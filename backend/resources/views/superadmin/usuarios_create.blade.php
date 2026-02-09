@@ -1,3 +1,19 @@
+@if(session('success'))
+    <div style="color:green">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div style="color:red">{{ session('error') }}</div>
+@endif
+@if($errors->any())
+    <div style="color:red">
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <form action="{{ route('superadmin.usuarios.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
@@ -37,28 +53,28 @@
     <input type="file" name="imagen"><br><br>
 
     <label>Código QR</label><br>
-    <input type="text" name="codigo_qr" required><br><br>
+    <input type="text" name="codigo_qr" ><br><br>
 
     <label>Contraseña</label><br>
     <input type="password" name="contrasena" required><br><br>
 
     <label>Rol</label><br>
-    <select name="id_rol" required>
-        <option value="">Seleccione</option>
-        @foreach ($roles as $rol)
-            <option value="{{ $rol->id_rol }}">
-                {{ $rol->nombre }}
-            </option>
-        @endforeach
-    </select>
-    <br><br>
+<select name="id_rol" required>
+    <option value="">Seleccione</option>
+    @foreach ($roles as $rol)
+        <option value="{{ $rol->id }}">
+            {{ $rol->rol }}
+        </option>
+    @endforeach
+</select>
+<br><br>
 
-    <label>Licencia</label><br>
-    <select name="id_licencia" required>
+    <label>Entidad</label><br>
+    <select name="id_entidad" required>
         <option value="">Seleccione</option>
-        @foreach ($licencias as $licencia)
-            <option value="{{ $licencia->id_licencia }}">
-                {{ $licencia->nombre }}
+        @foreach ($entidades as $entidad)
+            <option value="{{ $entidad->id }}">
+                {{ $entidad->nombre_entidad }}
             </option>
         @endforeach
     </select>

@@ -8,9 +8,9 @@ class Usuarios extends Model
 {
     protected $table = 'usuarios';
 
-    protected $filiable = [
+    protected $fillable = [
         'doc',
-        'tipo_doc',
+        'id_tip_doc',
         'primer_nombre',
         'segundo_nombre',
         'primer_apellido',
@@ -19,13 +19,18 @@ class Usuarios extends Model
         'correo',
         'imagen',
         'codigo_qr',
+        'contrasena',
         'id_rol',
-        'id_licencia'
+        'id_entidad'
     ];
 
     public function tipoDoc()
 {
-    return $this->belongsTo(TipoDoc::class, 'id_tip_doc');
+    return $this->belongsTo(TipoDoc::class, 'id_tip_doc', 'id_tip_doc');
 }
+    public function rol()
+    {
+        return $this->belongsTo(Roles::class, 'id_rol', 'id');
+    }
 
 }

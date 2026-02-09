@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LicenciasSistema extends Model
 {
-    protected $table = 'licencias_sistema'; // 👈 NOMBRE REAL DE TU TABLA
+    protected $table = 'licencias_sistema';
 
     protected $primaryKey = 'id_licencia';
 
