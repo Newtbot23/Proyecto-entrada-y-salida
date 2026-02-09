@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('codigo_qr', 300);
             $table->string('contrasena', 300);
             $table->foreignId('id_rol')->constrained('roles');
-            $table->foreignId('id_entidad')->constrained('entidades');
+            $table->foreignId('id_licencia')->constrained('licencias');
             $table->timestamps();
         });
     }
