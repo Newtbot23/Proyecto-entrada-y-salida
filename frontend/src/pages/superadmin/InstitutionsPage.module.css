@@ -1,0 +1,315 @@
+.dashboardLayout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-bg-page);
+}
+
+.mainContent {
+    flex: 1;
+    margin-left: 250px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: margin-left 0.3s ease-in-out;
+    width: 100%;
+}
+
+.mainContentCollapsed {
+    margin-left: 80px;
+}
+
+.contentWrapper {
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+}
+
+.pageTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.pageSubtitle {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.createButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.createButton:hover {
+    background-color: #5558e3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Filters */
+.filtersContainer {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdownButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.dropdownButton:hover {
+    border-color: var(--color-primary);
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: var(--spacing-sm);
+    min-width: 150px;
+    z-index: 10;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.checkboxLabel:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.checkboxLabel input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.licenseInput {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    background-color: var(--color-bg-card);
+    width: 140px;
+    transition: all 0.2s;
+}
+
+.licenseInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Table */
+.loadingContainer {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+}
+
+.tableContainer {
+    background-color: var(--color-bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead {
+    background-color: var(--color-bg-page);
+}
+
+.table th {
+    text-align: left;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.table tbody tr {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.clickableRow {
+    cursor: pointer;
+}
+
+.clickableRow:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+}
+
+.institutionName {
+    font-weight: 600;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.statusBadge.active {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.statusBadge.inactive {
+    background-color: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+}
+
+.actionButtons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.actionButton {
+    padding: var(--spacing-xs);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.actionButton:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.actionButton.danger:hover:not(:disabled) {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.emptyState {
+    text-align: center;
+    padding: var(--spacing-xl) !important;
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 1024px) {
+    .pageHeader {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .createButton {
+        justify-content: center;
+    }
+
+    .filtersContainer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filterGroup {
+        width: 100%;
+    }
+
+    .licenseInput {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .mainContent {
+        margin-left: 0;
+    }
+
+    .contentWrapper {
+        padding: var(--spacing-md);
+    }
+
+    .tableContainer {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 700px;
+    }
+}
