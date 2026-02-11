@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Usuarios extends Model
+class Usuarios extends Authenticatable
 {
     protected $table = 'usuarios';
 
@@ -20,8 +20,13 @@ class Usuarios extends Model
         'imagen',
         'codigo_qr',
         'contrasena',
+        'estado',
         'id_rol',
         'id_entidad'
+    ];
+
+    protected $casts = [
+        'estado' => 'string',
     ];
 
     public function tipoDoc()

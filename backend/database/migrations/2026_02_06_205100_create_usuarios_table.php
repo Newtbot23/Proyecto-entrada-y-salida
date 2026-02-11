@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('contrasena', 300);
             $table->foreignId('id_rol')->constrained('roles');
             $table->foreignId('id_entidad')->constrained('entidades');
+                $table->enum('estado', ['activo', 'inactivo'])->default('activo');
             $table->timestamps();
         });
     }

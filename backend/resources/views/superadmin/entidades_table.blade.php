@@ -14,8 +14,7 @@
                 <td>{{ $entidad->licencia->estado ?? '—' }}</td>
                 <td>{{ optional($entidad->licencia)->fecha_vencimiento ? \Carbon\Carbon::parse($entidad->licencia->fecha_vencimiento)->format('Y-m-d') : '—' }}</td>
                 <td>
-                    <a href="#">Ver</a>
-                    <a href="#">Editar</a>
+                    <a href="{{ route('superadmin.institutions.edit', $entidad->id) }}">Editar</a>
                 </td>
             </tr>
         @endforeach

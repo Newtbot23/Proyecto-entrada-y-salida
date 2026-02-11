@@ -9,8 +9,8 @@
 
     <textarea name="caracteristicas" required>{{ $plan->caracteristicas }}</textarea>
 
-    <input type="date" name="duracion_plan"
-        value="{{ $plan->duracion_plan }}" required>
+    <input type="number" name="duracion_plan"
+        value="{{ $plan->duracion_plan }}" min="0" required placeholder="Duración en meses">
 
     <input type="number" name="precio_plan"
         value="{{ $plan->precio_plan }}" step="0.01" required>

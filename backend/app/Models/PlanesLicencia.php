@@ -12,6 +12,11 @@ class PlanesLicencia extends Model
         'nombre_plan',
         'caracteristicas',
         'duracion_plan',
-        'precio_plan'
+        'precio_plan',
+        'estado'
+    ];
+
+    protected $casts = [
+        'duracion_plan' => 'integer',
     ];
 }

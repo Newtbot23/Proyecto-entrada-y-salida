@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('direccion', 200);
             $table->string('nombre_titular', 100);
             $table->string('telefono', 15);
+            $table->enum('estado', ['activo', 'pendiente','inactivo'])->default('pendiente');
             $table->string('nit', 15)->unique();
             $table->timestamps();
         });
