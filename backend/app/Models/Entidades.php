@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Entidades extends Model
 {
-    use HasFactory;
 
     protected $table = 'entidades'; // solo si tu tabla NO se llama entidades
     protected $primaryKey = 'id';
@@ -17,7 +16,8 @@ class Entidades extends Model
         'direccion',
         'nombre_titular',
         'telefono',
-        'nit'
+        'nit',
+        'status'
     ];
 
     public function usuarios()

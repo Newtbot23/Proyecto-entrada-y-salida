@@ -10,13 +10,10 @@ class PlanesLicencia extends Model
 
     protected $fillable = [
         'nombre_plan',
+        'periodo_facturacion',
         'caracteristicas',
+        'descripcion',
         'duracion_plan',
-        'precio_plan',
-        'estado'
-    ];
-
-    protected $casts = [
-        'duracion_plan' => 'integer',
+        'precio_plan'
     ];
 }
