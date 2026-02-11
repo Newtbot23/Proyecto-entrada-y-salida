@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('nombre_plan', 200);
             $table->string('caracteristicas', 1000);
-            $table->date('duracion_plan');
+            $table->integer('duracion_plan');
             $table->float('precio_plan');
+            $table->enum('estado', ['activo', 'inactivo'])->default('activo');
             $table->timestamps();
         });
     }

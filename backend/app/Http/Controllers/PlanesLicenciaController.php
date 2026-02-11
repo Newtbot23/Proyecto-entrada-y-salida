@@ -18,7 +18,7 @@ class PlanesLicenciaController extends Controller
         $request->validate([
             'nombre_plan' => 'required|string|max:200',
             'caracteristicas' => 'required|string|max:1000',
-            'duracion_plan' => 'required|date',
+            'duracion_plan' => 'required|integer|min:0',
             'precio_plan' => 'required|numeric|min:0'
         ]);
 
@@ -39,8 +39,9 @@ class PlanesLicenciaController extends Controller
         $request->validate([
             'nombre_plan' => 'required|string|max:200',
             'caracteristicas' => 'required|string|max:1000',
-            'duracion_plan' => 'required|date',
-            'precio_plan' => 'required|numeric|min:0'
+            'duracion_plan' => 'required|integer|min:0',
+            'precio_plan' => 'required|numeric|min:0',
+            'estado' => 'nullable|in:activo,inactivo'
         ]);
 
         $plan = PlanesLicencia::findOrFail($id);
@@ -61,11 +62,12 @@ class PlanesLicenciaController extends Controller
 
     public function userPlanes()
 {
-    $planes = PlanesLicencia::all(); // o el filtro que quieras
+    $planes = PlanesLicencia::all();
 
     return view('superadmin.planes_user', compact('planes'));
 }
 
+    
 }
 
 

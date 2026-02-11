@@ -55,7 +55,7 @@
     <textarea name="caracteristicas" placeholder="Características" required></textarea>
     <br>
 
-    <input type="date" name="duracion_plan" required>
+    <input type="number" name="duracion_plan" min="0" required placeholder="Duración en meses">
     <br>
 
     <input type="number" name="precio_plan" step="0.01" required>

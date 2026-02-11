@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('nombre', 200);
             $table->string('telefono', 200);
             $table->string('correo', 200);
+            $table->string('contrasena', 300);
             $table->timestamps();
         });
     }

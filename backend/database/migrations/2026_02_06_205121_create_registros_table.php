@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vehiculos', function (Blueprint $table) {
+        Schema::create('registros', function (Blueprint $table) {
             $table->id();
-            $table->string('placa', 10)->unique();
-            $table->foreignId('id_tipo_vehiculo')->constrained('tipos_vehiculo');
-            $table->integer('doc');
-            $table->string('marca', 100);
-            $table->string('modelo', 100);
-            $table->string('color', 50);
-            $table->text('descripcion');
+            $table->string('doc', 20);
+            $table->foreignId('id_equipo')->constrained('equipos');
+            $table->date('fecha');
+            $table->time('hora_entrada');
+            $table->time('hora_salida')->nullable();
             $table->foreign('doc')->references('doc')->on('usuarios');
             $table->timestamps();
         });
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vehiculos');
+        Schema::dropIfExists('registros');
     }
 };

@@ -12,6 +12,7 @@
             <th>Dirección</th>
             <th>Titular</th>
             <th>Teléfono</th>
+            <th>Estado</th>
             <th>NIT</th>
             <th>Acciones</th>
         </tr>
@@ -25,6 +26,7 @@
                 <td>{{ $entidad->direccion }}</td>
                 <td>{{ $entidad->nombre_titular }}</td>
                 <td>{{ $entidad->telefono }}</td>
+                <td>{{ $entidad->estado }}</td>
                 <td>{{ $entidad->nit }}</td>
                 <td>
                     <a href="{{ route('superadmin.institutions.edit', $entidad->id) }}">Edit</a>

@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('asignaciones', function (Blueprint $table) {
+        Schema::create('registros_equipos', function (Blueprint $table) {
             $table->id();
-            $table->integer('doc');
-            $table->foreignId('id_ambiente')->constrained('ambientes');
             $table->foreignId('id_equipo')->constrained('equipos');
-            $table->boolean('estado');
+            $table->string('doc', 20);
+            $table->date('fecha');
+            $table->text('observacion');
             $table->foreign('doc')->references('doc')->on('usuarios');
             $table->timestamps();
         });
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('asignaciones');
+        Schema::dropIfExists('registros_equipos');
     }
 };

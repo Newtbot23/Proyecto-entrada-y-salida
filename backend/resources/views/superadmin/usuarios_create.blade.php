@@ -1,68 +1,41 @@
-<form action="{{ route('superadmin.usuarios.store') }}" method="POST" enctype="multipart/form-data">
-    @csrf
-
-    <label>Tipo de documento</label><br>
-    <select name="id_tip_doc" required>
-        <option value="">Seleccione</option>
-        @foreach ($tiposDoc as $tipo)
-            <option value="{{ $tipo->id_tip_doc }}">
-                {{ $tipo->nombre }}
-            </option>
+    @if($errors->any())
+    <ul style="color:red">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
         @endforeach
-    </select>
-    <br><br>
+    </ul>
+@endif
 
-    <label>Documento</label><br>
-    <input type="number" name="doc" required><br><br>
+<h2>Datos de Pago de Licencia</h2>
 
-    <label>Primer nombre</label><br>
-    <input type="text" name="primer_nombre" required><br><br>
+<p><strong>Entidad Registrada:</strong> {{ $entidad->nombre_entidad }}</p>
+<p><strong>Plan Seleccionado:</strong> {{ $plan->nombre_plan }} - ${{ number_format($plan->precio_plan, 2) }}</p>
 
-    <label>Segundo nombre</label><br>
-    <input type="text" name="segundo_nombre"><br><br>
+<form action="{{ route('superadmin.usuarios-pagos.store') }}" method="POST">
+@csrf
 
-    <label>Primer apellido</label><br>
-    <input type="text" name="primer_apellido" required><br><br>
+<input type="hidden" name="entidad_id" value="{{ $entidad_id }}">
+<input type="hidden" name="plan_id" value="{{ $plan_id }}">
 
-    <label>Segundo apellido</label><br>
-    <input type="text" name="segundo_apellido"><br><br>
+<h3>Información de Pago</h3>
 
-    <label>Teléfono</label><br>
-    <input type="text" name="telefono" required><br><br>
+<label>Precio del Plan</label><br>
+<input type="text" value="${{ number_format($plan->precio_plan, 2) }}" readonly><br><br>
 
-    <label>Correo</label><br>
-    <input type="email" name="correo" required><br><br>
+<label>Fecha de Pago</label><br>
+<input type="date" name="fecha_pago" required><br><br>
 
-    <label>Imagen</label><br>
-    <input type="file" name="imagen"><br><br>
+<label>Método de pago</label><br>
+<select name="metodo_pago" required>
+    <option value="">-- Seleccionar Método de Pago --</option>
+    <option value="efectivo">Efectivo</option>
+    <option value="transferencia">Transferencia Bancaria</option>
+    <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+</select><br><br>
 
-    <label>Código QR</label><br>
-    <input type="text" name="codigo_qr" required><br><br>
+<label>Referencia</label><br>
+<input type="text" name="referencia" placeholder="Número de transacción o referencia" required><br><br>
 
-    <label>Contraseña</label><br>
-    <input type="password" name="contrasena" required><br><br>
-
-    <label>Rol</label><br>
-    <select name="id_rol" required>
-        <option value="">Seleccione</option>
-        @foreach ($roles as $rol)
-            <option value="{{ $rol->id_rol }}">
-                {{ $rol->nombre }}
-            </option>
-        @endforeach
-    </select>
-    <br><br>
-
-    <label>Licencia</label><br>
-    <select name="id_licencia" required>
-        <option value="">Seleccione</option>
-        @foreach ($licencias as $licencia)
-            <option value="{{ $licencia->id_licencia }}">
-                {{ $licencia->nombre }}
-            </option>
-        @endforeach
-    </select>
-    <br><br>
-
-    <button type="submit">Registrar</button>
+<button type="submit">Registrar Pago de Licencia</button>
+<a href="{{ route('superadmin.dashboard') }}">Cancelar</a>
 </form>

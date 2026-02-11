@@ -13,18 +13,20 @@ return new class extends Migration
     {
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
-            $table->integer('doc')->unique();
+            $table->foreignId('id_tip_doc')
+            ->constrained('tipo_doc', 'id_tip_doc');
+            $table->string('doc', 20)->unique();
             $table->string('primer_nombre', 50);
             $table->string('segundo_nombre', 50)->nullable();
             $table->string('primer_apellido', 50);
             $table->string('segundo_apellido', 50)->nullable();
             $table->string('telefono', 13);
-            $table->string('correo', 100);
+            $table->string('correo', 100)->unique();
             $table->string('imagen', 300)->nullable();
-            $table->string('codigo_qr', 300);
+            $table->string('codigo_qr', 300)->nullable();
             $table->string('contrasena', 300);
             $table->foreignId('id_rol')->constrained('roles');
-            $table->foreignId('id_licencia')->constrained('licencias');
+            $table->foreignId('id_entidad')->constrained('entidades');
             $table->timestamps();
         });
     }

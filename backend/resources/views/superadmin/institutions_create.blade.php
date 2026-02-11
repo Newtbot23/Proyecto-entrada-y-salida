@@ -1,4 +1,4 @@
-<h3>Registro de usuarios</h3>
+<h3>Registro de entidades</h3>
 
 <form action="{{ route('superadmin.institutions.store') }}" method="POST">
     @csrf

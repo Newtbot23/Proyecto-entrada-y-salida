@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entidades;
+use App\Models\LicenciasSistema;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class EntidadesController extends Controller
 {
@@ -16,6 +18,19 @@ class EntidadesController extends Controller
         })->paginate(5);
 
         return view('superadmin.institutions', compact('institutions', 'busqueda'));
+    }
+
+    public function dashboard()
+    {
+        $entidades = Entidades::with('licencia')->get();
+        $institucionesActivas = Entidades::count();
+        
+        $fecha_limite = Carbon::now()->addDays(30);
+        $licenciasProximasAVencer = LicenciasSistema::where('fecha_vencimiento', '<=', $fecha_limite)
+            ->where('fecha_vencimiento', '>=', Carbon::now())
+            ->count();
+        
+        return view('superadmin.superadmin', compact('entidades', 'institucionesActivas', 'licenciasProximasAVencer'));
     }
 
     public function create()

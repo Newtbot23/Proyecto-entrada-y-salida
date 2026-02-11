@@ -1,49 +1,74 @@
 <?php
 
-use App\Http\Controllers\EntidadesController;
+use App\Http\Controllers\AdminsController;
+use App\Http\Controllers\UsuariosAuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EntidadesController;
 use App\Http\Controllers\PlanesLicenciaController;
 use App\Http\Controllers\UsuariosController;
-
+use App\Http\Controllers\SuperAdminAuthController;
 
 Route::get('/', function () {
-    return redirect()->route('superadmin.planes.index');
+    return redirect()->route('superadmin.login');
 });
+
+// Rutas de autenticación para usuarios normales
+Route::get('/login', [UsuariosAuthController::class, 'showLogin'])
+    ->name('login');
+
+Route::post('/login', [UsuariosAuthController::class, 'login'])
+    ->name('login.submit');
+
+Route::post('/logout', [UsuariosAuthController::class, 'logout'])
+    ->name('logout');
 
 Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
-    Route::get('/planes', [PlanesLicenciaController::class, 'index'])
-        ->name('planes.index');
+    Route::get('/login', [AdminsController::class, 'showLogin'])
+        ->name('login');
 
-    Route::post('/planes', [PlanesLicenciaController::class, 'store'])
-        ->name('planes.store');
+    Route::post('/login', [AdminsController::class, 'login'])
+        ->name('login.submit');
 
-    Route::get('/planes/{id}/edit', [PlanesLicenciaController::class, 'edit'])
-        ->name('planes.edit');
+    Route::post('/logout', [AdminsController::class, 'logout'])
+        ->name('logout');
 
-    Route::put('/planes/{id}', [PlanesLicenciaController::class, 'update'])
-        ->name('planes.update');
+    Route::get('/planes_user', [PlanesLicenciaController::class, 'userPlanes'])
+        ->name('planes_user.index');
 
-    Route::delete('/planes/{id}', [PlanesLicenciaController::class, 'destroy'])
-        ->name('planes.destroy');
-        
-    Route::get('/institutions', [EntidadesController::class, 'index'])->name('institutions.index');
-    Route::get('/institutions/create', [EntidadesController::class, 'create'])->name('institutions.create');
-    Route::post('/institutions/store', [EntidadesController::class, 'store'])->name('institutions.store');
-    Route::get('/institutions/{id}/edit', [EntidadesController::class, 'edit'])->name('institutions.edit');
-    Route::put('/institutions/{id}', [EntidadesController::class, 'update'])->name('institutions.update');
-    Route::delete('/institutions/{id}', [EntidadesController::class, 'destroy'])->name('institutions.destroy');
+    Route::get('/entidad-usuario/create/{plan}', 
+        [UsuariosController::class, 'createEntidadUsuario']
+    )->name('entidad-usuario.create');
 
-    Route::get('/planes_user', [PlanesLicenciaController::class, 'userPlanes'])->name('planes_user.index');
+    Route::post('/entidad-usuario', 
+        [UsuariosController::class, 'storeEntidadUsuario']
+    )->name('entidad-usuario.store');
+
+    Route::get('/usuarios-pagos/create/{entidad}/{plan}',
+        [UsuariosController::class, 'createUsuariosPagos']
+    )->name('usuarios-pagos.create');
+
+    Route::post('/usuarios-pagos',
+        [UsuariosController::class, 'storeUsuariosPagos']
+    )->name('usuarios-pagos.store');
+});
+
+Route::prefix('superadmin')
+    ->name('superadmin.')
+    ->middleware('auth.superadmin')
+    ->group(function () {
+
+    Route::get('/dashboard', [EntidadesController::class, 'dashboard'])
+        ->name('dashboard');
+
+    Route::resource('planes', PlanesLicenciaController::class)
+        ->except(['show', 'create']);
+
+    Route::resource('institutions', EntidadesController::class)
+        ->except(['show']);
 
     Route::prefix('usuarios')->name('usuarios.')->group(function () {
-
-    Route::get('/create', [UsuariosController::class, 'create'])
-        ->name('create');
-
-    Route::post('/', [UsuariosController::class, 'store'])
-        ->name('store');
-
+        Route::post('/', [UsuariosController::class, 'store'])
+            ->name('store');
+    });
 });
-});
-
