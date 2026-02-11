@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Entidades extends Model
 {
-
+    use HasFactory;
     protected $table = 'entidades'; // solo si tu tabla NO se llama entidades
 
     protected $fillable = [
@@ -16,6 +16,7 @@ class Entidades extends Model
         'direccion',
         'nombre_titular',
         'telefono',
-        'nit'
+        'nit',
+        'status'
     ];
 }

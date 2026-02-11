@@ -63,7 +63,7 @@ const InstitutionsPage: React.FC = () => {
                 minLicenses: minLicenses ? parseInt(minLicenses) : undefined
             };
             const response = await getInstitutions(filters, paginationMeta.currentPage);
-            setInstitutions(response.data);
+            setInstitutions(response.data || []);
             setPaginationMeta(response.meta);
         } catch (error) {
             console.error('Failed to fetch institutions:', error);

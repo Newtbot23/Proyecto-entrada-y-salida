@@ -6,14 +6,29 @@ use Illuminate\Database\Eloquent\Model;
 
 class LicenciasSistema extends Model
 {
-    protected $table = 'licencias_sistema'; // 👈 NOMBRE REAL DE TU TABLA
-
-    protected $primaryKey = 'id_licencia';
-
-    public $timestamps = false;
+    protected $table = 'licencias_sistema';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
+        'fecha_inicio',
+        'fecha_vencimiento',
+        'estado',
+        'fecha_ultima_validacion',
+        'id_plan_lic',
+        'id_entidad'
     ];
+
+    public function plan()
+    {
+        return $this->belongsTo(PlanesLicencia::class, 'id_plan_lic');
+    }
+
+    public function entidad()
+    {
+        return $this->belongsTo(Entidades::class, 'id_entidad');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(PagosLicencia::class, 'id_licencia');
+    }
 }

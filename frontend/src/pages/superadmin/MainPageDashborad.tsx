@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './MainPageDashborad.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import StatCard from '../../components/dashboard/StatCard';
-import LicenseTable, { type License } from '../../components/dashboard/LicenseTable';
+import LicenseTable from '../../components/dashboard/LicenseTable';
+import { getDashboardStats, getLicensesList, activateLicense, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
@@ -11,27 +12,78 @@ const MainPageDashborad: React.FC = () => {
     // Desktop sidebar collapsed state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+    // Data state
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [licenses, setLicenses] = useState<LicenseData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            const [statsData, licensesData] = await Promise.all([
+                getDashboardStats(),
+                getLicensesList(1, 10)
+            ]);
+            setStats(statsData);
+            setLicenses(licensesData.data);
+            setError(null);
+        } catch (err) {
+            console.error('Error loading dashboard data:', err);
+            setError('Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Mock Data - To be replaced by API calls
-    const stats = [
-        { title: 'Active Institutions', value: 2, subtitle: 'Currently active' },
-        { title: 'Licenses About to Expire', value: 1, subtitle: 'Next 30 days' },
-        { title: 'Monthly Revenue', value: '1.000$', subtitle: 'This month' },
-    ];
-
-    const recentLicenses: License[] = [
-        { id: 1, institution: 'Institution A', status: 'Active', expirationDate: '2024-12-31' },
-        { id: 2, institution: 'Institution B', status: 'Expired', expirationDate: '2023-06-15' },
-        { id: 3, institution: 'Institution C', status: 'Active', expirationDate: '2025-03-20' },
-        { id: 4, institution: 'Institution D', status: 'Suspended', expirationDate: '2024-09-01' },
-    ];
-
     const handleLogout = () => {
         console.log('Logging out...');
         // Add logout logic here
+    };
+
+    const statCards = [
+        {
+            title: 'Active Institutions',
+            value: stats?.active_institutions ?? 0,
+            subtitle: 'Currently active'
+        },
+        {
+            title: 'Licenses About to Expire',
+            value: stats?.expiring_licenses ?? 0,
+            subtitle: 'Next 30 days'
+        },
+        {
+            title: 'Monthly Revenue',
+            value: `${(stats?.total_revenue ?? 0).toLocaleString()}$`,
+            subtitle: 'Total earned'
+        },
+    ];
+
+    if (error) {
+        return (
+            <div className={styles.errorContainer}>
+                <p>{error}</p>
+                <button onClick={fetchDashboardData}>Retry</button>
+            </div>
+        );
+    }
+
+    const handleActivateLicense = async (id: number) => {
+        try {
+            await activateLicense(id);
+            await fetchDashboardData();
+        } catch (err) {
+            console.error('Error activating license:', err);
+            alert('Failed to activate license');
+        }
     };
 
     return (
@@ -48,18 +100,29 @@ const MainPageDashborad: React.FC = () => {
                 <div className={styles.contentWrapper}>
                     {/* Stats Row */}
                     <div className={styles.statsGrid}>
-                        {stats.map((stat, index) => (
-                            <StatCard
-                                key={index}
-                                title={stat.title}
-                                value={stat.value}
-                                subtitle={stat.subtitle}
-                            />
-                        ))}
+                        {loading ? (
+                            <p>Loading stats...</p>
+                        ) : (
+                            statCards.map((stat, index) => (
+                                <StatCard
+                                    key={index}
+                                    title={stat.title}
+                                    value={stat.value}
+                                    subtitle={stat.subtitle}
+                                />
+                            ))
+                        )}
                     </div>
 
                     {/* Recent Activity Table */}
-                    <LicenseTable data={recentLicenses} />
+                    {loading ? (
+                        <p>Loading licenses...</p>
+                    ) : (
+                        <LicenseTable
+                            data={licenses}
+                            onActivate={handleActivateLicense}
+                        />
+                    )}
                 </div>
             </main>
         </div>
