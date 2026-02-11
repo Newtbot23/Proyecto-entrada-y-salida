@@ -125,7 +125,7 @@ const RegisterAdmin: React.FC = () => {
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label>Document Number</label>
-                        <input type="text" name="doc" value={formData.doc} onChange={handleChange} required />
+                        <input type="number" name="doc" value={formData.doc} onChange={handleChange} required />
                     </div>
 
                     <div className={styles.formGroup}>
@@ -164,7 +164,7 @@ const RegisterAdmin: React.FC = () => {
 
                     <div className={styles.formGroup}>
                         <label>Phone</label>
-                        <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} required />
+                        <input type="number" name="telefono" value={formData.telefono} onChange={handleChange} required />
                     </div>
 
                     <div className={styles.formGroup}>

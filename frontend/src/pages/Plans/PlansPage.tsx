@@ -4,6 +4,7 @@ import { MainLayout } from '../../layouts/MainLayout';
 import { PlanCard } from '../../components/Plans/PlanCard';
 import type { PricingPlan } from '../../types/plans';
 import { getPricingPlans } from '../../services/planService';
+import { TopBar } from '../../layouts/TopBar';
 export const PlansPage: React.FC = () => {
     const [plans, setPlans] = useState<PricingPlan[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -52,6 +53,7 @@ export const PlansPage: React.FC = () => {
 
     return (
         <MainLayout>
+            <TopBar />
             <div style={headerStyle}>
                 <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--color-text-main)' }}>
                     Choose the Right Plan for You

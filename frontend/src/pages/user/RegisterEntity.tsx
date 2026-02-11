@@ -91,7 +91,7 @@ const RegisterEntity: React.FC = () => {
                     <div className={styles.formGroup}>
                         <label>Phone</label>
                         <input
-                            type="text"
+                            type="number"
                             name="telefono"
                             value={formData.telefono}
                             onChange={handleChange}
@@ -101,7 +101,7 @@ const RegisterEntity: React.FC = () => {
                     <div className={styles.formGroup}>
                         <label>NIT</label>
                         <input
-                            type="text"
+                            type="number"
                             name="nit"
                             value={formData.nit}
                             onChange={handleChange}
