@@ -1,24 +1,20 @@
 import React from 'react';
 import styles from './LicenseTable.module.css';
-
-export interface License {
-    id: number;
-    institution: string;
-    status: 'Active' | 'Expired' | 'Suspended';
-    expirationDate: string;
-}
+import { type LicenseData } from '../../services/licenseDashboardService';
 
 interface LicenseTableProps {
-    data: License[];
+    data: LicenseData[];
+    onActivate?: (id: number) => void;
 }
 
-const LicenseTable: React.FC<LicenseTableProps> = ({ data }) => {
+const LicenseTable: React.FC<LicenseTableProps> = ({ data, onActivate }) => {
 
     const getStatusClass = (status: string) => {
         switch (status.toLowerCase()) {
-            case 'active': return styles.active;
-            case 'expired': return styles.expired;
-            case 'suspended': return styles.suspended;
+            case 'activa': return styles.active;
+            case 'vencida': return styles.expired;
+            case 'suspendida': return styles.suspended;
+            case 'pendiente': return styles.expired; // Use expired style for pending for now
             default: return '';
         }
     };
@@ -26,44 +22,52 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data }) => {
     return (
         <div className={styles.tableContainer}>
             <div className={styles.header}>
-                <h2 className={styles.title}>Recent License Activity</h2>
+                <h2 className={styles.title}>All System Licenses</h2>
             </div>
             <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>Entity / Institution Name</th>
-                            <th>License Status</th>
-                            <th>License Expiration Date</th>
+                            <th>Institution / Entity</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Expiration Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {data.map((row) => (
                             <tr key={row.id}>
-                                <td>{row.institution}</td>
+                                <td>{row.entidad?.nombre_entidad || 'N/A'}</td>
+                                <td>{row.plan?.nombre_plan || 'N/A'}</td>
                                 <td>
-                                    <span className={`${styles.statusBadge} ${getStatusClass(row.status)}`}>
-                                        {row.status}
+                                    <span className={`${styles.statusBadge} ${getStatusClass(row.estado)}`}>
+                                        {row.estado}
                                     </span>
                                 </td>
-                                <td>{row.expirationDate}</td>
+                                <td>{row.fecha_vencimiento}</td>
                                 <td>
                                     <div className={styles.actions}>
-                                        <button className={styles.actionBtn}>View</button>
-                                        <button className={styles.actionBtn}>Renew</button>
-                                        <button className={styles.actionBtn}>Suspend</button>
+                                        {row.estado === 'pendiente' && (
+                                            <button
+                                                className={styles.actionBtn}
+                                                onClick={() => onActivate?.(row.id)}
+                                            >
+                                                Activate
+                                            </button>
+                                        )}
+                                        <button className={styles.actionBtn}>View Details</button>
                                     </div>
                                 </td>
                             </tr>
                         ))}
+                        {data.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className={styles.emptyMessage}>No licenses found</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
-            </div>
-            <div className={styles.pagination}>
-                <div className={styles.pageNum}>1</div>
-                <div className={styles.pageNum}>2</div>
-                <button className={styles.pageBtn}>Next</button>
             </div>
         </div>
     );

@@ -1,156 +1,98 @@
+import { apiClient } from '../config/api';
 import type { LicensePlan, PlanFormData } from '../types/licensePlan';
 
-// Mock data for development - replace with actual API calls
-const mockPlans: LicensePlan[] = [
-    {
-        id: '1',
-        name: 'Basic Plan',
-        price: 50,
-        billingPeriod: 'monthly',
-        duration: 12,
-        description: 'Perfect for small institutions getting started',
-        status: 'active',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15'
-    },
-    {
-        id: '2',
-        name: 'Pro Plan',
-        price: 250,
-        billingPeriod: 'yearly',
-        duration: 12,
-        description: 'Ideal for growing institutions with advanced needs',
-        status: 'active',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15'
-    }
-];
-
-let plans = [...mockPlans];
+/**
+ * Map backend plan to frontend LicensePlan
+ * 
+ * Traslada los nombres de campos de la base de datos (en español) 
+ * a los nombres de propiedades esperados por el frontend (en inglés).
+ */
+const mapToFrontend = (plan: any): LicensePlan => ({
+    id: plan.id.toString(),
+    name: plan.nombre_plan,
+    price: parseFloat(plan.precio_plan),
+    billingPeriod: plan.periodo_facturacion,
+    duration: plan.duracion_plan,
+    description: plan.descripcion,
+    status: plan.estado as 'active' | 'disabled',
+    createdAt: plan.created_at,
+    updatedAt: plan.updated_at
+});
 
 /**
- * Get all license plans
- * TODO: Replace with actual API call to Laravel backend
- * Endpoint: GET /api/superadmin/license-plans
+ * Map frontend PlanFormData to backend format
+ * 
+ * Traslada los datos del formulario (en inglés) a los nombres 
+ * de campos esperados por la API Laravel (en español).
+ */
+const mapToBackend = (data: PlanFormData) => ({
+    nombre_plan: data.name,
+    precio_plan: data.price,
+    periodo_facturacion: data.billingPeriod,
+    duracion_plan: data.duration,
+    descripcion: data.description,
+    caracteristicas: [] // TODO: Add support for features in the form if needed
+});
+
+/**
+ * Get all license plans from the backend
  */
 export const getLicensePlans = async (): Promise<LicensePlan[]> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // TODO: Replace with actual fetch call
-    // const response = await fetch('/api/superadmin/license-plans');
-    // return response.json();
-
-    return [...plans];
+    try {
+        // El controlador refactorizado devuelve un objeto paginado: { data: [...], total: ... }
+        const response = await apiClient.get<{ data: any[] }>('/planes');
+        return response.data.map(mapToFrontend);
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
  * Create a new license plan
- * TODO: Replace with actual API call to Laravel backend
- * Endpoint: POST /api/superadmin/license-plans
  */
 export const createLicensePlan = async (data: PlanFormData): Promise<LicensePlan> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const newPlan: LicensePlan = {
-        id: Date.now().toString(),
-        ...data,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-
-    plans.push(newPlan);
-
-    // TODO: Replace with actual fetch call
-    // const response = await fetch('/api/superadmin/license-plans', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(data)
-    // });
-    // return response.json();
-
-    return newPlan;
+    try {
+        const newPlan = await apiClient.post<any, any>('/planes', mapToBackend(data));
+        return mapToFrontend(newPlan);
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
  * Update an existing license plan
- * TODO: Replace with actual API call to Laravel backend
- * Endpoint: PUT /api/superadmin/license-plans/{id}
  */
 export const updateLicensePlan = async (id: string, data: PlanFormData): Promise<LicensePlan> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const index = plans.findIndex(p => p.id === id);
-    if (index === -1) throw new Error('Plan not found');
-
-    const updatedPlan: LicensePlan = {
-        ...plans[index],
-        ...data,
-        updatedAt: new Date().toISOString()
-    };
-
-    plans[index] = updatedPlan;
-
-    // TODO: Replace with actual fetch call
-    // const response = await fetch(`/api/superadmin/license-plans/${id}`, {
-    //     method: 'PUT',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(data)
-    // });
-    // return response.json();
-
-    return updatedPlan;
+    try {
+        const updatedPlan = await apiClient.put<any, any>(`/planes/${id}`, mapToBackend(data));
+        return mapToFrontend(updatedPlan);
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
  * Duplicate a license plan
- * TODO: Replace with actual API call to Laravel backend
- * Endpoint: POST /api/superadmin/license-plans/{id}/duplicate
+ * Realiza un POST con la data del plan a duplicar
  */
-export const duplicateLicensePlan = async (id: string, data: PlanFormData): Promise<LicensePlan> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const newPlan: LicensePlan = {
-        id: Date.now().toString(),
-        ...data,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-
-    plans.push(newPlan);
-
-    // TODO: Replace with actual fetch call
-    // const response = await fetch(`/api/superadmin/license-plans/${id}/duplicate`, {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(data)
-    // });
-    // return response.json();
-
-    return newPlan;
+export const duplicateLicensePlan = async (_id: string, data: PlanFormData): Promise<LicensePlan> => {
+    try {
+        // En el backend es simplemente crear un nuevo registro
+        const newPlan = await apiClient.post<any, any>('/planes', mapToBackend(data));
+        return mapToFrontend(newPlan);
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
  * Disable a license plan
- * TODO: Replace with actual API call to Laravel backend
- * Endpoint: PATCH /api/superadmin/license-plans/{id}/disable
+ * Cambia el estado del plan a 'disabled'
  */
 export const disableLicensePlan = async (id: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const index = plans.findIndex(p => p.id === id);
-    if (index !== -1) {
-        plans[index] = {
-            ...plans[index],
-            status: 'disabled',
-            updatedAt: new Date().toISOString()
-        };
+    try {
+        await apiClient.put(`/planes/${id}`, { estado: 'disabled' });
+    } catch (error) {
+        throw error;
     }
-
-    // TODO: Replace with actual fetch call
-    // await fetch(`/api/superadmin/license-plans/${id}/disable`, {
-    //     method: 'PATCH'
-    // });
 };

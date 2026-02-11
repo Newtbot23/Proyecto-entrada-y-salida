@@ -56,4 +56,23 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## API Documentation
+
+### Planes (License Plans) API
+Endpoints for managing subscription plans.
+
+- `GET /api/planes`: List all license plans.
+- `GET /api/planes/{id}`: Get details of a specific plan.
+- `POST /api/planes`: Create a new license plan.
+- `PUT /api/planes/{id}`: Update an existing license plan.
+- `DELETE /api/planes/{id}`: Delete a license plan.
+
+### Custom Fields Mapping
+The backend uses Spanish names for database compatibility, while the frontend uses English names.
+- `name` -> `nombre_plan`
+- `price` -> `precio_plan`
+- `billingPeriod` -> `periodo_facturacion`
+- `duration` -> `duracion_plan`
+- `description` -> `descripcion`
+- `status` -> `estado`
