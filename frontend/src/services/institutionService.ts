@@ -11,8 +11,6 @@
  * - PUT    /api/entidades/{id}      -> Actualizar institución completa
  * - DELETE /api/entidades/{id}      -> Eliminar institución
  * 
- * @author Tu nombre
- * @version 1.0.0
  */
 
 import { apiClient } from '../config/api';
