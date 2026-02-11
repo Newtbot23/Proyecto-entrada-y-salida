@@ -126,7 +126,7 @@ class UsuariosController extends Controller
                     'id_entidad' => $entidad->id,
                     'fecha_inicio' => $fecha_inicio->toDateString(),
                     'fecha_vencimiento' => $fecha_vencimiento->toDateString(),
-                    'estado' => true,
+                    'estado' => 'activa',
                     'fecha_ultima_validacion' => Carbon::now()->toDateTimeString(),
                 ]);
 
@@ -135,7 +135,7 @@ class UsuariosController extends Controller
                     'fecha_pago' => Carbon::parse($request->fecha_pago)->toDateTimeString(),
                     'metodo_pago' => $request->metodo_pago,
                     'referencia' => $request->referencia,
-                    'estado' => 'pendiente',
+                    'estado' => 'pagado',
                     'creado_en' => Carbon::now()->toDateTimeString(),
                 ]);
             }

@@ -20,14 +20,14 @@
 <h3>Información de Pago</h3>
 
 <label>Precio del Plan</label><br>
-<input type="text" value="${{ number_format($plan->precio_plan, 2) }}" readonly><br><br>
+<input type="text" value="${{ number_format($plan->precio_plan) }}" readonly><br><br>
 
 <label>Fecha de Pago</label><br>
 <input type="date" name="fecha_pago" required><br><br>
 
 <label>Método de pago</label><br>
 <select name="metodo_pago" required>
-    <option value="">-- Seleccionar Método de Pago --</option>
+    <option value="">Seleccionar Método de Pago</option>
     <option value="efectivo">Efectivo</option>
     <option value="transferencia">Transferencia Bancaria</option>
     <option value="tarjeta">Tarjeta de Crédito/Débito</option>

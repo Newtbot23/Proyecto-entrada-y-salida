@@ -11,8 +11,6 @@ use App\Http\Controllers\SuperAdminAuthController;
 Route::get('/', function () {
     return redirect()->route('superadmin.login');
 });
-
-// Rutas de autenticación para usuarios normales
 Route::get('/login', [UsuariosAuthController::class, 'showLogin'])
     ->name('login');
 
@@ -71,4 +69,6 @@ Route::prefix('superadmin')
         Route::post('/', [UsuariosController::class, 'store'])
             ->name('store');
     });
+
+    
 });

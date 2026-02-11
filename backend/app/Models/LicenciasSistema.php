@@ -9,7 +9,11 @@ class LicenciasSistema extends Model
     protected $table = 'licencias_sistema';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
+        'id_plan_lic',
+        'id_entidad',
+        'fecha_inicio',
+        'fecha_vencimiento',
+        'estado',
+        'fecha_ultima_validacion',
     ];
 }
