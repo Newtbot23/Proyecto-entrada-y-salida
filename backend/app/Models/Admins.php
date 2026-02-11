@@ -3,9 +3,11 @@
 namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 
 class Admins extends Authenticatable
 {
+    use HasApiTokens;
     protected $table = 'admins';
 
     protected $fillable = [

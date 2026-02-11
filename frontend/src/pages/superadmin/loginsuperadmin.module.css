@@ -59,7 +59,8 @@
 .input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); /* faded primary color */
+  box-shadow: 0 0 0 3px rgba(0, 143, 57, 0.1);
+  /* faded primary green */
 }
 
 .button {
@@ -86,7 +87,8 @@
 }
 
 .errorMessage {
-  color: #ef4444; /* Red 500 */
+  color: #ef4444;
+  /* Red 500 */
   font-size: var(--font-size-sm);
   text-align: center;
   margin-top: var(--spacing-xs);

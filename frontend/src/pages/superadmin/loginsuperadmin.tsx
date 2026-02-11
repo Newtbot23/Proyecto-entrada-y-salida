@@ -21,14 +21,14 @@ const LoginSuperAdmin: React.FC = () => {
 
         try {
             // Use environment variable for API URL or fallback to localhost
-            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/login';
+            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins/login';
 
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ correo: email, contrasena: password }),
             });
 
             if (!response.ok) {
@@ -38,9 +38,13 @@ const LoginSuperAdmin: React.FC = () => {
 
             const data = await response.json();
             console.log('Login successful:', data);
-            // Handle successful login (e.g., store token, redirect)
-            // localStorage.setItem('token', data.token);
-            // window.location.href = '/superadmin/dashboard';
+
+            // Store token and admin data
+            localStorage.setItem('adminToken', data.data.token);
+            localStorage.setItem('adminUser', JSON.stringify(data.data.admin));
+
+            // Redirect to dashboard
+            window.location.href = '/superadmin/dashboard';
 
         } catch (err: any) {
             console.error('Login error:', err);

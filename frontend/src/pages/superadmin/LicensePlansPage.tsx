@@ -16,7 +16,6 @@ import {
 
 const LicensePlansPage: React.FC = () => {
     // Layout state
-    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Data state
@@ -50,8 +49,9 @@ const LicensePlansPage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        console.log('Logging out...');
-        // Add logout logic here
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/login';
     };
 
     // Create Plan
@@ -112,7 +112,6 @@ const LicensePlansPage: React.FC = () => {
     return (
         <div className={styles.dashboardLayout}>
             <Sidebar
-                isOpen={isMobileSidebarOpen}
                 isCollapsed={isSidebarCollapsed}
                 onToggle={toggleSidebar}
             />

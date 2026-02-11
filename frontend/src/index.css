@@ -1,9 +1,9 @@
 :root {
   /* Color System */
-  --color-primary: #6366f1;
-  /* Indigo 500 */
-  --color-primary-hover: #4f46e5;
-  /* Indigo 600 */
+  --color-primary: #008f39;
+  /* Green theme */
+  --color-primary-hover: #00702c;
+  /* Darker green for hover */
   --color-secondary: #ec4899;
   /* Pink 500 - for accents if needed */
 

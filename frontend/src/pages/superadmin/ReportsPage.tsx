@@ -51,7 +51,9 @@ const ReportsPage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        console.log('Logging out...');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/login';
     };
 
     const handleExport = async () => {

@@ -46,7 +46,11 @@ const MainPageDashborad: React.FC = () => {
 
     const handleLogout = () => {
         console.log('Logging out...');
-        // Add logout logic here
+        // Clear admin-related items from localStorage
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        // Redirect to login page
+        window.location.href = '/login';
     };
 
     const statCards = [

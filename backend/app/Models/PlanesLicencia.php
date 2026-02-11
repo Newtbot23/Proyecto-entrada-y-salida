@@ -14,6 +14,13 @@ class PlanesLicencia extends Model
         'caracteristicas',
         'descripcion',
         'duracion_plan',
-        'precio_plan'
+        'precio_plan',
+        'estado'
+    ];
+
+    protected $casts = [
+        'caracteristicas' => 'array',
+        'precio_plan' => 'float',
+        'duracion_plan' => 'integer'
     ];
 }

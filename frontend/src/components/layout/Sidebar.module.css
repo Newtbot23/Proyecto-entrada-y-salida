@@ -90,13 +90,13 @@
 
 .navLink:hover {
     color: var(--color-primary);
-    background-color: rgba(99, 102, 241, 0.05);
-    /* very light indigo */
+    background-color: rgba(0, 143, 57, 0.05);
+    /* very light green */
 }
 
 .active {
     color: var(--color-primary);
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(0, 143, 57, 0.1);
     border-left-color: var(--color-primary);
 }
 

@@ -67,9 +67,9 @@ const InstitutionDetailsPage: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             const data = await getInstitutionById(id);
-            
+
             if (data) {
                 setInstitution(data);
             } else {
@@ -88,7 +88,9 @@ const InstitutionDetailsPage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        console.log('Logging out...');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/login';
     };
 
     const handleBack = () => {
@@ -178,13 +180,13 @@ const InstitutionDetailsPage: React.FC = () => {
                 <Header title="Institution Details" userName="Super Admin" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
-                    
+
                     <div className={styles.pageHeader}>
                         <button onClick={handleBack} className={styles.backButton}>
                             <ChevronLeftIcon width={20} height={20} />
                             <span>Back to Institutions</span>
                         </button>
-                        
+
                         <button onClick={handleEditClick} className={styles.editButton}>
                             <EditIcon width={20} height={20} />
                             <span>Edit Institution</span>
@@ -192,7 +194,7 @@ const InstitutionDetailsPage: React.FC = () => {
                     </div>
 
                     <div className={styles.detailsCard}>
-                        
+
                         <div className={styles.cardHeader}>
                             <h2 className={styles.institutionName}>{institution.nombre_entidad}</h2>
                             {institution.status && (
@@ -203,7 +205,7 @@ const InstitutionDetailsPage: React.FC = () => {
                         </div>
 
                         <div className={styles.detailsGrid}>
-                            
+
                             <div className={styles.detailItem}>
                                 <span className={styles.label}>ID</span>
                                 <span className={styles.value}>{institution.id}</span>

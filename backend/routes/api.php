@@ -7,10 +7,18 @@ use App\Http\Controllers\Api\EntidadesController;
 use App\Http\Controllers\Api\PlanesController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LicenciasController;
+use App\Http\Controllers\Api\AdminsAuthController;
+use App\Http\Controllers\Api\AdminsController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// Admins Authentication
+Route::post('/admins/login', [AdminsAuthController::class, 'login']);
+
+// Admins Management CRUD
+Route::apiResource('admins', AdminsController::class);
 
 Route::get('/plans', [PricingController::class, 'index']);
 Route::post('/plans/select', [PricingController::class, 'select']);

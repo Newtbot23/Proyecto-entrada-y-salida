@@ -6,6 +6,7 @@ import LicensePlansPage from './pages/superadmin/LicensePlansPage';
 import InstitutionsPage from './pages/superadmin/InstitutionsPage';
 import InstitutionDetailsPage from './pages/superadmin/InstitutionDetailsPage';
 import ReportsPage from './pages/superadmin/ReportsPage';
+import SuperAdmin from './pages/superadmin/SuperAdmin';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/superadmin/dashboard" replace />} />
         <Route path="/superadmin/dashboard" element={<MainPageDashborad />} />
+        <Route path="/superadmin/admins" element={<SuperAdmin />} />
         <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
         <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
         <Route path="/superadmin/institutions/:id" element={<InstitutionDetailsPage />} />

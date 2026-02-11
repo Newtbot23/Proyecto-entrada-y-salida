@@ -27,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const menuItems = [
         { label: 'Dashboard', path: '/superadmin/dashboard', icon: DashboardIcon },
+        { label: 'Admins', path: '/superadmin/admins', icon: InstitutionIcon }, // Using InstitutionIcon for now
         { label: 'Institutions', path: '/superadmin/institutions', icon: InstitutionIcon },
         { label: 'License Plans', path: '/superadmin/license-plans', icon: LicenseIcon },
         { label: 'Reports', path: '/superadmin/reports', icon: ReportIcon },
