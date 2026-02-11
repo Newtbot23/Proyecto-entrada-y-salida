@@ -15,7 +15,7 @@ protected $table = 'pagos_licencia';
         'id_licencia',
         'fecha_pago',
         'metodo_pago',
-        'referenci',
+        'referencia',
         'estado',
         'creado_en',
     ];

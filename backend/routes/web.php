@@ -36,13 +36,21 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/planes_user', [PlanesLicenciaController::class, 'userPlanes'])
         ->name('planes_user.index');
 
-    Route::get('/entidad-usuario/create/{plan?}', 
+    Route::get('/entidad-usuario/create/{plan}', 
         [UsuariosController::class, 'createEntidadUsuario']
     )->name('entidad-usuario.create');
 
     Route::post('/entidad-usuario', 
         [UsuariosController::class, 'storeEntidadUsuario']
     )->name('entidad-usuario.store');
+
+    Route::get('/usuarios-pagos/create/{entidad}/{plan}',
+        [UsuariosController::class, 'createUsuariosPagos']
+    )->name('usuarios-pagos.create');
+
+    Route::post('/usuarios-pagos',
+        [UsuariosController::class, 'storeUsuariosPagos']
+    )->name('usuarios-pagos.store');
 });
 
 Route::prefix('superadmin')

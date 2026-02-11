@@ -9,6 +9,8 @@
 <form action="{{ route('superadmin.entidad-usuario.store') }}" method="POST" enctype="multipart/form-data">
 @csrf
 
+<input type="hidden" name="plan_id" value="{{ $plan_id }}">
+
 <h3>Datos de la Entidad</h3>
 
 <input type="text" name="nombre_entidad" placeholder="Nombre entidad" required><br>
@@ -47,5 +49,7 @@
 </select>
 
 <br><br>
+
 <button type="submit">Registrar Entidad y Usuario</button>
 </form>
+
