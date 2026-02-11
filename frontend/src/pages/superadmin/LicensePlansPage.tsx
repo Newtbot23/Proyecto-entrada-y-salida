@@ -51,7 +51,7 @@ const LicensePlansPage: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
-        window.location.href = '/login';
+        window.location.href = '/superadmin/login';
     };
 
     // Create Plan

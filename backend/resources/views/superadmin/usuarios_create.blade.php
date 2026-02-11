@@ -16,6 +16,7 @@
 
 <input type="hidden" name="entidad_id" value="{{ $entidad_id }}">
 <input type="hidden" name="plan_id" value="{{ $plan_id }}">
+<input type="hidden" name="licencia_id" value="{{ $licencia_id }}">
 
 <h3>Información de Pago</h3>
 

@@ -120,7 +120,7 @@ const SuperAdmin: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Administrator Management" userName="Super Admin" onLogout={() => window.location.href = '/login'} />
+                <Header title="Administrator Management" userName="Super Admin" onLogout={() => window.location.href = '/superadmin/login'} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>

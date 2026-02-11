@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import StatCard from '../../components/dashboard/StatCard';
 import LicenseTable from '../../components/dashboard/LicenseTable';
-import { getDashboardStats, getLicensesList, activateLicense, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
+import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
@@ -50,7 +50,7 @@ const MainPageDashborad: React.FC = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
         // Redirect to login page
-        window.location.href = '/login';
+        window.location.href = '/superadmin/login';
     };
 
     const statCards = [
@@ -80,13 +80,16 @@ const MainPageDashborad: React.FC = () => {
         );
     }
 
-    const handleActivateLicense = async (id: number) => {
+
+    const handleUpdateStatus = async (id: number, status: string) => {
         try {
-            await activateLicense(id);
+            // Import dynamically or ensure it's imported at top
+            const { updateLicenseStatus } = await import('../../services/licenseDashboardService');
+            await updateLicenseStatus(id, status);
             await fetchDashboardData();
         } catch (err) {
-            console.error('Error activating license:', err);
-            alert('Failed to activate license');
+            console.error(`Error updating license status to ${status}:`, err);
+            alert(`Failed to update license status to ${status}`);
         }
     };
 
@@ -124,7 +127,7 @@ const MainPageDashborad: React.FC = () => {
                     ) : (
                         <LicenseTable
                             data={licenses}
-                            onActivate={handleActivateLicense}
+                            onUpdateStatus={handleUpdateStatus}
                         />
                     )}
                 </div>

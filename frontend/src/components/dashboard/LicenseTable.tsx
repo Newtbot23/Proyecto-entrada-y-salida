@@ -4,16 +4,19 @@ import { type LicenseData } from '../../services/licenseDashboardService';
 
 interface LicenseTableProps {
     data: LicenseData[];
-    onActivate?: (id: number) => void;
+    onUpdateStatus?: (id: number, status: string) => void;
 }
 
-const LicenseTable: React.FC<LicenseTableProps> = ({ data, onActivate }) => {
+const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => {
 
     const getStatusClass = (status: string) => {
         switch (status.toLowerCase()) {
             case 'activa': return styles.active;
+            case 'activo': return styles.active; // Handle both
             case 'vencida': return styles.expired;
+            case 'expirado': return styles.expired; // Handle both
             case 'suspendida': return styles.suspended;
+            case 'inactivo': return styles.suspended; // Handle both
             case 'pendiente': return styles.expired; // Use expired style for pending for now
             default: return '';
         }
@@ -31,6 +34,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onActivate }) => {
                             <th>Institution / Entity</th>
                             <th>Plan</th>
                             <th>Status</th>
+                            <th>Payment Reference</th>
                             <th>Expiration Date</th>
                             <th>Actions</th>
                         </tr>
@@ -45,15 +49,50 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onActivate }) => {
                                         {row.estado}
                                     </span>
                                 </td>
+                                <td>
+                                    {row.referencia_pago ? (
+                                        <code className={styles.refCode}>{row.referencia_pago}</code>
+                                    ) : (
+                                        <span className={styles.noRef}>None</span>
+                                    )}
+                                </td>
                                 <td>{row.fecha_vencimiento}</td>
                                 <td>
                                     <div className={styles.actions}>
                                         {row.estado === 'pendiente' && (
+                                            <>
+                                                <button
+                                                    className={styles.actionBtn}
+                                                    style={{ color: '#166534', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
+                                                    onClick={() => onUpdateStatus?.(row.id, 'activo')}
+                                                    title="Approve Payment"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    className={styles.actionBtn}
+                                                    style={{ color: '#991b1b', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                                                    onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
+                                                    title="Reject Payment"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </>
+                                        )}
+                                        {row.estado === 'activo' && (
                                             <button
                                                 className={styles.actionBtn}
-                                                onClick={() => onActivate?.(row.id)}
+                                                onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
                                             >
-                                                Activate
+                                                Suspend
+                                            </button>
+                                        )}
+                                        {row.estado === 'inactivo' && (
+                                            <button
+                                                className={styles.actionBtn}
+                                                onClick={() => onUpdateStatus?.(row.id, 'activo')}
+                                            >
+                                                Re-Activate
                                             </button>
                                         )}
                                         <button className={styles.actionBtn}>View Details</button>

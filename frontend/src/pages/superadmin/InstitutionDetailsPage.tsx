@@ -90,7 +90,7 @@ const InstitutionDetailsPage: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
-        window.location.href = '/login';
+        window.location.href = '/superadmin/login';
     };
 
     const handleBack = () => {

@@ -4,6 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PricingController;
 use App\Http\Controllers\Api\EntidadesController;
+use App\Http\Controllers\Api\EntidadController;
+use App\Http\Controllers\Api\PlanesLicenciasController;
+use App\Http\Controllers\Api\UsuariosController;
+use App\Http\Controllers\Api\NormalAdminAuthController;
+use App\Http\Controllers\Api\RegistrationFlowController;
+use App\Http\Controllers\Api\TipoDocController;
 use App\Http\Controllers\Api\PlanesController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LicenciasController;
@@ -37,6 +43,15 @@ Route::get('/entidades/{id}', [EntidadesController::class, 'show']);
 Route::put('/entidades/{id}', [EntidadesController::class, 'update']);
 Route::delete('/entidades/{id}', [EntidadesController::class, 'destroy']);
 
+// Registration Flow
+Route::post('/registration/entidades', [EntidadController::class, 'store']);
+Route::post('/registration/licencias', [PlanesLicenciasController::class, 'store']);
+Route::post('/registration/usuarios', [UsuariosController::class, 'store']);
+Route::post('/registration/full', [RegistrationFlowController::class, 'register']);
+
+// Normal Admin Auth
+Route::post('/normaladmin/login', [NormalAdminAuthController::class, 'login']);
+
 // Dashboard Stats
 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
@@ -45,4 +60,9 @@ Route::get('/licencias', [LicenciasController::class, 'index']);
 Route::post('/licencias', [LicenciasController::class, 'store']);
 Route::get('/licencias/{id}', [LicenciasController::class, 'show']);
 Route::put('/licencias/{id}/activate', [LicenciasController::class, 'activate']);
+Route::patch('/licencias-sistema/{id}/referencia', [LicenciasController::class, 'updateReferencia']);
+Route::patch('/licencias-sistema/{id}/estado', [LicenciasController::class, 'updateEstado']);
+
+// Common Data
+Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 

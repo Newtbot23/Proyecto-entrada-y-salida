@@ -50,7 +50,7 @@ class UsuariosController extends Controller
             'plan_id' => 'required|exists:planes_licencia,id',
         ]);
 
-        $entidad = DB::transaction(function () use ($request) {
+        $transactionResult = DB::transaction(function () use ($request) {
             $entidad = Entidades::create([
                 'nombre_entidad' => $request->nombre_entidad,
                 'correo' => $request->correo_entidad,
@@ -65,6 +65,20 @@ class UsuariosController extends Controller
                 $rutaImagen = $request->file('imagen')->store('usuarios', 'public');
             }
 
+            // Create License Immediately via Plan
+            $plan = PlanesLicencia::findOrFail($request->plan_id);
+            $fecha_inicio = Carbon::now();
+            $fecha_vencimiento = $fecha_inicio->copy()->addDays(intval($plan->duracion_plan));
+
+            $licencia = LicenciasSistema::create([
+                'id_plan_lic' => $plan->id,
+                'id_entidad' => $entidad->id,
+                'fecha_inicio' => $fecha_inicio->toDateString(),
+                'fecha_vencimiento' => $fecha_vencimiento->toDateString(),
+                'estado' => 'pendiente', // Default pending until payment details
+                'fecha_ultima_validacion' => now(),
+            ]);
+
             Usuarios::create([
                 'id_tip_doc' => $request->id_tip_doc,
                 'doc' => $request->doc,
@@ -78,28 +92,37 @@ class UsuariosController extends Controller
                 'contrasena' => Hash::make($request->contrasena),
                 'id_rol' => $request->id_rol,
                 'estado' => $request->input('estado', 'activo'),
-                'id_entidad' => $entidad->id,
+                'id_licencia_sistema' => $licencia->id,
             ]);
 
-            return $entidad;
+            return ['entidad' => $entidad, 'licencia' => $licencia];
         });
 
+        // Redirect with license info if needed, or just entity/plan
+        // storeUsuariosPagos will need to know which license to update or create payment for.
+        // But the legacy route expects 'entidad' and 'plan'.
+        // We can pass 'licencia_id' in session or query param if we update the route/controller.
+        // For now, let's stick to the flow but we need to ensure storeUsuariosPagos finds the license.
+
         return redirect()->route('superadmin.usuarios-pagos.create', [
-            'entidad' => $entidad->id,
-            'plan' => $request->plan_id
-        ])->with('success', 'Entidad y usuario registrados. Ahora complete los datos de pago.');
+            'entidad' => $transactionResult['entidad']->id,
+            'plan' => $request->plan_id,
+            'licencia_id' => $transactionResult['licencia']->id // Pass this
+        ])->with('success', 'Entidad, Licencia y Usuario registrados. Complete los datos de pago.');
     }
 
-    public function createUsuariosPagos($entidad, $plan)
+    public function createUsuariosPagos(Request $request, $entidad, $plan)
     {
         $entidadData = Entidades::findOrFail($entidad);
         $planData = PlanesLicencia::findOrFail($plan);
+        $licenciaId = $request->query('licencia_id'); // Get from query param
 
         return view('superadmin.usuarios_create', [
             'entidad' => $entidadData,
             'plan' => $planData,
             'entidad_id' => $entidad,
             'plan_id' => $plan,
+            'licencia_id' => $licenciaId,
         ]);
     }
 
@@ -108,37 +131,33 @@ class UsuariosController extends Controller
         $request->validate([
             'entidad_id' => 'required|exists:entidades,id',
             'plan_id' => 'required|exists:planes_licencia,id',
+            'licencia_id' => 'required|exists:licencias_sistema,id', // Make it required now
             'fecha_pago' => 'required|date',
             'metodo_pago' => 'required|in:efectivo,transferencia,tarjeta',
             'referencia' => 'required|string|max:100',
         ]);
 
         DB::transaction(function () use ($request) {
-            $plan = PlanesLicencia::find($request->plan_id);
-            $entidad = Entidades::find($request->entidad_id);
-
-            if ($plan && $entidad) {
-                $fecha_inicio = Carbon::now();
-                $fecha_vencimiento = $fecha_inicio->copy()->addDays(intval($plan->duracion_plan));
-
-                $licencia = LicenciasSistema::create([
-                    'id_plan_lic' => $plan->id,
-                    'id_entidad' => $entidad->id,
-                    'fecha_inicio' => $fecha_inicio->toDateString(),
-                    'fecha_vencimiento' => $fecha_vencimiento->toDateString(),
-                    'estado' => true,
+            $licencia = LicenciasSistema::findOrFail($request->licencia_id);
+            
+            // Payment logic is separate from License creation now.
+            // But we can update license status to active if payment is recorded by SuperAdmin.
+            if ($licencia->estado === 'pendiente') {
+                $licencia->update([
+                    'estado' => 'activo', // SuperAdmin manual entry implies approval
                     'fecha_ultima_validacion' => Carbon::now()->toDateTimeString(),
-                ]);
-
-                PagosLicencia::create([
-                    'id_licencia' => $licencia->id,
-                    'fecha_pago' => Carbon::parse($request->fecha_pago)->toDateTimeString(),
-                    'metodo_pago' => $request->metodo_pago,
-                    'referencia' => $request->referencia,
-                    'estado' => 'pendiente',
-                    'creado_en' => Carbon::now()->toDateTimeString(),
+                    'id_plan_lic' => $request->plan_id, // Ensure plan matches
                 ]);
             }
+
+            PagosLicencia::create([
+                'id_licencia' => $licencia->id,
+                'fecha_pago' => Carbon::parse($request->fecha_pago)->toDateTimeString(),
+                'metodo_pago' => $request->metodo_pago,
+                'referencia' => $request->referencia,
+                'estado' => 'completado', // Auto-complete for SuperAdmin entry
+                'creado_en' => Carbon::now()->toDateTimeString(),
+            ]);
         });
 
         return redirect()->route('superadmin.dashboard')

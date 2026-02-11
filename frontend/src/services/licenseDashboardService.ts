@@ -10,7 +10,8 @@ export interface LicenseData {
     id: number;
     fecha_inicio: string;
     fecha_vencimiento: string;
-    estado: 'activa' | 'suspendida' | 'vencida' | 'pendiente';
+    estado: 'activo' | 'inactivo' | 'expirado' | 'pendiente' | 'activa' | 'suspendida' | 'vencida'; // Support both for transition
+    referencia_pago?: string;
     entidad: {
         id: number;
         nombre_entidad: string;
@@ -64,6 +65,19 @@ export const activateLicense = async (id: number): Promise<LicenseData> => {
         return response;
     } catch (error) {
         console.error(`Error activating license ${id}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Update license status (Approve/Reject)
+ */
+export const updateLicenseStatus = async (id: number, status: string): Promise<LicenseData> => {
+    try {
+        const response = await apiClient.patch<LicenseData, any>(`/licencias-sistema/${id}/estado`, { estado: status });
+        return response;
+    } catch (error) {
+        console.error(`Error updating license status ${id}:`, error);
         throw error;
     }
 };

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../../layouts/MainLayout';
 import { PlanCard } from '../../components/Plans/PlanCard';
 import type { PricingPlan } from '../../types/plans';
-import { getPricingPlans, sendSelectedPlan } from '../../services/planService';
-
+import { getPricingPlans } from '../../services/planService';
 export const PlansPage: React.FC = () => {
     const [plans, setPlans] = useState<PricingPlan[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -25,10 +26,9 @@ export const PlansPage: React.FC = () => {
         fetchPlans();
     }, []);
 
-    const handlePlanSelect = async (planId: string) => {
-        console.log(`User selected plan: ${planId}`);
-        await sendSelectedPlan(planId);
-        alert(`You selected the ${planId} plan!`);
+    const handlePlanSelect = (planId: string) => {
+        // Redirigir al formulario de registro de entidad, pasando el plan seleccionado
+        navigate('/register-entity', { state: { planId } });
     };
 
     const gridStyle: React.CSSProperties = {
