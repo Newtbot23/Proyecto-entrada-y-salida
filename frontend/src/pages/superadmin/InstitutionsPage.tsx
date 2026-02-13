@@ -1,70 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styles from './InstitutionsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
-import { SearchInput } from '../../components/common/SearchInput';
-import { Pagination } from '../../components/common/Pagination';
-import { InstitutionFormModal } from '../../components/modals/InstitutionFormModal';
-import { InstitutionDetailsModal } from '../../components/modals/InstitutionDetailsModal';
-import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
-import { PlusIcon, EditIcon, EyeIcon, TrashIcon, ChevronDownIcon } from '../../components/common/Icons';
-import { useDebounce } from '../../hooks/useDebounce';
-import type { Institution, InstitutionFormData, InstitutionFilters, PaginationMeta } from '../../types/institution';
-import {
-    getInstitutions,
-    createInstitution,
-    updateInstitution,
-    disableInstitution
-} from '../../services/institutionService';
+import { PlusIcon, EditIcon, TrashIcon, ExternalLinkIcon } from '../../components/common/Icons';
 
 const InstitutionsPage: React.FC = () => {
-    const navigate = useNavigate();
-
-    // Layout state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-    // Data state
-    const [institutions, setInstitutions] = useState<Institution[]>([]);
+    const [institutions, setInstitutions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 10
-    });
-
-    // Filter state
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedStatuses, setSelectedStatuses] = useState<('active' | 'inactive')[]>([]);
-    const [minLicenses, setMinLicenses] = useState<string>('');
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-
-    // Debounced search
-    const debouncedSearch = useDebounce(searchTerm, 500);
-
-    // Modal state
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-    const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
+    const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
+        const adminUserStr = localStorage.getItem('adminUser');
+        if (adminUserStr) {
+            try {
+                const adminUser = JSON.parse(adminUserStr);
+                setAdminName(adminUser.nombre || 'Super Admin');
+            } catch (e) {
+                console.error('Error parsing admin user:', e);
+            }
+        }
         fetchInstitutions();
-    }, [debouncedSearch, selectedStatuses, minLicenses, paginationMeta.currentPage]);
+    }, []);
 
     const fetchInstitutions = async () => {
         try {
             setLoading(true);
-            const filters: InstitutionFilters = {
-                search: debouncedSearch,
-                statuses: selectedStatuses,
-                minLicenses: minLicenses ? parseInt(minLicenses) : undefined
-            };
-            const response = await getInstitutions(filters, paginationMeta.currentPage);
-            setInstitutions(response.data || []);
-            setPaginationMeta(response.meta);
+            const token = localStorage.getItem('adminToken');
+            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/entidades';
+
+            const response = await fetch(API_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            setInstitutions(data.data || []);
         } catch (error) {
             console.error('Failed to fetch institutions:', error);
         } finally {
@@ -72,280 +44,84 @@ const InstitutionsPage: React.FC = () => {
         }
     };
 
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-
     const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        window.location.href = '/superadmin/login';
-    };
-
-    const handlePageChange = (page: number) => {
-        setPaginationMeta(prev => ({ ...prev, currentPage: page }));
-    };
-
-    const handleStatusToggle = (status: 'active' | 'inactive') => {
-        setSelectedStatuses(prev =>
-            prev.includes(status)
-                ? prev.filter(s => s !== status)
-                : [...prev, status]
-        );
-        setPaginationMeta(prev => ({ ...prev, currentPage: 1 }));
-    };
-
-    const handleSearchChange = (value: string) => {
-        setSearchTerm(value);
-        setPaginationMeta(prev => ({ ...prev, currentPage: 1 }));
-    };
-
-    const handleMinLicensesChange = (value: string) => {
-        setMinLicenses(value);
-        setPaginationMeta(prev => ({ ...prev, currentPage: 1 }));
-    };
-
-    // Create Institution
-    const handleCreateClick = () => {
-        setFormMode('create');
-        setSelectedInstitution(null);
-        setIsFormModalOpen(true);
-    };
-
-    // Edit Institution
-    const handleEditClick = (e: React.MouseEvent, institution: Institution) => {
-        e.stopPropagation();
-        setFormMode('edit');
-        setSelectedInstitution(institution);
-        setIsFormModalOpen(true);
-    };
-
-    // View Details Modal
-    const handleViewClick = (e: React.MouseEvent, institution: Institution) => {
-        e.stopPropagation();
-        setSelectedInstitution(institution);
-        setIsDetailsModalOpen(true);
-    };
-
-    // Row Click - Navigate to Details Page
-    const handleRowClick = (institution: Institution) => {
-        navigate(`/superadmin/institutions/${institution.id}`);
-    };
-
-    // Disable Institution
-    const handleDisableClick = (e: React.MouseEvent, institution: Institution) => {
-        e.stopPropagation();
-        setSelectedInstitution(institution);
-        setIsConfirmModalOpen(true);
-    };
-
-    // Save Institution (Create/Edit)
-    const handleSaveInstitution = async (data: InstitutionFormData) => {
-        try {
-            if (formMode === 'create') {
-                await createInstitution(data);
-            } else if (formMode === 'edit' && selectedInstitution) {
-                await updateInstitution(selectedInstitution.id, data);
-            }
-            await fetchInstitutions();
-        } catch (error) {
-            console.error('Failed to save institution:', error);
-        }
-    };
-
-    // Confirm Disable
-    const handleConfirmDisable = async () => {
-        if (selectedInstitution) {
-            try {
-                await disableInstitution(selectedInstitution.id);
-                await fetchInstitutions();
-            } catch (error) {
-                console.error('Failed to disable institution:', error);
-            }
-        }
+        localStorage.clear();
+        window.location.replace('/superadmin/login');
     };
 
     return (
         <div className={styles.dashboardLayout}>
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                onToggle={toggleSidebar}
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Institutions" userName="Super Admin" onLogout={handleLogout} />
+                <Header title="Institutions" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
-                            <h2 className={styles.pageTitle}>Manage Institutions</h2>
-                            <p className={styles.pageSubtitle}>View and manage all registered institutions</p>
+                            <h2 className={styles.pageTitle}>Registered Institutions</h2>
+                            <p className={styles.pageSubtitle}>Manage all entities using the system</p>
                         </div>
-                        <button className={styles.createButton} onClick={handleCreateClick}>
+                        <button className={styles.createButton} onClick={() => window.location.href = '/register-entity'}>
                             <PlusIcon width={20} height={20} />
-                            <span>Create Institution</span>
+                            <span>Add Institution</span>
                         </button>
                     </div>
 
-                    {/* Filters */}
-                    <div className={styles.filtersContainer}>
-                        <SearchInput
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            placeholder="Search by name or email..."
-                        />
-
-                        <div className={styles.filterGroup}>
-                            <div className={styles.dropdown}>
-                                <button
-                                    className={styles.dropdownButton}
-                                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                                >
-                                    <span>
-                                        Status {selectedStatuses.length > 0 && `(${selectedStatuses.length})`}
-                                    </span>
-                                    <ChevronDownIcon width={16} height={16} />
-                                </button>
-                                {showStatusDropdown && (
-                                    <div className={styles.dropdownMenu}>
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedStatuses.includes('active')}
-                                                onChange={() => handleStatusToggle('active')}
-                                            />
-                                            <span>Active</span>
-                                        </label>
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedStatuses.includes('inactive')}
-                                                onChange={() => handleStatusToggle('inactive')}
-                                            />
-                                            <span>Inactive</span>
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-
-                            <input
-                                type="number"
-                                className={styles.licenseInput}
-                                placeholder="Min licenses"
-                                value={minLicenses}
-                                onChange={(e) => handleMinLicensesChange(e.target.value)}
-                                min="0"
-                            />
-                        </div>
-                    </div>
-
                     {loading ? (
-                        <div className={styles.loadingContainer}>
-                            <p>Loading institutions...</p>
-                        </div>
+                        <div className={styles.loadingContainer}>Loading institutions...</div>
                     ) : (
-                        <>
-                            <div className={styles.tableContainer}>
-                                <table className={styles.table}>
-                                    <thead>
+                        <div className={styles.tableContainer}>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>NIT</th>
+                                        <th>Name</th>
+                                        <th>Contact Person</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {institutions.length === 0 ? (
                                         <tr>
-                                            <th>Institution Name</th>
-                                            <th>Contact Email</th>
-                                            <th>Status</th>
-                                            <th>Active Licenses</th>
-                                            <th>Actions</th>
+                                            <td colSpan={6} className={styles.emptyState}>No institutions found</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {institutions.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={5} className={styles.emptyState}>
-                                                    No institutions found. Create your first institution to get started.
+                                    ) : (
+                                        institutions.map(inst => (
+                                            <tr key={inst.id}>
+                                                <td>{inst.nit}</td>
+                                                <td>{inst.nombre_entidad}</td>
+                                                <td>{inst.nombre_titular}</td>
+                                                <td>{inst.telefono}</td>
+                                                <td>{inst.correo}</td>
+                                                <td>
+                                                    <div className={styles.actionButtons}>
+                                                        <button
+                                                            className={styles.actionButton}
+                                                            title="View Details"
+                                                            onClick={() => window.location.href = `/superadmin/institutions/${inst.id}`}
+                                                        >
+                                                            <ExternalLinkIcon width={18} height={18} />
+                                                        </button>
+                                                        <button className={styles.actionButton} title="Edit">
+                                                            <EditIcon width={18} height={18} />
+                                                        </button>
+                                                        <button className={`${styles.actionButton} ${styles.danger}`} title="Delete">
+                                                            <TrashIcon width={18} height={18} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
-                                        ) : (
-                                            institutions.map((institution) => (
-                                                <tr
-                                                    key={institution.id}
-                                                    className={styles.clickableRow}
-                                                    onClick={() => handleRowClick(institution)}
-                                                >
-                                                    <td className={styles.institutionName}>{institution.nombre_entidad}</td>
-                                                    <td>{institution.correo}</td>
-                                                    <td>
-                                                        {institution.status && (
-                                                            <span className={`${styles.statusBadge} ${styles[institution.status]}`}>
-                                                                {institution.status}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td>{institution.activeLicensesCount ?? 0}</td>
-                                                    <td>
-                                                        <div className={styles.actionButtons}>
-                                                            <button
-                                                                className={styles.actionButton}
-                                                                onClick={(e) => handleViewClick(e, institution)}
-                                                                title="View Details"
-                                                            >
-                                                                <EyeIcon width={18} height={18} />
-                                                            </button>
-                                                            <button
-                                                                className={styles.actionButton}
-                                                                onClick={(e) => handleEditClick(e, institution)}
-                                                                title="Edit"
-                                                            >
-                                                                <EditIcon width={18} height={18} />
-                                                            </button>
-                                                            <button
-                                                                className={`${styles.actionButton} ${styles.danger}`}
-                                                                onClick={(e) => handleDisableClick(e, institution)}
-                                                                disabled={institution.status === 'inactive'}
-                                                                title="Disable"
-                                                            >
-                                                                <TrashIcon width={18} height={18} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <Pagination meta={paginationMeta} onPageChange={handlePageChange} />
-                        </>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </main>
-
-            {/* Institution Form Modal */}
-            <InstitutionFormModal
-                isOpen={isFormModalOpen}
-                onClose={() => setIsFormModalOpen(false)}
-                onSave={handleSaveInstitution}
-                mode={formMode}
-                initialData={selectedInstitution}
-            />
-
-            {/* Institution Details Modal */}
-            <InstitutionDetailsModal
-                isOpen={isDetailsModalOpen}
-                onClose={() => setIsDetailsModalOpen(false)}
-                institution={selectedInstitution}
-            />
-
-            {/* Disable Confirmation Modal */}
-            <ConfirmationModal
-                isOpen={isConfirmModalOpen}
-                onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={handleConfirmDisable}
-                title="Disable Institution"
-                message={`Are you sure you want to disable "${selectedInstitution?.nombre_entidad}"? This will set the institution status to inactive.`}
-                confirmText="Disable Institution"
-                cancelText="Cancel"
-                variant="danger"
-            />
         </div>
     );
 };

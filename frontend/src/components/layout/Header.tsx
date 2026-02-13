@@ -11,7 +11,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
     title = 'Dashboard',
     userName = 'Super Admin',
-    role = 'Administrator',
+    role = 'Administrador',
     onLogout
 }) => {
     return (

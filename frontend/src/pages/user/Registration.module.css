@@ -64,6 +64,12 @@
     box-shadow: 0 0 0 3px rgba(0, 143, 57, 0.1);
 }
 
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
 .button {
     margin-top: 1rem;
     padding: 0.75rem 1rem;
@@ -93,4 +99,10 @@
     border-radius: 0.5rem;
     margin-bottom: 1.25rem;
     font-size: 0.875rem;
+}
+
+.fieldError {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
 }

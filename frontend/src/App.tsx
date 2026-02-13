@@ -12,6 +12,7 @@ import RegisterAdmin from './pages/user/RegisterAdmin';
 import NormalAdminLogin from './pages/user/normaladmin/Login';
 import NormalAdminDashboard from './pages/user/normaladmin/Dashboard';
 import LicensePayment from './pages/user/normaladmin/LicensePayment';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
@@ -30,12 +31,16 @@ function App() {
 
         {/* Super Admin Routes */}
         <Route path="/superadmin/login" element={<LoginSuperAdmin />} />
-        <Route path="/superadmin/dashboard" element={<MainPageDashborad />} />
-        <Route path="/superadmin/admins" element={<SuperAdmin />} />
-        <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
-        <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
-        <Route path="/superadmin/institutions/:id" element={<InstitutionDetailsPage />} />
-        <Route path="/superadmin/reports" element={<ReportsPage />} />
+
+        {/* Protected Super Admin Area */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/superadmin/dashboard" element={<MainPageDashborad />} />
+          <Route path="/superadmin/admins" element={<SuperAdmin />} />
+          <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
+          <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
+          <Route path="/superadmin/institutions/:id" element={<InstitutionDetailsPage />} />
+          <Route path="/superadmin/reports" element={<ReportsPage />} />
+        </Route>
 
         {/* Legacy/Specific Redirects if needed */}
         <Route path="/normaladmin/login" element={<Navigate to="/login" replace />} />
@@ -46,4 +51,3 @@ function App() {
 }
 
 export default App;
-

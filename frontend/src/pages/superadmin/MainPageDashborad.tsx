@@ -18,7 +18,20 @@ const MainPageDashborad: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Dynamic Admin Info
+    const [adminName, setAdminName] = useState('Super Admin');
+
     useEffect(() => {
+        // Get admin user from localStorage
+        const adminUserStr = localStorage.getItem('adminUser');
+        if (adminUserStr) {
+            try {
+                const adminUser = JSON.parse(adminUserStr);
+                setAdminName(adminUser.nombre || 'Super Admin');
+            } catch (e) {
+                console.error('Error parsing admin user:', e);
+            }
+        }
         fetchDashboardData();
     }, []);
 
@@ -45,12 +58,10 @@ const MainPageDashborad: React.FC = () => {
     };
 
     const handleLogout = () => {
-        console.log('Logging out...');
-        // Clear admin-related items from localStorage
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        // Redirect to login page
-        window.location.href = '/superadmin/login';
+        // Clear all admin-related items to prevent back-button access
+        localStorage.clear();
+        // Force redirect to login
+        window.location.replace('/superadmin/login');
     };
 
     const statCards = [
@@ -83,7 +94,6 @@ const MainPageDashborad: React.FC = () => {
 
     const handleUpdateStatus = async (id: number, status: string) => {
         try {
-            // Import dynamically or ensure it's imported at top
             const { updateLicenseStatus } = await import('../../services/licenseDashboardService');
             await updateLicenseStatus(id, status);
             await fetchDashboardData();
@@ -102,7 +112,7 @@ const MainPageDashborad: React.FC = () => {
             />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Dashboard" userName="Super Admin" onLogout={handleLogout} />
+                <Header title="Dashboard" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     {/* Stats Row */}

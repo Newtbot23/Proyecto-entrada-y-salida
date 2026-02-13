@@ -12,6 +12,9 @@ const SuperAdmin: React.FC = () => {
     const [admins, setAdmins] = useState<Admin[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Admin info from localStorage
+    const [adminName, setAdminName] = useState('Super Admin');
+
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -19,6 +22,16 @@ const SuperAdmin: React.FC = () => {
     const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
 
     useEffect(() => {
+        // Load session data
+        const adminUserStr = localStorage.getItem('adminUser');
+        if (adminUserStr) {
+            try {
+                const adminUser = JSON.parse(adminUserStr);
+                setAdminName(adminUser.nombre || 'Super Admin');
+            } catch (e) {
+                console.error('Error parsing admin user:', e);
+            }
+        }
         fetchAdmins();
     }, []);
 
@@ -98,6 +111,11 @@ const SuperAdmin: React.FC = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.clear();
+        window.location.replace('/superadmin/login');
+    };
+
     const openCreateModal = () => {
         setFormMode('create');
         setSelectedAdmin(null);
@@ -120,7 +138,7 @@ const SuperAdmin: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Administrator Management" userName="Super Admin" onLogout={() => window.location.href = '/superadmin/login'} />
+                <Header title="Administrator Management" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>

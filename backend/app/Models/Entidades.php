@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Entidades extends Model
 {
 
-    protected $table = 'entidades'; // solo si tu tabla NO se llama entidades
+    protected $table = 'entidades';
     protected $primaryKey = 'id';
     protected $fillable = [
         'nombre_entidad',
@@ -16,8 +16,7 @@ class Entidades extends Model
         'direccion',
         'nombre_titular',
         'telefono',
-        'nit',
-        'status'
+        'nit'
     ];
 
     public function usuarios()
@@ -25,10 +24,10 @@ class Entidades extends Model
         return $this->hasManyThrough(
             Usuarios::class,
             LicenciasSistema::class,
-            'id_entidad', // Foreign key on licencias_sistema table...
-            'id_licencia_sistema', // Foreign key on usuarios table...
-            'id', // Local key on entidades table...
-            'id' // Local key on licencias_sistema table...
+            'id_entidad',
+            'id_licencia_sistema',
+            'id',
+            'id'
         );
     }
 

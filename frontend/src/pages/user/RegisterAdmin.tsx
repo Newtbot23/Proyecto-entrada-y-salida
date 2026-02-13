@@ -6,7 +6,7 @@ import styles from './Registration.module.css';
 const RegisterAdmin: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { planId, entityData } = (location.state as { planId?: string; entityData?: any }) || {};
+    const { planId, entidadId, entidadNombre } = (location.state as { planId?: string; entidadId?: number; entidadNombre?: string }) || {};
 
     const [formData, setFormData] = useState({
         doc: '',
@@ -29,9 +29,10 @@ const RegisterAdmin: React.FC = () => {
     const [tiposDoc, setTiposDoc] = useState<TipoDoc[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
     useEffect(() => {
-        if (!planId || !entityData) {
+        if (!planId || !entidadId) {
             navigate('/plans');
             return;
         }
@@ -53,11 +54,18 @@ const RegisterAdmin: React.FC = () => {
         };
 
         fetchTiposDoc();
-    }, [planId, entityData, navigate]);
+    }, [planId, entidadId, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -67,29 +75,19 @@ const RegisterAdmin: React.FC = () => {
             return;
         }
 
-        if (!planId || !entityData) {
+        if (!planId || !entidadId) {
             setError('Missing entity or plan data. Please start over.');
             return;
         }
 
         setLoading(true);
         setError(null);
+        setFieldErrors({});
 
         try {
-            // Combine all data for unified registration
             const payload = {
-                // Entity Data
-                nombre_entidad: entityData.nombre_entidad,
-                entidad_correo: entityData.correo,
-                direccion: entityData.direccion,
-                nombre_titular: entityData.nombre_titular,
-                entidad_telefono: entityData.telefono,
-                nit: entityData.nit,
-
-                // License Data
+                id_entidad: entidadId,
                 id_plan_lic: planId,
-
-                // Admin User Data
                 doc: formData.doc,
                 id_tip_doc: formData.id_tip_doc,
                 primer_nombre: formData.primer_nombre,
@@ -101,14 +99,18 @@ const RegisterAdmin: React.FC = () => {
                 contrasena: formData.contrasena,
             };
 
-            await registrationService.fullRegistration(payload);
+            const response = await registrationService.completeEntityRegistration(payload);
 
-            // Redirect to login on success
-            alert('Registration completed successfully! Please login.');
-            navigate('/login');
-
+            if (response.success) {
+                alert('Registration completed successfully! Please login.');
+                navigate('/login');
+            }
         } catch (err: any) {
+            console.error('Final registration error:', err);
             setError(err.message || 'Error occurred during registration');
+            if (err.errors) {
+                setFieldErrors(err.errors);
+            }
         } finally {
             setLoading(false);
         }
@@ -118,7 +120,7 @@ const RegisterAdmin: React.FC = () => {
         <div className={styles.container}>
             <div className={styles.card}>
                 <h2 className={styles.title}>Admin Registration</h2>
-                <p className={styles.subtitle}>Configuring Admin for: {entityData?.nombre_entidad || 'New Entity'}</p>
+                <p className={styles.subtitle}>Configuring Admin for: {entidadNombre || 'New Entity'}</p>
 
                 {error && <div className={styles.error}>{error}</div>}
 
@@ -126,6 +128,7 @@ const RegisterAdmin: React.FC = () => {
                     <div className={styles.formGroup}>
                         <label>Document Number</label>
                         <input type="number" name="doc" value={formData.doc} onChange={handleChange} required />
+                        {fieldErrors.doc && <span className={styles.fieldError}>{fieldErrors.doc[0]}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
@@ -138,16 +141,19 @@ const RegisterAdmin: React.FC = () => {
                                 </option>
                             ))}
                         </select>
+                        {fieldErrors.id_tip_doc && <span className={styles.fieldError}>{fieldErrors.id_tip_doc[0]}</span>}
                     </div>
 
                     <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>First Name</label>
                             <input type="text" name="primer_nombre" value={formData.primer_nombre} onChange={handleChange} required />
+                            {fieldErrors.primer_nombre && <span className={styles.fieldError}>{fieldErrors.primer_nombre[0]}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Second Name (Optional)</label>
                             <input type="text" name="segundo_nombre" value={formData.segundo_nombre} onChange={handleChange} />
+                            {fieldErrors.segundo_nombre && <span className={styles.fieldError}>{fieldErrors.segundo_nombre[0]}</span>}
                         </div>
                     </div>
 
@@ -155,26 +161,31 @@ const RegisterAdmin: React.FC = () => {
                         <div className={styles.formGroup}>
                             <label>First Last Name</label>
                             <input type="text" name="primer_apellido" value={formData.primer_apellido} onChange={handleChange} required />
+                            {fieldErrors.primer_apellido && <span className={styles.fieldError}>{fieldErrors.primer_apellido[0]}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Second Last Name (Optional)</label>
                             <input type="text" name="segundo_apellido" value={formData.segundo_apellido} onChange={handleChange} />
+                            {fieldErrors.segundo_apellido && <span className={styles.fieldError}>{fieldErrors.segundo_apellido[0]}</span>}
                         </div>
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Phone</label>
                         <input type="number" name="telefono" value={formData.telefono} onChange={handleChange} required />
+                        {fieldErrors.user_telefono && <span className={styles.fieldError}>{fieldErrors.user_telefono[0]}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Email</label>
                         <input type="email" name="correo" value={formData.correo} onChange={handleChange} required />
+                        {fieldErrors.user_correo && <span className={styles.fieldError}>{fieldErrors.user_correo[0]}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Password</label>
                         <input type="password" name="contrasena" value={formData.contrasena} onChange={handleChange} required />
+                        {fieldErrors.contrasena && <span className={styles.fieldError}>{fieldErrors.contrasena[0]}</span>}
                     </div>
 
                     <div className={styles.formGroup}>

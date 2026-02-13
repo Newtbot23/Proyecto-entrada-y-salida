@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { registrationService } from '../../services/registrationService';
 import styles from './Registration.module.css';
 
 const RegisterEntity: React.FC = () => {
@@ -16,9 +17,12 @@ const RegisterEntity: React.FC = () => {
         nit: '',
     });
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
     useEffect(() => {
         if (!planId) {
-            // If no plan is selected, redirect back to plans
             navigate('/plans');
         }
     }, [planId, navigate]);
@@ -26,19 +30,44 @@ const RegisterEntity: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear error for this field when user types
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setFieldErrors({});
 
-        // In the new unified flow (Phase 14), we collect data and only 
-        // submit it at the final step to ensure transactional integrity.
-        navigate('/register-admin', {
-            state: {
-                planId,
-                entityData: formData
+        try {
+            const response = await registrationService.createEntity(formData);
+
+            if (response.success) {
+                // Navigate only IF successful creation
+                navigate('/register-admin', {
+                    state: {
+                        planId,
+                        entidadId: response.data.id,
+                        entidadNombre: formData.nombre_entidad
+                    }
+                });
             }
-        });
+        } catch (err: any) {
+            console.error('Registration error:', err);
+            setError(err.message || 'Error creating entity. Please check the form.');
+            if (err.errors) {
+                setFieldErrors(err.errors);
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -46,6 +75,8 @@ const RegisterEntity: React.FC = () => {
             <div className={styles.card}>
                 <h2 className={styles.title}>Entity Registration</h2>
                 <p className={styles.subtitle}>Selected Plan ID: {planId}</p>
+
+                {error && <div className={styles.error}>{error}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
@@ -57,6 +88,7 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.nombre_entidad && <span className={styles.fieldError}>{fieldErrors.nombre_entidad[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
                         <label>Email</label>
@@ -67,6 +99,7 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
                         <label>Address</label>
@@ -77,6 +110,7 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.direccion && <span className={styles.fieldError}>{fieldErrors.direccion[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
                         <label>Legal Representative Name</label>
@@ -87,6 +121,7 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.nombre_titular && <span className={styles.fieldError}>{fieldErrors.nombre_titular[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
                         <label>Phone</label>
@@ -97,6 +132,7 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
                         <label>NIT</label>
@@ -107,10 +143,11 @@ const RegisterEntity: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                        {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit[0]}</span>}
                     </div>
 
-                    <button type="submit" className={styles.button}>
-                        {'Next: Register Admin'}
+                    <button type="submit" className={styles.button} disabled={loading}>
+                        {loading ? 'Processing...' : 'Next: Register Admin'}
                     </button>
                 </form>
             </div>

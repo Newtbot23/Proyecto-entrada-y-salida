@@ -2,11 +2,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 /**
  * Registration Service
- * Handles the multi-step registration flow: Entity -> License -> Admin User
+ * Handles the multi-step registration flow: Entity -> (License + Admin User)
  */
 export const registrationService = {
     /**
      * Step 1: Create an Entity
+     * Returns the created entity data including its ID.
      */
     createEntity: async (entityData: any) => {
         try {
@@ -28,30 +29,30 @@ export const registrationService = {
     },
 
     /**
-     * Step 2: Create a License for the entity and plan
+     * Step 2: Complete registration for an existing entity
+     * Creates the License and Admin User in one transaction.
      */
-    createLicense: async (data: { id_plan_lic: string | number; id_entidad: number }) => {
+    completeEntityRegistration: async (payload: any) => {
         try {
-            const response = await fetch(`${API_URL}/registration/licencias`, {
+            const response = await fetch(`${API_URL}/registration/complete-entity`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
-            const result = await response.json();
-            if (!response.ok) throw result;
-            return result;
+            const data = await response.json();
+            if (!response.ok) throw data;
+            return data;
         } catch (error: any) {
-            console.error('Error creating license:', error);
+            console.error('Error completing registration:', error);
             throw error;
         }
     },
 
     /**
-     * Complete Registration Flow (Unified)
-     * Performs Entity, License, and Admin creation in a single transaction
+     * Complete Registration Flow (Unified - Legacy)
      */
     fullRegistration: async (allData: any) => {
         try {

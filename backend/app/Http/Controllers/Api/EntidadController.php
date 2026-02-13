@@ -38,7 +38,7 @@ class EntidadController extends Controller
         }
 
         try {
-            // Create the entity with a pending status by default
+            // Create the entity. Note: 'estado' is removed as it's not in the DB table.
             $entidad = Entidades::create([
                 'nombre_entidad' => $request->nombre_entidad,
                 'correo' => $request->correo,
@@ -46,7 +46,6 @@ class EntidadController extends Controller
                 'nombre_titular' => $request->nombre_titular,
                 'telefono' => $request->telefono,
                 'nit' => $request->nit,
-                'estado' => 'pendiente', // As defined in the migration (enum)
             ]);
 
             return response()->json([
@@ -54,7 +53,7 @@ class EntidadController extends Controller
                 'message' => 'Entity created successfully',
                 'data' => [
                     'entidad' => $entidad,
-                    'entidad_id' => $entidad->id
+                    'id' => $entidad->id
                 ]
             ], 201);
 
@@ -62,7 +61,7 @@ class EntidadController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error creating entity',
-                'error' => $e->getMessage()
+                'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }
     }

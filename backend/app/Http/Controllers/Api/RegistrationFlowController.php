@@ -16,24 +16,22 @@ use Carbon\Carbon;
 class RegistrationFlowController extends Controller
 {
     /**
-     * Handle the complete registration flow in a single transaction.
+     * Handle the complete registration flow in a single transaction (Unified Legacy).
      * POST /api/registration/full
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request): JsonResponse
     {
+        return response()->json(['message' => 'Use complete-entity for the new flow'], 400);
+    }
+
+    /**
+     * Complete registration for an existing entity: Create License and Admin User.
+     * POST /api/registration/complete-entity
+     */
+    public function finishRegistration(Request $request): JsonResponse
+    {
         $validator = Validator::make($request->all(), [
-            // Entity Data
-            'nombre_entidad' => 'required|string|max:200',
-            'entidad_correo' => 'required|email|max:200',
-            'direccion' => 'required|string|max:200',
-            'nombre_titular' => 'required|string|max:100',
-            'entidad_telefono' => 'required|string|max:15',
-            'nit' => 'required|string|max:15|unique:entidades,nit',
-            
-            // License Data
+            'id_entidad' => 'required|exists:entidades,id',
             'id_plan_lic' => 'required|exists:planes_licencia,id',
             
             // Admin User Data
@@ -57,33 +55,25 @@ class RegistrationFlowController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Create Entity
-            $entidad = Entidades::create([
-                'nombre_entidad' => $request->nombre_entidad,
-                'correo' => $request->entidad_correo,
-                'direccion' => $request->direccion,
-                'nombre_titular' => $request->nombre_titular,
-                'telefono' => $request->entidad_telefono,
-                'nit' => $request->nit,
-            ]);
-
-            // 2. Create License (Status = pendiente by default)
+            // 1. Create License (Status = pendiente by default)
             $fechaInicio = Carbon::now();
             $fechaVencimiento = Carbon::now()->addYear();
 
             $licencia = LicenciasSistema::create([
                 'fecha_inicio' => $fechaInicio,
                 'fecha_vencimiento' => $fechaVencimiento,
-                'estado' => 'pendiente', // Default as requested
+                'estado' => 'pendiente',
                 'fecha_ultima_validacion' => $fechaInicio,
                 'id_plan_lic' => $request->id_plan_lic,
-                'id_entidad' => $entidad->id,
+                'id_entidad' => $request->id_entidad,
             ]);
 
-            // 3. Create Admin User linked to License
+            // 2. Create Admin User linked to License
+            // Fields order and names are verified against DESCRIBE command result
             $user = Usuarios::create([
                 'doc' => $request->doc,
                 'id_tip_doc' => $request->id_tip_doc,
+                'id_licencia_sistema' => $licencia->id,
                 'primer_nombre' => $request->primer_nombre,
                 'segundo_nombre' => $request->segundo_nombre ?? null,
                 'primer_apellido' => $request->primer_apellido,
@@ -92,7 +82,6 @@ class RegistrationFlowController extends Controller
                 'correo' => $request->user_correo,
                 'contrasena' => Hash::make($request->contrasena),
                 'id_rol' => 1, // Admin role
-                'id_licencia_sistema' => $licencia->id,
                 'estado' => 'activo',
             ]);
 
@@ -103,8 +92,7 @@ class RegistrationFlowController extends Controller
                 'message' => 'Registration completed successfully',
                 'data' => [
                     'user' => $user,
-                    'licencia' => $licencia,
-                    'entidad' => $entidad
+                    'licencia' => $licencia
                 ]
             ], 201);
 
@@ -112,8 +100,8 @@ class RegistrationFlowController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Error during registration',
-                'error' => $e->getMessage()
+                'message' => 'Error completing registration',
+                'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }
     }

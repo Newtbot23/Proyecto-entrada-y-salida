@@ -2,121 +2,58 @@ import React, { useState, useEffect } from 'react';
 import styles from './ReportsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
-import { ReportFilters } from '../../components/reports/ReportFilters';
-import { ChartCard } from '../../components/reports/ChartCard';
-import type { ReportFilters as ReportFiltersType, ReportData } from '../../types/report';
-import { getReportData, exportReport } from '../../services/reportService';
 
 const ReportsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [reportData, setReportData] = useState<ReportData | null>(null);
-
-    // Default date range: last 6 months
-    const getDefaultDateRange = () => {
-        const end = new Date();
-        const start = new Date();
-        start.setMonth(start.getMonth() - 6);
-
-        return {
-            start: start.toISOString().split('T')[0],
-            end: end.toISOString().split('T')[0]
-        };
-    };
-
-    const [filters, setFilters] = useState<ReportFiltersType>({
-        dateRange: getDefaultDateRange(),
-        institutionId: undefined,
-        licenseType: undefined
-    });
+    const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        fetchReportData();
-    }, [filters]);
-
-    const fetchReportData = async () => {
-        try {
-            setLoading(true);
-            const data = await getReportData(filters);
-            setReportData(data);
-        } catch (error) {
-            console.error('Failed to fetch report data:', error);
-        } finally {
-            setLoading(false);
+        const adminUserStr = localStorage.getItem('adminUser');
+        if (adminUserStr) {
+            try {
+                const adminUser = JSON.parse(adminUserStr);
+                setAdminName(adminUser.nombre || 'Super Admin');
+            } catch (e) {
+                console.error('Error parsing admin user:', e);
+            }
         }
-    };
-
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
+    }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        window.location.href = '/superadmin/login';
-    };
-
-    const handleExport = async () => {
-        try {
-            await exportReport(filters, 'pdf');
-        } catch (error) {
-            console.error('Failed to export report:', error);
-        }
+        localStorage.clear();
+        window.location.replace('/superadmin/login');
     };
 
     return (
         <div className={styles.dashboardLayout}>
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                onToggle={toggleSidebar}
-            />
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Reports" userName="Super Admin" onLogout={handleLogout} />
+                <Header title="System Reports" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
                             <h2 className={styles.pageTitle}>Analytics & Reports</h2>
-                            <p className={styles.pageSubtitle}>View comprehensive reports and analytics</p>
+                            <p className={styles.pageSubtitle}>Review system performance and entity activity</p>
                         </div>
                     </div>
 
-                    {/* Filters */}
-                    <ReportFilters
-                        filters={filters}
-                        onFiltersChange={setFilters}
-                        onExport={handleExport}
-                    />
-
-                    {/* Charts Section */}
-                    <div className={styles.chartsContainer}>
-                        {/* Revenue Over Time - Full Width */}
-                        <div className={styles.chartFullWidth}>
-                            <ChartCard
-                                title="Revenue Over Time"
-                                loading={loading}
-                            />
+                    <div className={styles.reportsGrid}>
+                        <div className={styles.reportCard}>
+                            <h3>Institution Growth</h3>
+                            <p>Monthly registration trends and active entity count.</p>
+                            <button className={styles.reportBtn}>Generate PDF</button>
                         </div>
-
-                        {/* Licenses Sold & Institutions Growth - Half Width Each */}
-                        <div className={styles.chartRow}>
-                            <div className={styles.chartHalfWidth}>
-                                <ChartCard
-                                    title="Licenses Sold Per Month"
-                                    loading={loading}
-
-
-                                />
-                            </div>
-
-                            <div className={styles.chartHalfWidth}>
-                                <ChartCard
-                                    title="Institutions Growth"
-                                    loading={loading}
-
-                                />
-                            </div>
+                        <div className={styles.reportCard}>
+                            <h3>Revenue Report</h3>
+                            <p>Subscription income and upcoming renewals.</p>
+                            <button className={styles.reportBtn}>Download Excel</button>
+                        </div>
+                        <div className={styles.reportCard}>
+                            <h3>User Activity</h3>
+                            <p>Logins and system usage across all institutions.</p>
+                            <button className={styles.reportBtn}>View Analytics</button>
                         </div>
                     </div>
                 </div>

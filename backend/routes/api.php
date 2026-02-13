@@ -47,6 +47,7 @@ Route::delete('/entidades/{id}', [EntidadesController::class, 'destroy']);
 Route::post('/registration/entidades', [EntidadController::class, 'store']);
 Route::post('/registration/licencias', [PlanesLicenciasController::class, 'store']);
 Route::post('/registration/usuarios', [UsuariosController::class, 'store']);
+Route::post('/registration/complete-entity', [RegistrationFlowController::class, 'finishRegistration']);
 Route::post('/registration/full', [RegistrationFlowController::class, 'register']);
 
 // Normal Admin Auth
@@ -58,6 +59,7 @@ Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 // Licenses Management
 Route::get('/licencias', [LicenciasController::class, 'index']);
 Route::post('/licencias', [LicenciasController::class, 'store']);
+// Route::get('/licencias/{id}', [LicenciasController::class, 'show']); // Duplicate removed? No, it was there.
 Route::get('/licencias/{id}', [LicenciasController::class, 'show']);
 Route::put('/licencias/{id}/activate', [LicenciasController::class, 'activate']);
 Route::patch('/licencias-sistema/{id}/referencia', [LicenciasController::class, 'updateReferencia']);
@@ -65,4 +67,3 @@ Route::patch('/licencias-sistema/{id}/estado', [LicenciasController::class, 'upd
 
 // Common Data
 Route::get('/tipo-doc', [TipoDocController::class, 'index']);
-

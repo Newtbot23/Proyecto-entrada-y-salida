@@ -1,291 +1,129 @@
-/**
- * Institution Details Page
- * 
- * Página que muestra los detalles completos de una institución específica.
- * Permite editar la institución y ver información relacionada.
- * 
- * Features:
- * - Carga de datos desde Laravel API
- * - Edición de institución via modal
- * - Estados de carga y error
- * - Formato de fechas y datos
- * - Navegación de regreso a lista
- * 
- * @author Tu nombre
- * @version 1.0.0
- */
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import styles from './InstitutionDetailsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
-import { InstitutionFormModal } from '../../components/modals/InstitutionFormModal';
-import { EditIcon, ChevronLeftIcon } from '../../components/common/Icons';
-import type { Institution, InstitutionFormData } from '../../types/institution';
-import { getInstitutionById, updateInstitution } from '../../services/institutionService';
-
-// ============================================================================
-// COMPONENTE PRINCIPAL
-// ============================================================================
+import { EditIcon, TrashIcon, ArrowLeftIcon } from '../../components/common/Icons';
 
 const InstitutionDetailsPage: React.FC = () => {
-    // ------------------------------------------------------------------------
-    // HOOKS
-    // ------------------------------------------------------------------------
-
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-
-    // ------------------------------------------------------------------------
-    // ESTADO
-    // ------------------------------------------------------------------------
-
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [institution, setInstitution] = useState<Institution | null>(null);
+    const [institution, setInstitution] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-    // ------------------------------------------------------------------------
-    // EFECTOS
-    // ------------------------------------------------------------------------
+    const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        if (id) {
-            fetchInstitution();
+        const adminUserStr = localStorage.getItem('adminUser');
+        if (adminUserStr) {
+            try {
+                const adminUser = JSON.parse(adminUserStr);
+                setAdminName(adminUser.nombre || 'Super Admin');
+            } catch (e) {
+                console.error('Error parsing admin user:', e);
+            }
         }
+        fetchInstitutionDetails();
     }, [id]);
 
-    // ------------------------------------------------------------------------
-    // FUNCIONES
-    // ------------------------------------------------------------------------
-
-    const fetchInstitution = async () => {
+    const fetchInstitutionDetails = async () => {
         if (!id) return;
-
         try {
             setLoading(true);
-            setError(null);
+            const token = localStorage.getItem('adminToken');
+            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/entidades/${id}`;
 
-            const data = await getInstitutionById(id);
-
-            if (data) {
-                setInstitution(data);
-            } else {
-                setError('Institution not found');
+            const response = await fetch(API_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setInstitution(data.data);
             }
-        } catch (err) {
-            console.error('Failed to fetch institution:', err);
-            setError(err instanceof Error ? err.message : 'Failed to load institution');
+        } catch (error) {
+            console.error('Failed to fetch institution details:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const toggleSidebar = () => {
-        setIsSidebarCollapsed(!isSidebarCollapsed);
-    };
-
     const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        window.location.href = '/superadmin/login';
+        localStorage.clear();
+        window.location.replace('/superadmin/login');
     };
 
-    const handleBack = () => {
-        navigate('/superadmin/institutions');
-    };
-
-    const handleEditClick = () => {
-        setIsEditModalOpen(true);
-    };
-
-    const handleSaveInstitution = async (data: InstitutionFormData) => {
-        if (!institution) return;
-
-        try {
-            await updateInstitution(institution.id, data);
-            await fetchInstitution();
-        } catch (error) {
-            console.error('Failed to update institution:', error);
-            throw error;
-        }
-    };
-
-    const formatDate = (isoDate: string): string => {
-        return new Date(isoDate).toLocaleDateString('es-CO', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-    };
-
-    const getStatusBadgeClass = (status: 'active' | 'inactive'): string => {
-        return status === 'active' ? styles.statusActive : styles.statusInactive;
-    };
-
-    // ------------------------------------------------------------------------
-    // RENDERIZADO - LOADING
-    // ------------------------------------------------------------------------
-
-    if (loading) {
-        return (
-            <div className={styles.dashboardLayout}>
-                <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-                <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                    <Header title="Institution Details" userName="Super Admin" onLogout={handleLogout} />
-                    <div className={styles.loadingContainer}>
-                        <div className={styles.spinner}></div>
-                        <p>Loading institution details...</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    // ------------------------------------------------------------------------
-    // RENDERIZADO - ERROR
-    // ------------------------------------------------------------------------
-
-    if (error || !institution) {
-        return (
-            <div className={styles.dashboardLayout}>
-                <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-                <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                    <Header title="Institution Details" userName="Super Admin" onLogout={handleLogout} />
-                    <div className={styles.errorContainer}>
-                        <div className={styles.errorIcon}>⚠️</div>
-                        <h2>Institution Not Found</h2>
-                        <p>{error || 'The requested institution does not exist.'}</p>
-                        <button onClick={handleBack} className={styles.backButton}>
-                            <ChevronLeftIcon width={20} height={20} />
-                            <span>Back to Institutions</span>
-                        </button>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    // ------------------------------------------------------------------------
-    // RENDERIZADO PRINCIPAL
-    // ------------------------------------------------------------------------
+    if (loading) return <div className={styles.loading}>Loading details...</div>;
+    if (!institution) return <div className={styles.error}>Institution not found</div>;
 
     return (
         <div className={styles.dashboardLayout}>
-            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Institution Details" userName="Super Admin" onLogout={handleLogout} />
+                <Header title="Institution Details" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
+                    <button className={styles.backBtn} onClick={() => window.history.back()}>
+                        <ArrowLeftIcon width={16} height={16} />
+                        <span>Back to Institutions</span>
+                    </button>
 
-                    <div className={styles.pageHeader}>
-                        <button onClick={handleBack} className={styles.backButton}>
-                            <ChevronLeftIcon width={20} height={20} />
-                            <span>Back to Institutions</span>
-                        </button>
-
-                        <button onClick={handleEditClick} className={styles.editButton}>
-                            <EditIcon width={20} height={20} />
-                            <span>Edit Institution</span>
-                        </button>
-                    </div>
-
-                    <div className={styles.detailsCard}>
-
-                        <div className={styles.cardHeader}>
-                            <h2 className={styles.institutionName}>{institution.nombre_entidad}</h2>
-                            {institution.status && (
-                                <span className={`${styles.statusBadge} ${getStatusBadgeClass(institution.status)}`}>
-                                    {institution.status.charAt(0).toUpperCase() + institution.status.slice(1)}
-                                </span>
-                            )}
+                    <div className={styles.detailsHeader}>
+                        <div className={styles.titleInfo}>
+                            <h2>{institution.nombre_entidad}</h2>
+                            <span className={styles.nitLabel}>NIT: {institution.nit}</span>
                         </div>
-
-                        <div className={styles.detailsGrid}>
-
-                            <div className={styles.detailItem}>
-                                <span className={styles.label}>ID</span>
-                                <span className={styles.value}>{institution.id}</span>
-                            </div>
-
-                            <div className={styles.detailItem}>
-                                <span className={styles.label}>Email</span>
-                                <a href={`mailto:${institution.correo}`} className={styles.valueLink}>
-                                    {institution.correo}
-                                </a>
-                            </div>
-
-                            <div className={styles.detailItem}>
-                                <span className={styles.label}>Phone</span>
-                                <a href={`tel:${institution.telefono}`} className={styles.valueLink}>
-                                    {institution.telefono}
-                                </a>
-                            </div>
-
-                            <div className={styles.detailItem}>
-                                <span className={styles.label}>NIT</span>
-                                <span className={styles.value}>{institution.nit}</span>
-                            </div>
-
-                            <div className={`${styles.detailItem} ${styles.fullWidth}`}>
-                                <span className={styles.label}>Address</span>
-                                <span className={styles.value}>{institution.direccion}</span>
-                            </div>
-
-                            <div className={styles.detailItem}>
-                                <span className={styles.label}>Legal Representative</span>
-                                <span className={styles.value}>{institution.nombre_titular}</span>
-                            </div>
-
-                            {institution.activeLicensesCount !== undefined && (
-                                <div className={styles.detailItem}>
-                                    <span className={styles.label}>Active Licenses</span>
-                                    <span className={`${styles.value} ${styles.badge}`}>
-                                        {institution.activeLicensesCount}
-                                    </span>
-                                </div>
-                            )}
-
-                            {institution.created_at && (
-                                <div className={styles.detailItem}>
-                                    <span className={styles.label}>Created At</span>
-                                    <span className={styles.value}>
-                                        {formatDate(institution.created_at)}
-                                    </span>
-                                </div>
-                            )}
-
-                            {institution.updated_at && (
-                                <div className={styles.detailItem}>
-                                    <span className={styles.label}>Last Updated</span>
-                                    <span className={styles.value}>
-                                        {formatDate(institution.updated_at)}
-                                    </span>
-                                </div>
-                            )}
+                        <div className={styles.headerActions}>
+                            <button className={styles.editBtn}><EditIcon width={18} height={18} /> Edit</button>
+                            <button className={styles.deleteBtn}><TrashIcon width={18} height={18} /> Delete</button>
                         </div>
                     </div>
 
-                    <div className={styles.licensesSection}>
-                        <h3 className={styles.sectionTitle}>Active Licenses</h3>
-                        <div className={styles.placeholderBox}>
-                            <p>License list will be displayed here</p>
-                            <small>This feature will show all licenses associated with this institution</small>
+                    <div className={styles.detailsGrid}>
+                        <div className={styles.detailsCard}>
+                            <h3>Contact Information</h3>
+                            <div className={styles.infoRow}>
+                                <label>Representative:</label>
+                                <span>{institution.nombre_titular}</span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <label>Email:</label>
+                                <span>{institution.correo}</span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <label>Phone:</label>
+                                <span>{institution.telefono}</span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <label>Address:</label>
+                                <span>{institution.direccion}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.detailsCard}>
+                            <h3>License Information</h3>
+                            {institution.licencia ? (
+                                <>
+                                    <div className={styles.infoRow}>
+                                        <label>Current Status:</label>
+                                        <span className={`${styles.statusBadge} ${styles[institution.licencia.estado]}`}>
+                                            {institution.licencia.estado}
+                                        </span>
+                                    </div>
+                                    <div className={styles.infoRow}>
+                                        <label>Valid Until:</label>
+                                        <span>{new Date(institution.licencia.fecha_vencimiento).toLocaleDateString()}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className={styles.noLicense}>No active license found</p>
+                            )}
                         </div>
                     </div>
                 </div>
             </main>
-
-            <InstitutionFormModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSave={handleSaveInstitution}
-                mode="edit"
-                initialData={institution}
-            />
         </div>
     );
 };
