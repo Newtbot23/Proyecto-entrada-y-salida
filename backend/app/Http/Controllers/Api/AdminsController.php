@@ -54,8 +54,8 @@ class AdminsController extends Controller
         try {
             $validated = $request->validate([
                 'doc' => 'required|integer|unique:admins,doc',
-                'nombre' => 'required|string|max:200',
-                'telefono' => 'required|string|max:200',
+                'nombre' => 'required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+                'telefono' => 'required|regex:/^[0-9]{7,15}$/',
                 'correo' => 'required|email|max:200|unique:admins,correo',
                 'contrasena' => 'required|string|min:6',
             ]);
@@ -135,8 +135,8 @@ class AdminsController extends Controller
 
             $validated = $request->validate([
                 'doc' => 'sometimes|required|integer|unique:admins,doc,' . $id,
-                'nombre' => 'sometimes|required|string|max:200',
-                'telefono' => 'sometimes|required|string|max:200',
+                'nombre' => 'sometimes|required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+                'telefono' => 'sometimes|required|regex:/^[0-9]{7,15}$/',
                 'correo' => 'sometimes|required|email|max:200|unique:admins,correo,' . $id,
                 'contrasena' => 'sometimes|nullable|string|min:6',
             ]);

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
 
 class Usuarios extends Authenticatable
 {
@@ -37,5 +39,38 @@ class Usuarios extends Authenticatable
     {
         return $this->belongsTo(Roles::class, 'id_rol', 'id');
     }
+    
+    use Notifiable;
+    public function getAuthPassword()
+{
+    return $this->contrasena;
+}
 
+
+public function getAuthIdentifierName()
+{
+    return 'correo';
+}
+
+
+    /**
+     * Get the e-mail address where password reset links are sent.
+     *
+     * @return string
+     */
+    public function getEmailForPasswordReset()
+    {
+        return $this->correo;
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 }

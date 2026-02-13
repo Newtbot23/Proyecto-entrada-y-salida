@@ -55,9 +55,9 @@ class EntidadesController extends Controller
                 'nombre_entidad' => 'required|string|max:255',
                 'correo' => 'required|email|max:255|unique:entidades,correo',
                 'direccion' => 'required|string|max:255',
-                'nombre_titular' => 'required|string|max:255',
-                'telefono' => 'required|string|max:20',
-                'nit' => 'required|string|max:50|unique:entidades,nit',
+                'nombre_titular' => 'required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+                'telefono' => 'required|regex:/^[0-9]{7,15}$/',
+                'nit' => 'required|string|max:50|unique:entidades,nit|regex:/^[0-9]{6,15}$/',
                 'status' => 'sometimes|string|in:active,inactive',
             ]);
 
@@ -154,9 +154,9 @@ class EntidadesController extends Controller
                 'nombre_entidad' => 'sometimes|required|string|max:255',
                 'correo' => 'sometimes|required|email|max:255|unique:entidades,correo,' . $id,
                 'direccion' => 'sometimes|required|string|max:255',
-                'nombre_titular' => 'sometimes|required|string|max:255',
-                'telefono' => 'sometimes|required|string|max:20',
-                'nit' => 'sometimes|required|string|max:50|unique:entidades,nit,' . $id,
+                'nombre_titular' => 'sometimes|required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+                'telefono' => 'sometimes|required|regex:/^[0-9]{7,15}$/',
+                'nit' => 'sometimes|required|string|max:50|unique:entidades,nit,' . $id . '|regex:/^[0-9]{6,15}$/',
                 'status' => 'sometimes|string|in:active,inactive',
             ]);
 
