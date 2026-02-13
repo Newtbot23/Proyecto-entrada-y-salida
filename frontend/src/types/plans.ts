@@ -9,7 +9,8 @@ export interface PricingPlan {
     price: string;
     period: string;
     description: string;
-    features: PlanFeature[];
+    features?: PlanFeature[];
+    caracteristicas?: string;
     is_popular?: boolean;
     button_text: string;
 }

@@ -66,6 +66,12 @@
     margin-top: 4px;
 }
 
+.helperText {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
 .actions {
     display: flex;
     justify-content: flex-end;

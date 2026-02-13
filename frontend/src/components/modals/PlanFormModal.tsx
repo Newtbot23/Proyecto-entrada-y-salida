@@ -23,7 +23,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
         price: 0,
         billingPeriod: 'monthly',
         duration: 12,
-        description: ''
+        description: '',
+        caracteristicas: ''
     });
 
     const [errors, setErrors] = useState<Partial<Record<keyof PlanFormData, string>>>({});
@@ -35,7 +36,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                 price: initialData.price,
                 billingPeriod: initialData.billingPeriod,
                 duration: initialData.duration,
-                description: initialData.description
+                description: initialData.description,
+                caracteristicas: initialData.caracteristicas
             });
         } else if (isOpen && mode === 'create') {
             setFormData({
@@ -43,7 +45,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                 price: 0,
                 billingPeriod: 'monthly',
                 duration: 12,
-                description: ''
+                description: '',
+                caracteristicas: ''
             });
         }
         setErrors({});
@@ -66,6 +69,10 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
         if (!formData.description.trim()) {
             newErrors.description = 'Description is required';
+        }
+
+        if (!formData.caracteristicas.trim()) {
+            newErrors.caracteristicas = 'Features are required';
         }
 
         setErrors(newErrors);
@@ -183,6 +190,22 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                         rows={4}
                     />
                     {errors.description && <span className={styles.errorText}>{errors.description}</span>}
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="caracteristicas" className={styles.label}>
+                        Features (comma separated) <span className={styles.required}>*</span>
+                    </label>
+                    <textarea
+                        id="caracteristicas"
+                        className={`${styles.textarea} ${errors.caracteristicas ? styles.inputError : ''}`}
+                        value={formData.caracteristicas}
+                        onChange={(e) => handleChange('caracteristicas', e.target.value)}
+                        placeholder="Feature 1, Feature 2, Feature 3"
+                        rows={3}
+                    />
+                    <p className={styles.helperText}>Separate each feature with a comma (,) to display them as a list.</p>
+                    {errors.caracteristicas && <span className={styles.errorText}>{errors.caracteristicas}</span>}
                 </div>
 
                 <div className={styles.actions}>

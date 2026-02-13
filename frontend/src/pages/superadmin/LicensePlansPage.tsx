@@ -144,6 +144,7 @@ const LicensePlansPage: React.FC = () => {
                                         <th>Price</th>
                                         <th>Billing Period</th>
                                         <th>Duration</th>
+                                        <th>Features</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -162,6 +163,13 @@ const LicensePlansPage: React.FC = () => {
                                                 <td>${plan.price.toFixed(2)}</td>
                                                 <td className={styles.capitalize}>{plan.billingPeriod}</td>
                                                 <td>{plan.duration} months</td>
+                                                <td>
+                                                    <ul className={styles.featuresList}>
+                                                        {typeof plan.caracteristicas === 'string' && plan.caracteristicas.split(',').map((feature, index) => (
+                                                            <li key={index}>{feature.trim()}</li>
+                                                        ))}
+                                                    </ul>
+                                                </td>
                                                 <td>
                                                     <span className={`${styles.statusBadge} ${styles[plan.status]}`}>
                                                         {plan.status}

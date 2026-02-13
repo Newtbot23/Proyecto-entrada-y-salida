@@ -142,8 +142,18 @@
 }
 
 .statusBadge.disabled {
-    background-color: rgba(156, 163, 175, 0.1);
     color: #9ca3af;
+}
+
+.featuresList {
+    margin: 0;
+    padding-left: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.featuresList li {
+    margin-bottom: 2px;
 }
 
 .actionButtons {

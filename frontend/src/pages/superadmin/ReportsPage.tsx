@@ -96,17 +96,7 @@ const ReportsPage: React.FC = () => {
                             <ChartCard
                                 title="Revenue Over Time"
                                 loading={loading}
-                                isEmpty={!reportData?.revenue || reportData.revenue.length === 0}
-                            >
-                                {reportData?.revenue && (
-                                    <div className={styles.chartPlaceholder}>
-                                        <p>Chart data available: {reportData.revenue.length} data points</p>
-                                        <p className={styles.dataPreview}>
-                                            {reportData.revenue.map(d => `${d.date}: $${d.revenue}`).join(', ')}
-                                        </p>
-                                    </div>
-                                )}
-                            </ChartCard>
+                            />
                         </div>
 
                         {/* Licenses Sold & Institutions Growth - Half Width Each */}
@@ -115,34 +105,17 @@ const ReportsPage: React.FC = () => {
                                 <ChartCard
                                     title="Licenses Sold Per Month"
                                     loading={loading}
-                                    isEmpty={!reportData?.licenseSales || reportData.licenseSales.length === 0}
-                                >
-                                    {reportData?.licenseSales && (
-                                        <div className={styles.chartPlaceholder}>
-                                            <p>Chart data available: {reportData.licenseSales.length} data points</p>
-                                            <p className={styles.dataPreview}>
-                                                {reportData.licenseSales.map(d => `${d.month}: ${d.count}`).join(', ')}
-                                            </p>
-                                        </div>
-                                    )}
-                                </ChartCard>
+
+
+                                />
                             </div>
 
                             <div className={styles.chartHalfWidth}>
                                 <ChartCard
                                     title="Institutions Growth"
                                     loading={loading}
-                                    isEmpty={!reportData?.institutionGrowth || reportData.institutionGrowth.length === 0}
-                                >
-                                    {reportData?.institutionGrowth && (
-                                        <div className={styles.chartPlaceholder}>
-                                            <p>Chart data available: {reportData.institutionGrowth.length} data points</p>
-                                            <p className={styles.dataPreview}>
-                                                {reportData.institutionGrowth.map(d => `${d.month}: ${d.count}`).join(', ')}
-                                            </p>
-                                        </div>
-                                    )}
-                                </ChartCard>
+
+                                />
                             </div>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ export interface LicensePlan {
     billingPeriod: 'monthly' | 'yearly';
     duration: number; // in months
     description: string;
+    caracteristicas: string;
     status: 'active' | 'disabled';
     createdAt?: string;
     updatedAt?: string;
@@ -18,4 +19,5 @@ export interface PlanFormData {
     billingPeriod: 'monthly' | 'yearly';
     duration: number;
     description: string;
+    caracteristicas: string;
 }

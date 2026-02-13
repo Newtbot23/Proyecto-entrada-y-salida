@@ -25,7 +25,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onSelect }) => {
                 <p className={styles.description}>{plan.description}</p>
             </div>
 
-            <PlanFeatures features={plan.features} />
+            <PlanFeatures
+                features={plan.features as any}
+                featuresString={plan.caracteristicas}
+            />
 
             <button
                 className={`${styles.button} ${isPopular ? styles.buttonPrimary : styles.buttonOutline}`}

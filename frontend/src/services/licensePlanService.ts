@@ -14,6 +14,10 @@ const mapToFrontend = (plan: any): LicensePlan => ({
     billingPeriod: plan.periodo_facturacion,
     duration: plan.duracion_plan,
     description: plan.descripcion,
+    // El backend puede devolver un string o un array dependiendo de la versión
+    caracteristicas: Array.isArray(plan.caracteristicas)
+        ? plan.caracteristicas.join(',')
+        : (typeof plan.caracteristicas === 'string' ? plan.caracteristicas : ''),
     status: plan.estado as 'active' | 'disabled',
     createdAt: plan.created_at,
     updatedAt: plan.updated_at
@@ -31,7 +35,8 @@ const mapToBackend = (data: PlanFormData) => ({
     periodo_facturacion: data.billingPeriod,
     duracion_plan: data.duration,
     descripcion: data.description,
-    caracteristicas: [] // TODO: Add support for features in the form if needed
+    // El backend espera un array de strings
+    caracteristicas: data.caracteristicas.split(',').map(f => f.trim()).filter(f => f !== '')
 });
 
 /**
