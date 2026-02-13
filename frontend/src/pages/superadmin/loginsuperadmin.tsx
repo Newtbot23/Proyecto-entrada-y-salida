@@ -39,9 +39,9 @@ const LoginSuperAdmin: React.FC = () => {
             const data = await response.json();
             console.log('Login successful:', data);
 
-            // Store token and admin data
-            localStorage.setItem('adminToken', data.data.token);
-            localStorage.setItem('adminUser', JSON.stringify(data.data.admin));
+            // Store token and admin data in sessionStorage for tab isolation
+            sessionStorage.setItem('adminToken', data.data.token);
+            sessionStorage.setItem('adminUser', JSON.stringify(data.data.admin));
 
             // Redirect to dashboard
             window.location.href = '/superadmin/dashboard';

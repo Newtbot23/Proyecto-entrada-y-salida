@@ -23,7 +23,7 @@ const SuperAdmin: React.FC = () => {
 
     useEffect(() => {
         // Load session data
-        const adminUserStr = localStorage.getItem('adminUser');
+        const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
                 const adminUser = JSON.parse(adminUserStr);
@@ -38,7 +38,7 @@ const SuperAdmin: React.FC = () => {
     const fetchAdmins = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('adminToken');
             const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins';
 
             const response = await fetch(API_URL, {
@@ -60,7 +60,7 @@ const SuperAdmin: React.FC = () => {
 
     const handleSaveAdmin = async (formData: AdminFormData) => {
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('adminToken');
             const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins';
             const url = formMode === 'edit' && selectedAdmin ? `${baseUrl}/${selectedAdmin.id}` : baseUrl;
             const method = formMode === 'edit' ? 'PUT' : 'POST';
@@ -90,7 +90,7 @@ const SuperAdmin: React.FC = () => {
     const handleDeleteAdmin = async () => {
         if (!selectedAdmin) return;
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('adminToken');
             const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/admins/${selectedAdmin.id}`;
 
             const response = await fetch(url, {
@@ -112,7 +112,7 @@ const SuperAdmin: React.FC = () => {
     };
 
     const handleLogout = () => {
-        localStorage.clear();
+        sessionStorage.clear();
         window.location.replace('/superadmin/login');
     };
 

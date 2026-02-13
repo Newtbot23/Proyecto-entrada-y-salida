@@ -20,7 +20,7 @@ const NormalAdminDashboard: React.FC = () => {
     const [isLicenseExpired, setIsLicenseExpired] = useState(false);
 
     useEffect(() => {
-        const userDataString = localStorage.getItem('userData');
+        const userDataString = sessionStorage.getItem('userData');
         if (!userDataString) {
             navigate('/login');
         } else {
@@ -40,8 +40,8 @@ const NormalAdminDashboard: React.FC = () => {
     }, [navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('userToken');
-        localStorage.removeItem('userData');
+        sessionStorage.removeItem('userToken');
+        sessionStorage.removeItem('userData');
         navigate('/login');
     };
 

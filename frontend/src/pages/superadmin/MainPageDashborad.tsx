@@ -22,8 +22,8 @@ const MainPageDashborad: React.FC = () => {
     const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        // Get admin user from localStorage
-        const adminUserStr = localStorage.getItem('adminUser');
+        // Get admin user from sessionStorage
+        const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
                 const adminUser = JSON.parse(adminUserStr);
@@ -58,8 +58,8 @@ const MainPageDashborad: React.FC = () => {
     };
 
     const handleLogout = () => {
-        // Clear all admin-related items to prevent back-button access
-        localStorage.clear();
+        // Clear all admin-related items from sessionStorage
+        sessionStorage.clear();
         // Force redirect to login
         window.location.replace('/superadmin/login');
     };
