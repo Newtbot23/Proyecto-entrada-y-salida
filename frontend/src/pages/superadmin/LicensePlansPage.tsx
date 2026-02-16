@@ -71,11 +71,11 @@ const LicensePlansPage: React.FC = () => {
                     {loading ? (
                         <div className={styles.loadingContainer}>Loading plans...</div>
                     ) : (
-                        <div className={styles.plansGridIdx}>
-                            {plans.length === 0 ? (
+                        <div className={styles.plansGrid}>
+                            {Array.isArray(plans) && plans.length === 0 ? (
                                 <p className={styles.emptyState}>No plans found</p>
                             ) : (
-                                plans.map(plan => (
+                                Array.isArray(plans) && plans.map(plan => (
                                     <div key={plan.id} className={styles.planCard}>
                                         <div className={styles.planHeader}>
                                             <h3>{plan.nombre_plan}</h3>

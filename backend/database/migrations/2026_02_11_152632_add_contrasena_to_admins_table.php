@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            $table->string('contrasena', 300)->after('correo');
-        });
+        // Column already exists in base migration
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            $table->dropColumn('contrasena');
-        });
+        //
     }
 };

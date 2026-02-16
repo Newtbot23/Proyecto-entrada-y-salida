@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('registros_equipos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_equipo')->constrained('equipos');
-            $table->string('doc', 20);
+            $table->string('serial_equipo', 100);
+            $table->unsignedInteger('doc');
             $table->date('fecha');
             $table->text('observacion');
+            $table->foreign('serial_equipo')->references('serial')->on('equipos');
             $table->foreign('doc')->references('doc')->on('usuarios');
             $table->timestamps();
         });
