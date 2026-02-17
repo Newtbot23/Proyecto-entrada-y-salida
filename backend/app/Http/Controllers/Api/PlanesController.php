@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Api\Planes\StorePlanRequest;
+use App\Http\Requests\Api\Planes\UpdatePlanRequest;
 
 class PlanesController extends Controller
 {
@@ -46,20 +48,12 @@ class PlanesController extends Controller
      * Store a newly created plan in the database.
      * POST /api/planes
      */
-    public function store(Request $request): JsonResponse
+    public function store(StorePlanRequest $request): JsonResponse
     {
         try {
             Log::info('Datos recibidos en store de PlanesController:', $request->all());
 
-            $validated = $request->validate([
-                'nombre_plan' => 'required|string|max:200',
-                'periodo_facturacion' => 'required|string|in:monthly,yearly',
-                'caracteristicas' => 'sometimes|array',
-                'descripcion' => 'required|string',
-                'duracion_plan' => 'required|integer|min:1',
-                'precio_plan' => 'required|numeric|min:0',
-                'estado' => 'sometimes|required|string|in:active,disabled',
-            ]);
+            $validated = $request->validated();
 
             Log::info('Datos validados para nuevo plan:', $validated);
 
@@ -126,7 +120,7 @@ class PlanesController extends Controller
      * Update the specified plan in the database.
      * PUT /api/planes/{id}
      */
-    public function update(Request $request, $id): JsonResponse
+    public function update(UpdatePlanRequest $request, $id): JsonResponse
     {
         try {
             $plan = PlanesLicencia::find($id);
@@ -140,15 +134,7 @@ class PlanesController extends Controller
 
             Log::info('Datos recibidos para actualizar plan ID ' . $id . ':', $request->all());
 
-            $validated = $request->validate([
-                'nombre_plan' => 'sometimes|required|string|max:200',
-                'periodo_facturacion' => 'sometimes|required|string|in:monthly,yearly',
-                'caracteristicas' => 'sometimes|array',
-                'descripcion' => 'sometimes|required|string',
-                'duracion_plan' => 'sometimes|required|integer|min:1',
-                'precio_plan' => 'sometimes|required|numeric|min:0',
-                'estado' => 'sometimes|required|string|in:active,disabled',
-            ]);
+            $validated = $request->validated();
 
             Log::info('Datos validados para actualización de plan:', $validated);
 

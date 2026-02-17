@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
+use App\Http\Requests\Api\Admins\LoginRequest;
+
 /**
  * Controller for Admins (SuperAdmin) Authentication
  */
@@ -17,16 +19,12 @@ class AdminsAuthController extends Controller
     /**
      * Handle an authentication attempt for admins.
      * 
-     * @param \Illuminate\Http\Request $request
+     * @param \App\Http\Requests\Api\Admins\LoginRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        // Validation of incoming request
-        $request->validate([
-            'correo' => 'required|email',
-            'contrasena' => 'required',
-        ]);
+        // Validation is automatically handled by the LoginRequest
 
         // Attempt to find the admin by email
         $admin = Admins::where('correo', $request->correo)->first();

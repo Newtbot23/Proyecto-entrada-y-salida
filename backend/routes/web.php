@@ -6,7 +6,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EntidadesController;
 use App\Http\Controllers\PlanesLicenciaController;
 use App\Http\Controllers\UsuariosController;
-use App\Http\Controllers\SuperAdminAuthController;
+use App\Http\Controllers\PasswordRecoveryController;
+
+// Rutas de recuperación de contraseña para usuarios normales
+Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('forgot.form');
+Route::post('/forgot-password', [PasswordRecoveryController::class, 'sendResetCode'])->name('forgot.submit');
+Route::get('/verify-code', [PasswordRecoveryController::class, 'showVerifyForm'])->name('verify.form');
+Route::post('/verify-code', [PasswordRecoveryController::class, 'verifyCode'])->name('verify.submit');
+Route::get('/reset-password', [PasswordRecoveryController::class, 'showResetForm'])->name('reset.form');
+Route::post('/reset-password', [PasswordRecoveryController::class, 'resetPassword'])->name('reset.submit');
 
 Route::get('/', function () {
     return redirect()->route('superadmin.login');
@@ -51,6 +59,14 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
     Route::post('/usuarios-pagos',
         [UsuariosController::class, 'storeUsuariosPagos']
     )->name('usuarios-pagos.store');
+
+    // Rutas de recuperación de contraseña para SuperAdmin
+    Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('forgot.form');
+    Route::post('/forgot-password', [PasswordRecoveryController::class, 'sendResetCode'])->name('forgot.submit');
+    Route::get('/verify-code', [PasswordRecoveryController::class, 'showVerifyForm'])->name('verify.form');
+    Route::post('/verify-code', [PasswordRecoveryController::class, 'verifyCode'])->name('verify.submit');
+    Route::get('/reset-password', [PasswordRecoveryController::class, 'showResetForm'])->name('reset.form');
+    Route::post('/reset-password', [PasswordRecoveryController::class, 'resetPassword'])->name('reset.submit');
 });
 
 Route::prefix('superadmin')

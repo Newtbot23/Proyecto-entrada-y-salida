@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('usuarios', function (Blueprint $table) {
-            if (!Schema::hasColumn('usuarios', 'estado')) {
-                $table->string('estado', 20)->default('activo')->after('id_entidad');
-            }
+        Schema::create('password_reset_codes', function (Blueprint $table) {
+            $table->id();
+            $table->string('email')->index();
+            $table->string('code', 6);
+            $table->enum('user_type', ['admins', 'usuarios']);
+            $table->timestamp('created_at')->nullable();
         });
     }
 
@@ -23,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('usuarios', function (Blueprint $table) {
-            $table->dropColumn('estado');
-        });
+        Schema::dropIfExists('password_reset_codes');
     }
 };

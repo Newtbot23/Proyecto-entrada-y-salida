@@ -13,11 +13,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('licencias_sistema', function (Blueprint $table) {
-            // Add referencia_pago
-            $table->string('referencia_pago')->nullable()->default(null)->after('id_entidad');
+            if (!Schema::hasColumn('licencias_sistema', 'referencia_pago')) {
+                // Add referencia_pago
+                $table->string('referencia_pago')->nullable()->default(null)->after('id_entidad');
+            }
         });
 
-        // Update estado column ENUM
+        // Update estado column ENUM safely
+        // 1. Change to varchar to allow data migration
+        DB::statement("ALTER TABLE licencias_sistema MODIFY COLUMN estado VARCHAR(50) DEFAULT 'pendiente'");
+        
+        // 2. Update existing values
+        DB::table('licencias_sistema')->where('estado', 'activa')->update(['estado' => 'activo']);
+        DB::table('licencias_sistema')->where('estado', 'vencida')->update(['estado' => 'expirado']);
+        DB::table('licencias_sistema')->where('estado', 'suspendida')->update(['estado' => 'inactivo']);
+
+        // 3. Apply new ENUM
         DB::statement("ALTER TABLE licencias_sistema MODIFY COLUMN estado ENUM('activo', 'inactivo', 'expirado', 'pendiente') DEFAULT 'pendiente'");
     }
 

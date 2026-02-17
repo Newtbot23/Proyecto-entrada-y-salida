@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\PlanesLicencia;
+use App\Http\Requests\Api\Pricing\SelectPlanRequest;
 
 class PricingController extends Controller
 {
@@ -48,11 +49,9 @@ class PricingController extends Controller
     /**
      * Select a pricing plan.
      */
-    public function select(Request $request): JsonResponse
+    public function select(SelectPlanRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'plan_id' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         return response()->json([
             'message' => 'Plan selected successfully',

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Api\Auth\LoginRequest;
 
 class NormalAdminAuthController extends Controller
 {
@@ -18,15 +19,11 @@ class NormalAdminAuthController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'correo' => 'required|email',
-            'contrasena' => 'required|string',
-        ]);
+        // Validation is automatically handled by the LoginRequest
 
-        if ($validator->fails()) {
+        if (false) { // Validator is now handled by FormRequest
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',

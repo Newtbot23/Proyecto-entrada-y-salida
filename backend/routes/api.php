@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\LicenciasController;
 use App\Http\Controllers\Api\AdminsAuthController;
 use App\Http\Controllers\Api\AdminsController;
 
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');

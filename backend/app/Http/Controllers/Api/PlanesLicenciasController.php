@@ -7,6 +7,7 @@ use App\Models\LicenciasSistema;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Api\PlanesLicencias\StorePlanesLicenciasRequest;
 use Carbon\Carbon;
 
 class PlanesLicenciasController extends Controller
@@ -18,21 +19,11 @@ class PlanesLicenciasController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): JsonResponse
+    public function store(StorePlanesLicenciasRequest $request): JsonResponse
     {
-        // Validation of required fields
-        $validator = Validator::make($request->all(), [
-            'id_plan_lic' => 'required|exists:planes_licencia,id',
-            'id_entidad' => 'required|exists:entidades,id',
-        ]);
+        // Validation is automatically handled by the StorePlanesLicenciasRequest
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+
 
         try {
             // Set default dates for the license (e.g., 1 year duration)

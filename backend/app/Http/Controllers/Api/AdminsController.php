@@ -8,6 +8,8 @@ use App\Models\Admins;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Api\Admins\StoreAdminRequest;
+use App\Http\Requests\Api\Admins\UpdateAdminRequest;
 
 /**
  * Controller for Admins Management CRUD
@@ -49,16 +51,10 @@ class AdminsController extends Controller
      * Store a newly created admin in storage.
      * POST /api/admins
      */
-    public function store(Request $request)
+    public function store(StoreAdminRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'doc' => 'required|integer|unique:admins,doc',
-                'nombre' => 'required|string|max:200',
-                'telefono' => 'required|string|max:200',
-                'correo' => 'required|email|max:200|unique:admins,correo',
-                'contrasena' => 'required|string|min:6',
-            ]);
+            $validated = $request->validated();
 
             $validated['contrasena'] = Hash::make($validated['contrasena']);
             
@@ -121,7 +117,7 @@ class AdminsController extends Controller
      * Update the specified admin in storage.
      * PUT/PATCH /api/admins/{id}
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateAdminRequest $request, string $id)
     {
         try {
             $admin = Admins::find($id);
@@ -133,13 +129,7 @@ class AdminsController extends Controller
                 ], 404);
             }
 
-            $validated = $request->validate([
-                'doc' => 'sometimes|required|integer|unique:admins,doc,' . $id,
-                'nombre' => 'sometimes|required|string|max:200',
-                'telefono' => 'sometimes|required|string|max:200',
-                'correo' => 'sometimes|required|email|max:200|unique:admins,correo,' . $id,
-                'contrasena' => 'sometimes|nullable|string|min:6',
-            ]);
+            $validated = $request->validated();
 
             if (isset($validated['contrasena']) && !empty($validated['contrasena'])) {
                 $validated['contrasena'] = Hash::make($validated['contrasena']);

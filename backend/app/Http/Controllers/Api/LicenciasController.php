@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Api\Licencias\StoreLicenciaRequest;
+use App\Http\Requests\Api\Licencias\UpdateReferenciaRequest;
+use App\Http\Requests\Api\Licencias\UpdateEstadoRequest;
 
 class LicenciasController extends Controller
 {
@@ -49,16 +52,10 @@ class LicenciasController extends Controller
      * Store a newly created license.
      * POST /api/licencias
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreLicenciaRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'fecha_inicio' => 'required|date',
-                'fecha_vencimiento' => 'required|date|after:fecha_inicio',
-                'estado' => 'required|string|in:activo,inactivo,expirado,pendiente',
-                'id_plan_lic' => 'required|exists:planes_licencia,id',
-                'id_entidad' => 'required|exists:entidades,id',
-            ]);
+            $validated = $request->validated();
 
             $licencia = LicenciasSistema::create([
                 ...$validated,
@@ -159,12 +156,10 @@ class LicenciasController extends Controller
      * Update the payment reference for a license.
      * PATCH /api/licencias-sistema/{id}/referencia
      */
-    public function updateReferencia(Request $request, $id): JsonResponse
+    public function updateReferencia(UpdateReferenciaRequest $request, $id): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'referencia_pago' => 'required|string|max:255',
-            ]);
+            $validated = $request->validated();
 
             $licencia = LicenciasSistema::find($id);
 
@@ -206,12 +201,10 @@ class LicenciasController extends Controller
      * Update the status of a license (e.g., from 'pendiente' to 'activo' or 'inactivo').
      * PATCH /api/licencias-sistema/{id}/estado
      */
-    public function updateEstado(Request $request, $id): JsonResponse
+    public function updateEstado(UpdateEstadoRequest $request, $id): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'estado' => 'required|string|in:activo,activa,inactivo,suspendida,expirado,vencida,pendiente',
-            ]);
+            $validated = $request->validated();
 
             $licencia = LicenciasSistema::find($id);
 

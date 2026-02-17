@@ -8,6 +8,8 @@ use App\Models\Entidades;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Schema;
+use App\Http\Requests\Api\Entidades\StoreEntidadRequest;
+use App\Http\Requests\Api\Entidades\UpdateEntidadRequest;
 
 class EntidadesController extends Controller
 {
@@ -46,31 +48,16 @@ class EntidadesController extends Controller
      * Store a newly created resource in storage.
      * POST /api/entidades
      */
-    public function store(Request $request)
+    public function store(StoreEntidadRequest $request)
     {
         try {
             Log::info('Datos recibidos en store:', $request->all());
             
-            $validated = $request->validate([
-                'nombre_entidad' => 'required|string|max:255',
-                'correo' => 'required|email|max:255|unique:entidades,correo',
-                'direccion' => 'required|string|max:255',
-                'nombre_titular' => 'required|string|max:255',
-                'telefono' => 'required|string|max:20',
-                'nit' => 'required|string|max:50|unique:entidades,nit',
-                'status' => 'sometimes|string|in:active,inactive',
-            ]);
-
+            $validated = $request->validated();
+            
             Log::info('Datos validados:', $validated);
 
-            $dataToSave = $validated;
-            // Evitar error 500 si la columna 'status' aún no ha sido creada en la BD
-            if (!Schema::hasColumn('entidades', 'status')) {
-                unset($dataToSave['status']);
-                Log::warning('La columna "status" no existe en la tabla "entidades". Se omitirá el campo para evitar error SQL.');
-            }
-
-            $entidad = Entidades::create($dataToSave);
+            $entidad = Entidades::create($validated);
 
             Log::info('Entidad creada con ID: ' . $entidad->id);
 
@@ -150,27 +137,12 @@ class EntidadesController extends Controller
             Log::info('Datos recibidos para actualizar entidad ID ' . $id . ':', $request->all());
 
             // Validación - el email y nit pueden ser únicos excepto para este registro
-            $validated = $request->validate([
-                'nombre_entidad' => 'sometimes|required|string|max:255',
-                'correo' => 'sometimes|required|email|max:255|unique:entidades,correo,' . $id,
-                'direccion' => 'sometimes|required|string|max:255',
-                'nombre_titular' => 'sometimes|required|string|max:255',
-                'telefono' => 'sometimes|required|string|max:20',
-                'nit' => 'sometimes|required|string|max:50|unique:entidades,nit,' . $id,
-                'status' => 'sometimes|string|in:active,inactive',
-            ]);
+            $validated = $request->validated();
 
             Log::info('Datos validados para actualización:', $validated);
 
-            $dataToSave = $validated;
-            // Evitar error 500 si la columna 'status' aún no ha sido creada en la BD
-            if (!Schema::hasColumn('entidades', 'status')) {
-                unset($dataToSave['status']);
-                Log::warning('La columna "status" no existe en la tabla "entidades". Se omitirá el campo para evitar error SQL en update.');
-            }
-
             // Actualizar solo los campos que se enviaron
-            $entidad->update($dataToSave);
+            $entidad->update($validated);
 
             // Recargar el modelo para obtener los datos actualizados
             $entidad->refresh();
