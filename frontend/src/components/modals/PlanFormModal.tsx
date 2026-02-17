@@ -32,12 +32,12 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
     useEffect(() => {
         if (isOpen && initialData) {
             setFormData({
-                name: mode === 'duplicate' ? `${initialData.name} (Copy)` : initialData.name,
-                price: initialData.price,
-                billingPeriod: initialData.billingPeriod,
-                duration: initialData.duration,
-                description: initialData.description,
-                caracteristicas: initialData.caracteristicas
+                name: mode === 'duplicate' ? `${initialData.name || ''} (Copy)` : (initialData.name || ''),
+                price: initialData.price || 0,
+                billingPeriod: initialData.billingPeriod || 'monthly',
+                duration: initialData.duration || 12,
+                description: initialData.description || '',
+                caracteristicas: initialData.caracteristicas || ''
             });
         } else if (isOpen && mode === 'create') {
             setFormData({
@@ -55,7 +55,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof PlanFormData, string>> = {};
 
-        if (!formData.name.trim()) {
+        if (!(formData.name || '').trim()) {
             newErrors.name = 'Plan name is required';
         }
 
@@ -67,11 +67,11 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
             newErrors.duration = 'Duration must be greater than 0';
         }
 
-        if (!formData.description.trim()) {
+        if (!(formData.description || '').trim()) {
             newErrors.description = 'Description is required';
         }
 
-        if (!formData.caracteristicas.trim()) {
+        if (!(formData.caracteristicas || '').trim()) {
             newErrors.caracteristicas = 'Features are required';
         }
 

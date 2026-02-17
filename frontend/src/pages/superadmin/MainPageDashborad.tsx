@@ -8,7 +8,7 @@ import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseDa
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
-    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isMobileSidebarOpen] = useState(false);
     // Desktop sidebar collapsed state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 

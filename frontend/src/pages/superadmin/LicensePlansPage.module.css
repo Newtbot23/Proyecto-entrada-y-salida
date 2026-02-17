@@ -202,6 +202,93 @@
     color: var(--color-text-muted);
 }
 
+.planCard {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.planCard:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.planHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.planHeader h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.planPrice {
+    text-align: right;
+}
+
+.amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.period {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.planDetails {
+    flex: 1;
+}
+
+.planDetails p {
+    margin: 0;
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+.planActions {
+    display: flex;
+    gap: var(--spacing-xs);
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--spacing-md);
+}
+
+.iconBtn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.iconBtn:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.iconBtn.danger:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
 @media (max-width: 1024px) {
     .pageHeader {
         flex-direction: column;

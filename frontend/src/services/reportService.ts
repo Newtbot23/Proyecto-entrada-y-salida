@@ -33,7 +33,7 @@ const mockReportData: ReportData = {
  * TODO: Replace with actual API call to Laravel backend
  * Endpoint: GET /api/superadmin/reports?start_date=...&end_date=...&institution_id=...&license_type=...
  */
-export const getReportData = async (filters: ReportFilters): Promise<ReportData> => {
+export const getReportData = async (): Promise<ReportData> => {
     await new Promise(resolve => setTimeout(resolve, 800));
 
     // TODO: Replace with actual fetch call

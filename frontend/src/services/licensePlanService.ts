@@ -11,12 +11,14 @@ const mapToFrontend = (plan: any): LicensePlan => ({
     id: plan.id.toString(),
     name: plan.nombre_plan,
     price: parseFloat(plan.precio_plan),
-    billingPeriod: plan.periodo_facturacion,
+    billingPeriod: plan.periodo_facturacion || 'monthly',
     duration: plan.duracion_plan,
-    description: plan.descripcion,
-    // El backend puede devolver un string o un array dependiendo de la versión
+    description: plan.descripcion || '',
+    // El backend puede devolver strings simples o objetos {text, included} (seeder)
     caracteristicas: Array.isArray(plan.caracteristicas)
-        ? plan.caracteristicas.join(',')
+        ? plan.caracteristicas.map((item: any) =>
+            typeof item === 'object' && item !== null ? item.text : item
+        ).join(', ')
         : (typeof plan.caracteristicas === 'string' ? plan.caracteristicas : ''),
     status: plan.estado as 'active' | 'disabled',
     createdAt: plan.created_at,

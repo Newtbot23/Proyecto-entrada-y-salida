@@ -36,7 +36,9 @@ const InstitutionsPage: React.FC = () => {
                 }
             });
             const data = await response.json();
-            setInstitutions(data.data || []);
+            // API returns { success, data: { data: [...], total, ... } }
+            const items = data.data?.data || data.data || [];
+            setInstitutions(Array.isArray(items) ? items : []);
         } catch (error) {
             console.error('Failed to fetch institutions:', error);
         } finally {

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->foreignId('id_rol')->constrained('roles');
             $table->string('nit_entidad', 15);
             $table->foreign('nit_entidad')->references('nit')->on('entidades');
+            $table->foreignId('id_tip_doc')->constrained('tipo_doc', 'id_tip_doc');
             $table->timestamps();
         });
     }

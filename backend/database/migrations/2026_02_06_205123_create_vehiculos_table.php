@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('vehiculos', function (Blueprint $table) {
             $table->string('placa', 10)->primary();
             $table->foreignId('id_tipo_vehiculo')->constrained('tipos_vehiculo');
-            $table->unsignedInteger('doc');
+            $table->Integer('doc')->index();
             $table->string('marca', 100);
             $table->string('modelo', 100);
             $table->string('color', 50);
