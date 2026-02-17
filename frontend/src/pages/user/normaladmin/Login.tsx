@@ -96,6 +96,9 @@ const NormalAdminLogin: React.FC = () => {
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                        <a href="/forgot-password" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
+                            ¿Olvidaste tu contraseña?
+                        </a>
                         <a href="/plans" style={{ color: '#008f39', fontSize: '0.875rem' }}>
                             Back to Plans
                         </a>

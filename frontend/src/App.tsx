@@ -14,6 +14,9 @@ import NormalAdminLogin from './pages/user/normaladmin/Login';
 import NormalAdminDashboard from './pages/user/normaladmin/Dashboard';
 import LicensePayment from './pages/user/normaladmin/LicensePayment';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ForgotPassword from './components/auth/ForgotPassword';
+import VerifyCode from './components/auth/VerifyCode';
+import ResetPassword from './components/auth/ResetPassword';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
 
         {/* Normal Admin Flow */}
         <Route path="/login" element={<NormalAdminLogin />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-code" element={<VerifyCode />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register-entity" element={<RegisterEntity />} />
         <Route path="/register-admin" element={<RegisterAdmin />} />
         <Route path="/dashboard" element={<NormalAdminDashboard />} />

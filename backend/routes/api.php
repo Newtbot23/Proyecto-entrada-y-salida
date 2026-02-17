@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LicenciasController;
 use App\Http\Controllers\Api\AdminsAuthController;
 use App\Http\Controllers\Api\AdminsController;
+use App\Http\Controllers\Api\PasswordRecoveryApiController;
 
 
 Route::get('/user', function (Request $request) {
@@ -23,6 +24,11 @@ Route::get('/user', function (Request $request) {
 
 // Admins Authentication
 Route::post('/admins/login', [AdminsAuthController::class, 'login']);
+
+// Password Recovery
+Route::post('/forgot-password', [PasswordRecoveryApiController::class, 'sendResetCode']);
+Route::post('/verify-code', [PasswordRecoveryApiController::class, 'verifyCode']);
+Route::post('/reset-password', [PasswordRecoveryApiController::class, 'resetPassword']);
 
 // Admins Management CRUD
 Route::apiResource('admins', AdminsController::class);
