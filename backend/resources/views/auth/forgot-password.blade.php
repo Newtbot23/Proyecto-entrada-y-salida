@@ -12,7 +12,7 @@
             <p>Ingresa tu correo electrónico para recibir un código de recuperación.</p>
         </div>
 
-        <form action="{{ $type === 'superadmin' ? route('superadmin.forgot.submit') : route('forgot.submit') }}" method="POST">
+        <form action="{{ $type === 'superadmin' ? route('superadmin.forgot.submit') : route('usuario.forgot.submit') }}" method="POST">
             @csrf
             <input type="hidden" name="type" value="{{ $type }}">
             

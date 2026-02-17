@@ -5,11 +5,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
-use App\Notifications\AdminResetPasswordNotification;
 
 class Admins extends Authenticatable
 {
-    use HasApiTokens;
+    use HasApiTokens, Notifiable;
     protected $table = 'admins';
 
     protected $fillable = [
@@ -38,17 +37,4 @@ class Admins extends Authenticatable
     {
         return $this->correo;
     }
-
-    /**
-     * Send the password reset notification.
-     *
-     * @param  string  $token
-     * @return void
-     */
-    public function sendPasswordResetNotification($token)
-    {
-        $this->notify(new AdminResetPasswordNotification($token));
-    }
-
-    use Notifiable;
 }
