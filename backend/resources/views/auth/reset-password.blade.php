@@ -12,7 +12,7 @@
             <p>Por favor, ingresa tu nueva contraseña para el correo <strong>{{ $email }}</strong>.</p>
         </div>
 
-        <form action="{{ $type === 'superadmin' ? route('superadmin.reset.submit') : route('reset.submit') }}" method="POST">
+        <form action="{{ $type === 'superadmin' ? route('superadmin.reset.submit') : route('usuario.reset.submit') }}" method="POST">
             @csrf
             
             <div class="form-group">

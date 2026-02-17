@@ -16,9 +16,9 @@
 <input type="text" name="nombre_entidad" placeholder="Nombre entidad" required><br>
 <input type="email" name="correo_entidad" placeholder="Correo entidad" required><br>
 <input type="text" name="direccion" placeholder="Dirección" required><br>
-<input type="text" name="nombre_titular" placeholder="Nombre titular"  required><br>
-<input type="text" name="telefono_entidad" placeholder="Teléfono entidad"  required><br>
-<input type="text" name="nit" placeholder="NIT"  required><br>
+<input type="text" name="nombre_titular" placeholder="Nombre titular" required><br>
+<input type="text" name="telefono_entidad" placeholder="Teléfono entidad" required><br>
+<input type="text" name="nit" placeholder="NIT" required><br>
 
 <hr>
 

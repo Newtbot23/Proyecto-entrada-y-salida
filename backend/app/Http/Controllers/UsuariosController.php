@@ -156,7 +156,6 @@ class UsuariosController extends Controller
                     'fecha_ultima_validacion' => Carbon::now()->toDateTimeString(),
                     'id_plan_lic' => $request->plan_id, // Ensure plan matches
                 ]);
-            }
 
                 PagosLicencia::create([
                     'id_licencia' => $licencia->id,

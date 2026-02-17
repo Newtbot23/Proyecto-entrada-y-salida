@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EntidadesController;
 use App\Http\Controllers\PlanesLicenciaController;
 use App\Http\Controllers\UsuariosController;
-use App\Http\Controllers\SuperAdminAuthController;
+use App\Http\Controllers\PasswordRecoveryController;
 
 Route::get('/', function () {
     return redirect()->route('superadmin.login');
@@ -50,7 +50,7 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
         [UsuariosController::class, 'storeUsuariosPagos']
     )->name('usuarios-pagos.store');
 
-    // Rutas de recuperación de contraseña para SuperAdmin
+    // Rutas de recuperación de contraseña para SuperAdmin (código de 6 dígitos)
     Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('forgot.form');
     Route::post('/forgot-password', [PasswordRecoveryController::class, 'sendResetCode'])->name('forgot.submit');
     Route::get('/verify-code', [PasswordRecoveryController::class, 'showVerifyForm'])->name('verify.form');
@@ -79,16 +79,12 @@ Route::prefix('superadmin')
     });
 });
 
-Route::prefix('superadmin')->name('superadmin.')->group(function () {
-    Route::get('/admin/forgot-password', [AdminForgotPasswordController::class, 'showLinkRequestForm'])->name('admin.password.request');
-    Route::post('/admin/forgot-password', [AdminForgotPasswordController::class, 'sendResetLink']);
-    Route::get('/admin/reset-password/{token}', [AdminResetPasswordController::class, 'showResetForm'])->name('admin.password.reset');
-    Route::post('/admin/reset-password', [AdminResetPasswordController::class, 'reset']);
-});
-
+// Rutas de recuperación de contraseña para Usuarios normales (código de 6 dígitos)
 Route::prefix('usuario')->group(function () {
-    Route::get('/forgot-password', [UsuarioForgotPasswordController::class, 'showLinkRequestForm'])->name('usuario.password.request');
-    Route::post('/forgot-password', [UsuarioForgotPasswordController::class, 'sendResetLink']);
-    Route::get('/reset-password/{token}', [UsuarioResetPasswordController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [UsuarioResetPasswordController::class, 'reset']);
+    Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('usuario.forgot.form');
+    Route::post('/forgot-password', [PasswordRecoveryController::class, 'sendResetCode'])->name('usuario.forgot.submit');
+    Route::get('/verify-code', [PasswordRecoveryController::class, 'showVerifyForm'])->name('usuario.verify.form');
+    Route::post('/verify-code', [PasswordRecoveryController::class, 'verifyCode'])->name('usuario.verify.submit');
+    Route::get('/reset-password', [PasswordRecoveryController::class, 'showResetForm'])->name('usuario.reset.form');
+    Route::post('/reset-password', [PasswordRecoveryController::class, 'resetPassword'])->name('usuario.reset.submit');
 });

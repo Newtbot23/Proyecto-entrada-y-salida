@@ -12,7 +12,7 @@
             <p>Hemos enviado un código de 6 dígitos a <strong>{{ $email }}</strong>.</p>
         </div>
 
-        <form action="{{ $type === 'superadmin' ? route('superadmin.verify.submit') : route('verify.submit') }}" method="POST">
+        <form action="{{ $type === 'superadmin' ? route('superadmin.verify.submit') : route('usuario.verify.submit') }}" method="POST">
             @csrf
             <input type="hidden" name="type" value="{{ $type }}">
             <input type="hidden" name="email" value="{{ $email }}">
@@ -28,7 +28,7 @@
             <button type="submit" class="btn">Verificar</button>
         </form>
 
-        <a href="{{ $type === 'superadmin' ? route('superadmin.forgot.form') : route('forgot.form') }}" class="back-link">
+        <a href="{{ $type === 'superadmin' ? route('superadmin.forgot.form') : route('usuario.forgot.form') }}" class="back-link">
             No recibí el código
         </a>
     </div>

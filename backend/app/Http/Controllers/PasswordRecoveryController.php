@@ -62,7 +62,7 @@ class PasswordRecoveryController extends Controller
             return back()->withErrors(['correo' => 'Error al enviar el correo electrónico. Por favor, inténtalo de nuevo más tarde.'])->withInput();
         }
 
-        return redirect()->route($isSuperAdmin ? 'superadmin.verify.form' : 'verify.form', ['email' => $request->correo]);
+        return redirect()->route($isSuperAdmin ? 'superadmin.verify.form' : 'usuario.verify.form', ['email' => $request->correo]);
     }
 
     /**
@@ -103,7 +103,7 @@ class PasswordRecoveryController extends Controller
         // Redirect to reset password form with temporary signed URL or session flag
         session(['reset_email' => $request->email, 'reset_type' => $type, 'code_verified' => true]);
 
-        return redirect()->route($isSuperAdmin ? 'superadmin.reset.form' : 'reset.form');
+        return redirect()->route($isSuperAdmin ? 'superadmin.reset.form' : 'usuario.reset.form');
     }
 
     /**
@@ -112,7 +112,7 @@ class PasswordRecoveryController extends Controller
     public function showResetForm(Request $request)
     {
         if (!session('code_verified')) {
-            return redirect()->route($request->is('superadmin/*') ? 'superadmin.forgot.form' : 'forgot.form');
+            return redirect()->route($request->is('superadmin/*') ? 'superadmin.forgot.form' : 'usuario.forgot.form');
         }
 
         $type = session('reset_type');
@@ -126,7 +126,7 @@ class PasswordRecoveryController extends Controller
     public function resetPassword(Request $request)
     {
         if (!session('code_verified')) {
-             return redirect()->route($request->is('superadmin/*') ? 'superadmin.forgot.form' : 'forgot.form');
+             return redirect()->route($request->is('superadmin/*') ? 'superadmin.forgot.form' : 'usuario.forgot.form');
         }
 
         $request->validate([
