@@ -6,21 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EntidadesController;
 use App\Http\Controllers\PlanesLicenciaController;
 use App\Http\Controllers\UsuariosController;
-use App\Http\Controllers\PasswordRecoveryController;
-
-// Rutas de recuperación de contraseña para usuarios normales
-Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('forgot.form');
-Route::post('/forgot-password', [PasswordRecoveryController::class, 'sendResetCode'])->name('forgot.submit');
-Route::get('/verify-code', [PasswordRecoveryController::class, 'showVerifyForm'])->name('verify.form');
-Route::post('/verify-code', [PasswordRecoveryController::class, 'verifyCode'])->name('verify.submit');
-Route::get('/reset-password', [PasswordRecoveryController::class, 'showResetForm'])->name('reset.form');
-Route::post('/reset-password', [PasswordRecoveryController::class, 'resetPassword'])->name('reset.submit');
+use App\Http\Controllers\SuperAdminAuthController;
 
 Route::get('/', function () {
     return redirect()->route('superadmin.login');
 });
-
-// Rutas de autenticación para usuarios normales
 Route::get('/login', [UsuariosAuthController::class, 'showLogin'])
     ->name('login');
 
@@ -87,4 +77,18 @@ Route::prefix('superadmin')
         Route::post('/', [UsuariosController::class, 'store'])
             ->name('store');
     });
+});
+
+Route::prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/admin/forgot-password', [AdminForgotPasswordController::class, 'showLinkRequestForm'])->name('admin.password.request');
+    Route::post('/admin/forgot-password', [AdminForgotPasswordController::class, 'sendResetLink']);
+    Route::get('/admin/reset-password/{token}', [AdminResetPasswordController::class, 'showResetForm'])->name('admin.password.reset');
+    Route::post('/admin/reset-password', [AdminResetPasswordController::class, 'reset']);
+});
+
+Route::prefix('usuario')->group(function () {
+    Route::get('/forgot-password', [UsuarioForgotPasswordController::class, 'showLinkRequestForm'])->name('usuario.password.request');
+    Route::post('/forgot-password', [UsuarioForgotPasswordController::class, 'sendResetLink']);
+    Route::get('/reset-password/{token}', [UsuarioResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [UsuarioResetPasswordController::class, 'reset']);
 });

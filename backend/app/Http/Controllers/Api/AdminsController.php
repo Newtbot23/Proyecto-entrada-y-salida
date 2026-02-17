@@ -54,7 +54,13 @@ class AdminsController extends Controller
     public function store(StoreAdminRequest $request)
     {
         try {
-            $validated = $request->validated();
+            $validated = $request->validate([
+                'doc' => 'required|integer|unique:admins,doc',
+                'nombre' => 'required|string|max:200',
+                'telefono' => 'required|string|max:200',
+                'correo' => 'required|email|max:200|unique:admins,correo',
+                'contrasena' => 'required|string|min:6',
+            ]);
 
             $validated['contrasena'] = Hash::make($validated['contrasena']);
             
@@ -129,7 +135,13 @@ class AdminsController extends Controller
                 ], 404);
             }
 
-            $validated = $request->validated();
+            $validated = $request->validate([
+                'doc' => 'sometimes|required|integer|unique:admins,doc,' . $id,
+                'nombre' => 'sometimes|required|string|max:200',
+                'telefono' => 'sometimes|required|string|max:200',
+                'correo' => 'sometimes|required|email|max:200|unique:admins,correo,' . $id,
+                'contrasena' => 'sometimes|nullable|string|min:6',
+            ]);
 
             if (isset($validated['contrasena']) && !empty($validated['contrasena'])) {
                 $validated['contrasena'] = Hash::make($validated['contrasena']);

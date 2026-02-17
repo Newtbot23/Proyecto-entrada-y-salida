@@ -53,8 +53,16 @@ class EntidadesController extends Controller
         try {
             Log::info('Datos recibidos en store:', $request->all());
             
-            $validated = $request->validated();
-            
+            $validated = $request->validate([
+                'nombre_entidad' => 'required|string|max:255',
+                'correo' => 'required|email|max:255|unique:entidades,correo',
+                'direccion' => 'required|string|max:255',
+                'nombre_titular' => 'required|string|max:255',
+                'telefono' => 'required|string|max:20',
+                'nit' => 'required|string|max:50|unique:entidades,nit',
+                'status' => 'sometimes|string|in:active,inactive',
+            ]);
+
             Log::info('Datos validados:', $validated);
 
             $entidad = Entidades::create($validated);
@@ -137,7 +145,15 @@ class EntidadesController extends Controller
             Log::info('Datos recibidos para actualizar entidad ID ' . $id . ':', $request->all());
 
             // Validación - el email y nit pueden ser únicos excepto para este registro
-            $validated = $request->validated();
+            $validated = $request->validate([
+                'nombre_entidad' => 'sometimes|required|string|max:255',
+                'correo' => 'sometimes|required|email|max:255|unique:entidades,correo,' . $id,
+                'direccion' => 'sometimes|required|string|max:255',
+                'nombre_titular' => 'sometimes|required|string|max:255',
+                'telefono' => 'sometimes|required|string|max:20',
+                'nit' => 'sometimes|required|string|max:50|unique:entidades,nit,' . $id,
+                'status' => 'sometimes|string|in:active,inactive',
+            ]);
 
             Log::info('Datos validados para actualización:', $validated);
 

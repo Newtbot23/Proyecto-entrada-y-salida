@@ -35,14 +35,16 @@ class UsuariosController extends Controller
             'nombre_entidad' => 'required|string|max:200',
             'correo_entidad' => 'required|email',
             'direccion' => 'required|string',
-            'nombre_titular' => 'required|string|max:100',
-            'telefono_entidad' => 'required|string|max:15',
-            'nit' => 'required|string|max:15|unique:entidades,nit',
+            'nombre_titular' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'telefono_entidad' => 'required|regex:/^[0-9]{7,15}$/',
+            'nit' => 'required|string|max:15|unique:entidades,nit|regex:/^[0-9]{6,15}$/',
             'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
             'doc' => 'required|string|max:20|unique:usuarios,doc',
-            'primer_nombre' => 'required|string|max:50',
-            'primer_apellido' => 'required|string|max:50',
-            'telefono_usuario' => 'required|string|max:13',
+            'primer_nombre' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'segundo_nombre' => 'nullable|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'primer_apellido' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'segundo_apellido' => 'nullable|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'telefono_usuario' => 'required|regex:/^[0-9]{7,15}$/',
             'correo_usuario' => 'required|email|unique:usuarios,correo',
             'contrasena' => 'required|min:6',
             'id_rol' => 'required|exists:roles,id',
@@ -138,26 +140,33 @@ class UsuariosController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            $licencia = LicenciasSistema::findOrFail($request->licencia_id);
-            
-            // Payment logic is separate from License creation now.
-            // But we can update license status to active if payment is recorded by SuperAdmin.
-            if ($licencia->estado === 'pendiente') {
-                $licencia->update([
-                    'estado' => 'activo', // SuperAdmin manual entry implies approval
+            $plan = PlanesLicencia::find($request->plan_id);
+            $entidad = Entidades::find($request->entidad_id);
+
+            if ($plan && $entidad) {
+                $fecha_inicio = Carbon::now();
+                $fecha_vencimiento = $fecha_inicio->copy()->addDays(intval($plan->duracion_plan));
+
+                $licencia = LicenciasSistema::create([
+                    'id_plan_lic' => $plan->id,
+                    'id_entidad' => $entidad->id,
+                    'fecha_inicio' => $fecha_inicio->toDateString(),
+                    'fecha_vencimiento' => $fecha_vencimiento->toDateString(),
+                    'estado' => true,
                     'fecha_ultima_validacion' => Carbon::now()->toDateTimeString(),
                     'id_plan_lic' => $request->plan_id, // Ensure plan matches
                 ]);
             }
 
-            PagosLicencia::create([
-                'id_licencia' => $licencia->id,
-                'fecha_pago' => Carbon::parse($request->fecha_pago)->toDateTimeString(),
-                'metodo_pago' => $request->metodo_pago,
-                'referencia' => $request->referencia,
-                'estado' => 'completado', // Auto-complete for SuperAdmin entry
-                'creado_en' => Carbon::now()->toDateTimeString(),
-            ]);
+                PagosLicencia::create([
+                    'id_licencia' => $licencia->id,
+                    'fecha_pago' => Carbon::parse($request->fecha_pago)->toDateTimeString(),
+                    'metodo_pago' => $request->metodo_pago,
+                    'referencia' => $request->referencia,
+                    'estado' => 'pendiente',
+                    'creado_en' => Carbon::now()->toDateTimeString(),
+                ]);
+            }
         });
 
         return redirect()->route('superadmin.dashboard')

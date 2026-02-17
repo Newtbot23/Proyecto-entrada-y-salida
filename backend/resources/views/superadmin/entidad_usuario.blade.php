@@ -16,9 +16,9 @@
 <input type="text" name="nombre_entidad" placeholder="Nombre entidad" required><br>
 <input type="email" name="correo_entidad" placeholder="Correo entidad" required><br>
 <input type="text" name="direccion" placeholder="Dirección" required><br>
-<input type="text" name="nombre_titular" placeholder="Nombre titular" required><br>
-<input type="text" name="telefono_entidad" placeholder="Teléfono entidad" required><br>
-<input type="text" name="nit" placeholder="NIT" required><br>
+<input type="text" name="nombre_titular" placeholder="Nombre titular"  required><br>
+<input type="text" name="telefono_entidad" placeholder="Teléfono entidad"  required><br>
+<input type="text" name="nit" placeholder="NIT"  required><br>
 
 <hr>
 
@@ -32,11 +32,11 @@
 </select><br>
 
 <input type="text" name="doc" placeholder="Documento" required><br>
-<input type="text" name="primer_nombre" placeholder="Primer nombre" required><br>
-<input type="text" name="segundo_nombre" placeholder="Segundo nombre"><br>
-<input type="text" name="primer_apellido" placeholder="Primer apellido" required><br>
-<input type="text" name="segundo_apellido" placeholder="Segundo apellido"><br>
-<input type="text" name="telefono_usuario" placeholder="Teléfono usuario" required><br>
+<input type="text" name="primer_nombre" placeholder="Primer nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="Solo se permiten letras y espacios" required><br>
+<input type="text" name="segundo_nombre" placeholder="Segundo nombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="Solo se permiten letras y espacios"><br>
+<input type="text" name="primer_apellido" placeholder="Primer apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="Solo se permiten letras y espacios" required><br>
+<input type="text" name="segundo_apellido" placeholder="Segundo apellido" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="Solo se permiten letras y espacios"><br>
+<input type="text" name="telefono_usuario" placeholder="Teléfono usuario" pattern="[0-9]{7,15}" title="Solo números (7 a 15 dígitos)" required><br>
 <input type="email" name="correo_usuario" placeholder="Correo usuario" required><br>
 <input type="file" name="imagen"><br>
 <input type="password" name="contrasena" placeholder="Contraseña" required><br>

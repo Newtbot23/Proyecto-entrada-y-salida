@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-use Laravel\Sanctum\HasApiTokens;
-
 class Usuarios extends Authenticatable
 {
     use HasApiTokens;
@@ -41,8 +39,4 @@ class Usuarios extends Authenticatable
         return $this->belongsTo(Roles::class, 'id_rol', 'id');
     }
 
-    public function licenciaSistema()
-    {
-        return $this->belongsTo(LicenciasSistema::class, 'id_licencia_sistema');
-    }
 }

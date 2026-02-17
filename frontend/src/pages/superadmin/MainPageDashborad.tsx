@@ -47,7 +47,8 @@ const MainPageDashborad: React.FC = () => {
             setError(null);
         } catch (err) {
             console.error('Error loading dashboard data:', err);
-            setError('Failed to load dashboard data');
+            const message = err instanceof Error ? err.message : String(err);
+            setError(`Failed to load dashboard data: ${message}`);
         } finally {
             setLoading(false);
         }
