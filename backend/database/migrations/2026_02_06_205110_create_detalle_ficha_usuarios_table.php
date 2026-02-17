@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('detalle_ficha_usuarios', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_ficha')->constrained('fichas');
-            $table->string('doc', 20);
+            $table->integer('doc');
             $table->enum('tipo_participante', ['aprendiz', 'instructor']);
             $table->foreign('doc')->references('doc')->on('usuarios');
             $table->timestamps();

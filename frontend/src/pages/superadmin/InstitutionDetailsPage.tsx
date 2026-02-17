@@ -13,7 +13,7 @@ const InstitutionDetailsPage: React.FC = () => {
     const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        const adminUserStr = localStorage.getItem('adminUser');
+        const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
                 const adminUser = JSON.parse(adminUserStr);
@@ -29,7 +29,7 @@ const InstitutionDetailsPage: React.FC = () => {
         if (!id) return;
         try {
             setLoading(true);
-            const token = localStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('adminToken');
             const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/entidades/${id}`;
 
             const response = await fetch(API_URL, {
@@ -50,7 +50,7 @@ const InstitutionDetailsPage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        localStorage.clear();
+        sessionStorage.clear();
         window.location.replace('/superadmin/login');
     };
 

@@ -11,7 +11,7 @@ const LicensePayment: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('userData');
+        const storedUser = sessionStorage.getItem('userData');
         if (!storedUser) {
             navigate('/login');
             return;
@@ -41,7 +41,7 @@ const LicensePayment: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+                    'Authorization': `Bearer ${sessionStorage.getItem('userToken')}`
                 },
                 body: JSON.stringify({ referencia_pago: referencia }),
             });

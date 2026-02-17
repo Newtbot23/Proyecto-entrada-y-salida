@@ -8,7 +8,7 @@ const ReportsPage: React.FC = () => {
     const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        const adminUserStr = localStorage.getItem('adminUser');
+        const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
                 const adminUser = JSON.parse(adminUserStr);
@@ -20,7 +20,7 @@ const ReportsPage: React.FC = () => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.clear();
+        sessionStorage.clear();
         window.location.replace('/superadmin/login');
     };
 

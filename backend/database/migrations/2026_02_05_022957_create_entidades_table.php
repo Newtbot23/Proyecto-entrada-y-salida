@@ -12,14 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('entidades', function (Blueprint $table) {
-            $table->id();
+            $table->string('nit', 15)->primary();
             $table->string('nombre_entidad', 200);
             $table->string('correo', 200);
             $table->string('direccion', 200);
             $table->string('nombre_titular', 100);
             $table->string('telefono', 15);
             $table->enum('estado', ['activo', 'pendiente','inactivo'])->default('pendiente');
-            $table->string('nit', 15)->unique();
             $table->timestamps();
         });
     }

@@ -10,6 +10,9 @@ class Admins extends Authenticatable
 {
     use HasApiTokens, Notifiable;
     protected $table = 'admins';
+    protected $primaryKey = 'doc';
+    public $incrementing = false;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'doc',

@@ -1,0 +1,276 @@
+/* ========================================
+   PublicDashboard — Layout-only styles
+   Reuses all CSS variables from index.css
+   and card/button styles from Plans.module.css
+   ======================================== */
+
+/* Page wrapper — bumps all text +2px for landing readability */
+.pageWrapper {
+    font-size: calc(var(--font-size-base) + 0.125rem);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 8rem 1rem 4rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.heroTitle {
+    font-size: clamp(1.875rem, 4vw, calc(var(--font-size-3xl) + 0.125rem));
+    font-weight: 800;
+    color: var(--color-text-main);
+    margin: 0 0 var(--spacing-lg) 0;
+    line-height: 1.2;
+}
+
+.heroDescription {
+    font-size: calc(var(--font-size-base) + 0.125rem);
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin: 0 0 var(--spacing-xl) 0;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.heroCta {
+    display: inline-block;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: calc(var(--font-size-base) + 0.125rem);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverted);
+    transition: background-color 0.2s;
+    text-decoration: none;
+}
+
+.heroCta:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* Benefits / Features Section */
+.benefitsSection {
+    padding: 3rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sectionTitle {
+    text-align: center;
+    font-size: calc(var(--font-size-2xl) + 0.125rem);
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0 0 2.5rem 0;
+}
+
+.benefitsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.benefitCard {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.benefitCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.benefitIcon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-inverted);
+}
+
+.benefitTitle {
+    font-size: calc(var(--font-size-lg) + 0.125rem);
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.benefitDescription {
+    font-size: calc(var(--font-size-sm) + 0.125rem);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Plans Preview Section */
+.plansSection {
+    padding: 3rem 1rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.plansCarouselWrapper {
+    position: relative;
+    overflow: visible;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    padding-top: 16px;
+}
+
+.plansCarouselTrack {
+    display: flex;
+    align-items: stretch;
+    gap: var(--spacing-xl);
+    transition: none;
+}
+
+.plansCarouselTrack.animating {
+    transition: transform 0.5s ease;
+}
+
+.planSlide {
+    flex: 0 0 340px;
+    min-width: 300px;
+    max-width: 360px;
+    display: flex;
+    align-items: stretch;
+    padding-top: 16px;
+}
+
+.plansGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-xl);
+    align-items: stretch;
+    padding-top: 16px;
+}
+
+.plansCtaContainer {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+.plansCtaButton {
+    display: inline-block;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: calc(var(--font-size-sm) + 0.125rem);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-focus);
+    background-color: transparent;
+    color: var(--color-text-main);
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.plansCtaButton:hover {
+    background-color: #f1f5f9;
+    border-color: var(--color-text-main);
+}
+
+/* Footer */
+.footer {
+    width: 100%;
+    background-color: var(--color-primary);
+    color: var(--color-text-inverted);
+    padding: 2.5rem 3rem;
+    margin-top: 2rem;
+}
+
+.footerInner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--spacing-xl);
+}
+
+.footerLinks {
+    display: flex;
+    gap: var(--spacing-xl);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footerLink {
+    color: var(--color-text-inverted);
+    text-decoration: none;
+    font-size: calc(var(--font-size-sm) + 0.125rem);
+    opacity: 0.9;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+}
+
+.footerLink:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.footerContact {
+    text-align: right;
+    font-size: calc(var(--font-size-sm) + 0.125rem);
+    opacity: 0.9;
+    line-height: 1.7;
+}
+
+/* Loading & error states */
+.centerMessage {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--color-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero {
+        padding: 6rem 1rem 3rem;
+    }
+
+    .planSlide {
+        flex: 0 0 280px;
+    }
+
+    .footerInner {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .footerContact {
+        text-align: center;
+    }
+
+    .footerLinks {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .planSlide {
+        flex: 0 0 90%;
+        max-width: none;
+    }
+
+    .benefitsGrid {
+        grid-template-columns: 1fr;
+    }
+}

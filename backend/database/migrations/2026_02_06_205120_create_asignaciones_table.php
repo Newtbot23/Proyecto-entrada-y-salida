@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('asignaciones', function (Blueprint $table) {
             $table->id();
-            $table->string('doc', 20);
-            $table->foreignId('id_ambiente')->constrained('ambientes');
-            $table->foreignId('id_equipo')->constrained('equipos');
+            $table->integer('doc');
+            $table->string('serial_equipo', 100);
+            $table->string('numero_ambiente', 20);
             $table->boolean('estado');
             $table->foreign('doc')->references('doc')->on('usuarios');
+            $table->foreign('serial_equipo')->references('serial')->on('equipos');
+            $table->foreign('numero_ambiente')->references('numero_ambiente')->on('ambientes');
             $table->timestamps();
         });
     }
