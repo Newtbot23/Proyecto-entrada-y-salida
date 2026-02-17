@@ -60,4 +60,8 @@ class Usuarios extends Authenticatable
         return $this->belongsTo(Roles::class, 'id_rol', 'id');
     }
 
+    public function licenciaSistema()
+    {
+        return $this->belongsTo(LicenciasSistema::class, 'id_licencia_sistema', 'id');
+    }
 }
