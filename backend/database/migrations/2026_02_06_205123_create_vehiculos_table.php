@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vehiculos', function (Blueprint $table) {
-            $table->id();
-            $table->string('placa', 10)->unique();
+            $table->string('placa', 10)->primary();
             $table->foreignId('id_tipo_vehiculo')->constrained('tipos_vehiculo');
-            $table->string('doc', 20);
+            $table->Integer('doc')->index();
             $table->string('marca', 100);
             $table->string('modelo', 100);
             $table->string('color', 50);

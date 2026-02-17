@@ -9,7 +9,9 @@ class Entidades extends Model
 {
 
     protected $table = 'entidades';
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'nit';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'nombre_entidad',
         'correo',
@@ -24,15 +26,15 @@ class Entidades extends Model
         return $this->hasManyThrough(
             Usuarios::class,
             LicenciasSistema::class,
-            'id_entidad',
+            'nit_entidad',
             'id_licencia_sistema',
-            'id',
+            'nit',
             'id'
         );
     }
 
     public function licencia()
     {
-        return $this->hasOne(LicenciasSistema::class, 'id_entidad', 'id');
+        return $this->hasOne(LicenciasSistema::class, 'nit_entidad', 'nit');
     }
 }

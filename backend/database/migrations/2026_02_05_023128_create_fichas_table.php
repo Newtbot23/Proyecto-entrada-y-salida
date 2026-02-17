@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('fichas', function (Blueprint $table) {
             $table->id();
+            $table->integer('numero_ficha')->unique();
             $table->foreignId('id_programa')->constrained('programas');
-            $table->foreignId('id_ambiente')->constrained('ambientes');
+            $table->string('numero_ambiente', 20);
             $table->foreignId('id_jornada')->constrained('jornadas');
+            $table->foreign('numero_ambiente')->references('numero_ambiente')->on('ambientes');
             $table->timestamps();
         });
     }

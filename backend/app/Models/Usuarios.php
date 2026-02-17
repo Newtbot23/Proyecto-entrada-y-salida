@@ -9,6 +9,9 @@ class Usuarios extends Authenticatable
 {
     use HasApiTokens;
     protected $table = 'usuarios';
+    protected $primaryKey = 'doc';
+    public $incrementing = false;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'doc',

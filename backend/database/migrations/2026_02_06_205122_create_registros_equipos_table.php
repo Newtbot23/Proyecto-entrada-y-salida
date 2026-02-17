@@ -12,14 +12,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('registros_equipos', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_equipo')->constrained('equipos');
-            $table->string('doc', 20);
-            $table->date('fecha');
-            $table->text('observacion');
-            $table->foreign('doc')->references('doc')->on('usuarios');
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->string('serial_equipo', 100);
+
+    $table->integer('doc')->index();   
+
+    $table->date('fecha');
+    $table->text('observacion');
+
+    $table->foreign('serial_equipo')
+          ->references('serial')
+          ->on('equipos')
+          ->onDelete('cascade');
+
+    $table->foreign('doc')
+          ->references('doc')
+          ->on('usuarios')
+          ->onDelete('cascade');
+
+    $table->timestamps();
+});
+
     }
 
     /**

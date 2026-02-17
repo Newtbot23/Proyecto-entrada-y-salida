@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('equipos', function (Blueprint $table) {
-            $table->id();
+            $table->string('serial', 100)->primary();
             $table->enum('tipo_equipo', ['sena', 'propio']);
-            $table->string('serial', 100)->unique();
             $table->string('placa_sena', 50);
             $table->foreignId('id_marca')->constrained('marcas_equipo');
             $table->enum('estado', ['asignado', 'no_asignado', 'inhabilitado']);

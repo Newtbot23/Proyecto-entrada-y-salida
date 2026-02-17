@@ -16,7 +16,7 @@ class PlanesLicenciaSeeder extends Seeder
             [
                 'nombre_plan' => 'Basic',
                 'precio_plan' => 19,
-                'duracion_plan' => now()->addMonth(), // Example duration
+                'duracion_plan' => 30, // 30 days
                 'caracteristicas' => [
                     ['text' => '1 User Account', 'included' => true],
                     ['text' => '10 Projects', 'included' => true],
@@ -28,7 +28,7 @@ class PlanesLicenciaSeeder extends Seeder
             [
                 'nombre_plan' => 'Professional',
                 'precio_plan' => 49,
-                'duracion_plan' => now()->addMonth(),
+                'duracion_plan' => 30,
                 'caracteristicas' => [
                     ['text' => '5 User Accounts', 'included' => true],
                     ['text' => 'Unlimited Projects', 'included' => true],
@@ -40,7 +40,7 @@ class PlanesLicenciaSeeder extends Seeder
             [
                 'nombre_plan' => 'Enterprise',
                 'precio_plan' => 99,
-                'duracion_plan' => now()->addMonth(),
+                'duracion_plan' => 30,
                 'caracteristicas' => [
                     ['text' => 'Unlimited Users', 'included' => true],
                     ['text' => 'Unlimited Projects', 'included' => true],

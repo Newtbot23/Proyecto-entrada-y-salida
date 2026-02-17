@@ -41,10 +41,10 @@ const NormalAdminLogin: React.FC = () => {
                 throw new Error(result.message || 'Login failed');
             }
 
-            // Store token and user data
+            // Store token and user data in sessionStorage
             const { token, user } = result.data;
-            localStorage.setItem('userToken', token);
-            localStorage.setItem('userData', JSON.stringify(user));
+            sessionStorage.setItem('userToken', token);
+            sessionStorage.setItem('userData', JSON.stringify(user));
 
             // Phase 15 & 16: Redirect logic based on license
             if (user.license_status === 'pendiente') {

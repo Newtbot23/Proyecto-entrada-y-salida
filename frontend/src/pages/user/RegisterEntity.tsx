@@ -19,6 +19,7 @@ const RegisterEntity: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
     useEffect(() => {
@@ -50,14 +51,17 @@ const RegisterEntity: React.FC = () => {
             const response = await registrationService.createEntity(formData);
 
             if (response.success) {
-                // Navigate only IF successful creation
-                navigate('/register-admin', {
-                    state: {
-                        planId,
-                        entidadId: response.data.id,
-                        entidadNombre: formData.nombre_entidad
-                    }
-                });
+                setSuccess('Entity created successfully! Redirecting to admin registration...');
+                // Wait 2 seconds so the user sees the success message
+                setTimeout(() => {
+                    navigate('/register-admin', {
+                        state: {
+                            planId,
+                            entidadId: response.data.id,
+                            entidadNombre: formData.nombre_entidad
+                        }
+                    });
+                }, 2000);
             }
         } catch (err: any) {
             console.error('Registration error:', err);
@@ -77,6 +81,7 @@ const RegisterEntity: React.FC = () => {
                 <p className={styles.subtitle}>Selected Plan ID: {planId}</p>
 
                 {error && <div className={styles.error}>{error}</div>}
+                {success && <div className={styles.success}>{success}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
@@ -146,8 +151,8 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit[0]}</span>}
                     </div>
 
-                    <button type="submit" className={styles.button} disabled={loading}>
-                        {loading ? 'Processing...' : 'Next: Register Admin'}
+                    <button type="submit" className={styles.button} disabled={loading || !!success}>
+                        {loading ? 'Processing...' : success ? 'Redirecting...' : 'Next: Register Admin'}
                     </button>
                 </form>
             </div>

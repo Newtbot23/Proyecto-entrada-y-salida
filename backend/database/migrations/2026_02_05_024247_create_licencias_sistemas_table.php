@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->date('fecha_inicio');
             $table->date('fecha_vencimiento');
-            $table->enum('estado', ['activa', 'suspendida', 'vencida', 'pendiente']);
+            $table->enum('estado', ['activa', 'suspendida', 'vencida', 'pendiente'])->default('pendiente');
             $table->dateTime('fecha_ultima_validacion');
             $table->foreignId('id_plan_lic')->constrained('planes_licencia');
-            $table->foreignId('id_entidad')->constrained('entidades');
+            $table->string('nit_entidad', 15);
+            $table->foreign('nit_entidad')->references('nit')->on('entidades');
             $table->timestamps();
         });
     }

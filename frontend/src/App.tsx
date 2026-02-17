@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginSuperAdmin from './pages/superadmin/loginsuperadmin';
 import { PlansPage } from './pages/Plans/PlansPage';
+import PublicDashboardPage from './pages/PublicDashboardPage';
 import MainPageDashborad from './pages/superadmin/MainPageDashborad';
 import LicensePlansPage from './pages/superadmin/LicensePlansPage';
 import InstitutionsPage from './pages/superadmin/InstitutionsPage';
@@ -21,8 +22,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page - Starting the Normal Admin Flow */}
-        <Route path="/" element={<PlansPage />} />
+        {/* Public Landing Page */}
+        <Route path="/" element={<PublicDashboardPage />} />
         <Route path="/plans" element={<PlansPage />} />
 
         {/* Normal Admin Flow */}

@@ -11,7 +11,7 @@ const InstitutionsPage: React.FC = () => {
     const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
-        const adminUserStr = localStorage.getItem('adminUser');
+        const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
                 const adminUser = JSON.parse(adminUserStr);
@@ -26,7 +26,7 @@ const InstitutionsPage: React.FC = () => {
     const fetchInstitutions = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('adminToken');
             const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/entidades';
 
             const response = await fetch(API_URL, {
@@ -36,7 +36,9 @@ const InstitutionsPage: React.FC = () => {
                 }
             });
             const data = await response.json();
-            setInstitutions(data.data || []);
+            // API returns { success, data: { data: [...], total, ... } }
+            const items = data.data?.data || data.data || [];
+            setInstitutions(Array.isArray(items) ? items : []);
         } catch (error) {
             console.error('Failed to fetch institutions:', error);
         } finally {
@@ -45,7 +47,7 @@ const InstitutionsPage: React.FC = () => {
     };
 
     const handleLogout = () => {
-        localStorage.clear();
+        sessionStorage.clear();
         window.location.replace('/superadmin/login');
     };
 

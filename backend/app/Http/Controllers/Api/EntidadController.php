@@ -31,7 +31,7 @@ class EntidadController extends Controller
         }
 
         try {
-            // Create the entity. Note: 'estado' is removed as it's not in the DB table.
+            // Create the entity. 
             $entidad = Entidades::create([
                 'nombre_entidad' => $request->nombre_entidad,
                 'correo' => $request->correo,

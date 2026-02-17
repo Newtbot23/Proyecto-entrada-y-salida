@@ -6,7 +6,7 @@ import { Navigate, Outlet } from 'react-router-dom';
  * Checks for adminToken in localStorage.
  */
 const ProtectedRoute: React.FC = () => {
-    const adminToken = localStorage.getItem('adminToken');
+    const adminToken = sessionStorage.getItem('adminToken');
 
     if (!adminToken) {
         // Redirect to login if no token found
