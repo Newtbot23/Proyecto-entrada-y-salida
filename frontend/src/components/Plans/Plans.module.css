@@ -4,7 +4,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xl);
-    padding-top: 24px;
+    padding-top: 32px;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
@@ -75,6 +75,8 @@
     top: 0;
     left: 50%;
     transform: translate(-50%, -50%);
+    white-space: nowrap;
+    z-index: 2;
 }
 
 .badge {

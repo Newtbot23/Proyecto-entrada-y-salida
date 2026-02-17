@@ -121,7 +121,7 @@
 
 .plansCarouselWrapper {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
     display: flex;
     align-items: stretch;
@@ -140,16 +140,17 @@
 }
 
 .planSlide {
-    flex: 0 0 320px;
-    min-width: 280px;
-    max-width: 340px;
+    flex: 0 0 340px;
+    min-width: 300px;
+    max-width: 360px;
     display: flex;
     align-items: stretch;
+    padding-top: 16px;
 }
 
 .plansGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: var(--spacing-xl);
     align-items: stretch;
     padding-top: 16px;
