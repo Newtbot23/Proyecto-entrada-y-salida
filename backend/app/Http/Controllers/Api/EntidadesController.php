@@ -8,6 +8,8 @@ use App\Models\Entidades;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Schema;
+use App\Http\Requests\Api\Entidades\StoreEntidadRequest;
+use App\Http\Requests\Api\Entidades\UpdateEntidadRequest;
 
 class EntidadesController extends Controller
 {
@@ -46,7 +48,7 @@ class EntidadesController extends Controller
      * Store a newly created resource in storage.
      * POST /api/entidades
      */
-    public function store(Request $request)
+    public function store(StoreEntidadRequest $request)
     {
         try {
             Log::info('Datos recibidos en store:', $request->all());
@@ -63,14 +65,7 @@ class EntidadesController extends Controller
 
             Log::info('Datos validados:', $validated);
 
-            $dataToSave = $validated;
-            // Evitar error 500 si la columna 'status' aún no ha sido creada en la BD
-            if (!Schema::hasColumn('entidades', 'status')) {
-                unset($dataToSave['status']);
-                Log::warning('La columna "status" no existe en la tabla "entidades". Se omitirá el campo para evitar error SQL.');
-            }
-
-            $entidad = Entidades::create($dataToSave);
+            $entidad = Entidades::create($validated);
 
             Log::info('Entidad creada con ID: ' . $entidad->id);
 
@@ -162,15 +157,8 @@ class EntidadesController extends Controller
 
             Log::info('Datos validados para actualización:', $validated);
 
-            $dataToSave = $validated;
-            // Evitar error 500 si la columna 'status' aún no ha sido creada en la BD
-            if (!Schema::hasColumn('entidades', 'status')) {
-                unset($dataToSave['status']);
-                Log::warning('La columna "status" no existe en la tabla "entidades". Se omitirá el campo para evitar error SQL en update.');
-            }
-
             // Actualizar solo los campos que se enviaron
-            $entidad->update($dataToSave);
+            $entidad->update($validated);
 
             // Recargar el modelo para obtener los datos actualizados
             $entidad->refresh();

@@ -7,6 +7,7 @@ use App\Models\Entidades;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Api\Entidad\StoreEntidadRequest;
 
 class EntidadController extends Controller
 {
@@ -17,19 +18,11 @@ class EntidadController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreEntidadRequest $request): JsonResponse
     {
-        // Validation of required fields for an entity
-        $validator = Validator::make($request->all(), [
-            'nombre_entidad' => 'required|string|max:200',
-            'correo' => 'required|email|max:200',
-            'direccion' => 'required|string|max:200',
-            'nombre_titular' => 'required|string|max:100',
-            'telefono' => 'required|string|max:15',
-            'nit' => 'required|string|max:15|unique:entidades,nit',
-        ]);
+        // Validation is automatically handled by the StoreEntidadRequest
 
-        if ($validator->fails()) {
+        if (false) { // Validator is now handled by FormRequest
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',

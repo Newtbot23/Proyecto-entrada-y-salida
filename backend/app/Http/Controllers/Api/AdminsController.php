@@ -8,6 +8,8 @@ use App\Models\Admins;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Api\Admins\StoreAdminRequest;
+use App\Http\Requests\Api\Admins\UpdateAdminRequest;
 
 /**
  * Controller for Admins Management CRUD
@@ -49,7 +51,7 @@ class AdminsController extends Controller
      * Store a newly created admin in storage.
      * POST /api/admins
      */
-    public function store(Request $request)
+    public function store(StoreAdminRequest $request)
     {
         try {
             $validated = $request->validate([
@@ -121,7 +123,7 @@ class AdminsController extends Controller
      * Update the specified admin in storage.
      * PUT/PATCH /api/admins/{id}
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateAdminRequest $request, string $id)
     {
         try {
             $admin = Admins::find($id);

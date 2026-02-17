@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Api\Registration\FinishRegistrationRequest;
 use Carbon\Carbon;
 
 class RegistrationFlowController extends Controller
@@ -28,23 +29,11 @@ class RegistrationFlowController extends Controller
      * Complete registration for an existing entity: Create License and Admin User.
      * POST /api/registration/complete-entity
      */
-    public function finishRegistration(Request $request): JsonResponse
+    public function finishRegistration(FinishRegistrationRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'id_entidad' => 'required|exists:entidades,id',
-            'id_plan_lic' => 'required|exists:planes_licencia,id',
-            
-            // Admin User Data
-            'doc' => 'required|string|max:20|unique:usuarios,doc',
-            'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
-            'primer_nombre' => 'required|string|max:50',
-            'primer_apellido' => 'required|string|max:50',
-            'user_telefono' => 'required|string|max:13',
-            'user_correo' => 'required|email|max:100|unique:usuarios,correo',
-            'contrasena' => 'required|string|min:6',
-        ]);
+        // Validation is automatically handled by the FinishRegistrationRequest
 
-        if ($validator->fails()) {
+        if (false) { // Validator is now handled by FormRequest
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',

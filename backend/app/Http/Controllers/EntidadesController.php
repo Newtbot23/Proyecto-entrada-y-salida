@@ -44,9 +44,9 @@ class EntidadesController extends Controller
             'nombre_entidad' => 'required|string|max:200',
             'correo' => 'required|email',
             'direccion' => 'required|string',
-            'nombre_titular' => 'required|string|max:200',
-            'telefono' => 'required|numeric',
-            'nit' => 'required|numeric'
+            'nombre_titular' => 'required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'telefono' => 'required|regex:/^[0-9]{7,15}$/',
+            'nit' => 'required|regex:/^[0-9]{6,15}$/'
         ]);
 
         Entidades::create($request->all());
@@ -69,9 +69,9 @@ class EntidadesController extends Controller
             'nombre_entidad' => 'required|string|max:200',
             'correo' => 'required|email',
             'direccion' => 'required|string',
-            'nombre_titular' => 'required|string|max:200',
-            'telefono' => 'required|numeric',
-            'nit' => 'required|numeric'
+            'nombre_titular' => 'required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'telefono' => 'required|regex:/^[0-9]{7,15}$/',
+            'nit' => 'required|regex:/^[0-9]{6,15}$/'
         ]);
 
         $entidad->update($request->all());

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
 use Laravel\Sanctum\HasApiTokens;
 
 class Usuarios extends Authenticatable
@@ -35,17 +34,33 @@ class Usuarios extends Authenticatable
         'estado' => 'string',
     ];
 
+    protected $hidden = [
+        'contrasena',
+    ];
+
+    public function getAuthPasswordName()
+    {
+        return 'contrasena';
+    }
+
+    /**
+     * Get the e-mail address where password reset links are sent.
+     *
+     * @return string
+     */
+    public function getEmailForPasswordReset()
+    {
+        return $this->correo;
+    }
+
     public function tipoDoc()
-{
-    return $this->belongsTo(TipoDoc::class, 'id_tip_doc', 'id_tip_doc');
-}
+    {
+        return $this->belongsTo(TipoDoc::class, 'id_tip_doc', 'id_tip_doc');
+    }
+
     public function rol()
     {
         return $this->belongsTo(Roles::class, 'id_rol', 'id');
     }
 
-    public function licenciaSistema()
-    {
-        return $this->belongsTo(LicenciasSistema::class, 'id_licencia_sistema');
-    }
 }
