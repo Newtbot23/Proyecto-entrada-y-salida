@@ -1,4 +1,5 @@
 import type { ReportFilters, ReportData, ExportFormat } from '../types/report';
+import { apiClient as api } from '../config/api';
 
 // Mock data for development - replace with actual API calls
 const mockReportData: ReportData = {
@@ -98,4 +99,81 @@ export const getLicenseTypesForFilter = async (): Promise<Array<{ id: string; na
         { id: 'premium', name: 'Premium' },
         { id: 'enterprise', name: 'Enterprise' }
     ];
+};
+
+export const reportService = {
+    downloadLicensesReport: async () => {
+        try {
+            const blob = await api.getBlob('/reports/licenses');
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'licencias.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading licenses report:', error);
+            throw error;
+        }
+    },
+
+    getLicensesPreview: async () => {
+        try {
+            return await api.get<any>('/reports/licenses?format=json');
+        } catch (error) {
+            console.error('Error fetching licenses preview:', error);
+            throw error;
+        }
+    },
+
+    downloadEntitiesReport: async () => {
+        try {
+            const blob = await api.getBlob('/reports/entities');
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'entidades_general.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading entities report:', error);
+            throw error;
+        }
+    },
+
+    getEntitiesPreview: async () => {
+        try {
+            return await api.get<any>('/reports/entities?format=json');
+        } catch (error) {
+            console.error('Error fetching entities preview:', error);
+            throw error;
+        }
+    },
+
+    downloadEntityFullReport: async (nit: string) => {
+        try {
+            const blob = await api.getBlob(`/reports/entities/${nit}`);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `entidad_${nit}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading entity report:', error);
+            throw error;
+        }
+    },
+
+    getEntityPreview: async (nit: string) => {
+        try {
+            return await api.get<any>(`/reports/entities/${nit}?format=json`);
+        } catch (error) {
+            console.error('Error fetching entity preview:', error);
+            throw error;
+        }
+    },
 };

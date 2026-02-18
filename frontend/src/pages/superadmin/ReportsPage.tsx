@@ -2,10 +2,22 @@ import React, { useState, useEffect } from 'react';
 import styles from './ReportsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
+import { reportService } from '../../services/reportService';
+import { getInstitutions } from '../../services/institutionService';
+import type { Institution } from '../../types/institution';
 
 const ReportsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [adminName, setAdminName] = useState('Super Admin');
+    const [institutions, setInstitutions] = useState<Institution[]>([]);
+    const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
+    const [loading, setLoading] = useState(false);
+
+    // Preview State
+    const [previewData, setPreviewData] = useState<any | null>(null);
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [showPreview, setShowPreview] = useState(false);
+    const [currentReportType, setCurrentReportType] = useState<string>('');
 
     useEffect(() => {
         const adminUserStr = sessionStorage.getItem('adminUser');
@@ -17,11 +29,96 @@ const ReportsPage: React.FC = () => {
                 console.error('Error parsing admin user:', e);
             }
         }
+        fetchInstitutions();
     }, []);
+
+    const fetchInstitutions = async () => {
+        try {
+            const response = await getInstitutions({ statuses: [], search: '' }, 1, 100);
+            setInstitutions(response.data);
+        } catch (error) {
+            console.error('Error fetching institutions:', error);
+        }
+    };
 
     const handleLogout = () => {
         sessionStorage.clear();
         window.location.replace('/superadmin/login');
+    };
+
+    const handlePreviewLicenses = async () => {
+        try {
+            setLoading(true);
+            const data = await reportService.getLicensesPreview();
+            setPreviewData(data);
+            setPreviewTitle('Vista Previa: Reporte de Licencias');
+            setCurrentReportType('licenses');
+            setShowPreview(true);
+        } catch (error) {
+            alert('Error al cargar la vista previa');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePreviewEntities = async () => {
+        try {
+            setLoading(true);
+            const data = await reportService.getEntitiesPreview();
+            setPreviewData(data);
+            setPreviewTitle('Vista Previa: Reporte General de Entidades');
+            setCurrentReportType('entities');
+            setShowPreview(true);
+        } catch (error) {
+            alert('Error al cargar la vista previa');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePreviewEntityFull = async () => {
+        if (!selectedInstitutionId) {
+            alert('Por favor seleccione una entidad');
+            return;
+        }
+        try {
+            setLoading(true);
+            const selectedInst = institutions.find(i => i.id.toString() === selectedInstitutionId);
+            if (selectedInst) {
+                const data = await reportService.getEntityPreview(selectedInst.nit);
+                setPreviewData(data);
+                setPreviewTitle(`Vista Previa: Reporte de ${selectedInst.nombre_entidad}`);
+                setCurrentReportType('entity_full');
+                setShowPreview(true);
+            }
+        } catch (error) {
+            alert('Error al cargar la vista previa');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmDownload = async () => {
+        try {
+            setLoading(true);
+            if (currentReportType === 'licenses') {
+                await reportService.downloadLicensesReport();
+            } else if (currentReportType === 'entities') {
+                await reportService.downloadEntitiesReport();
+            } else if (currentReportType === 'entity_full') {
+                const institution = institutions.find(i => i.id.toString() === selectedInstitutionId);
+                if (institution) await reportService.downloadEntityFullReport(institution.nit);
+            }
+        } catch (error) {
+            alert('Error al descargar el PDF');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleClosePreview = () => {
+        setShowPreview(false);
+        setPreviewData(null);
     };
 
     return (
@@ -29,33 +126,143 @@ const ReportsPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="System Reports" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header title="Reportes del Sistema" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
-                            <h2 className={styles.pageTitle}>Analytics & Reports</h2>
-                            <p className={styles.pageSubtitle}>Review system performance and entity activity</p>
+                            <h2 className={styles.pageTitle}>Panel de Reportes</h2>
+                            <p className={styles.pageSubtitle}>Generar y descargar reportes del sistema</p>
                         </div>
                     </div>
 
                     <div className={styles.reportsGrid}>
+                        {/* Reporte 1: Licencias */}
                         <div className={styles.reportCard}>
-                            <h3>Institution Growth</h3>
-                            <p>Monthly registration trends and active entity count.</p>
-                            <button className={styles.reportBtn}>Generate PDF</button>
+                            <h3>Reporte de Licencias</h3>
+                            <p>Lista completa de todas las licencias del sistema.</p>
+                            <button
+                                className={styles.reportBtn}
+                                onClick={handlePreviewLicenses}
+                                disabled={loading}
+                            >
+                                {loading && currentReportType === 'licenses' && !showPreview ? 'Cargando...' : 'Vista Previa y Descargar'}
+                            </button>
                         </div>
+
+                        {/* Reporte 2: Entidades (General) */}
                         <div className={styles.reportCard}>
-                            <h3>Revenue Report</h3>
-                            <p>Subscription income and upcoming renewals.</p>
-                            <button className={styles.reportBtn}>Download Excel</button>
+                            <h3>Reporte General de Entidades</h3>
+                            <p>Listado general de entidades registradas.</p>
+                            <button
+                                className={styles.reportBtn}
+                                onClick={handlePreviewEntities}
+                                disabled={loading}
+                            >
+                                {loading && currentReportType === 'entities' && !showPreview ? 'Cargando...' : 'Vista Previa y Descargar'}
+                            </button>
                         </div>
+
+                        {/* Reporte 3: Entidad Completa */}
                         <div className={styles.reportCard}>
-                            <h3>User Activity</h3>
-                            <p>Logins and system usage across all institutions.</p>
-                            <button className={styles.reportBtn}>View Analytics</button>
+                            <h3>Reporte Detallado por Entidad</h3>
+                            <p>Seleccione una entidad para ver su información completa.</p>
+
+                            <select
+                                className={styles.selectInput}
+                                value={selectedInstitutionId}
+                                onChange={(e) => setSelectedInstitutionId(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '8px',
+                                    marginBottom: '10px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ccc'
+                                }}
+                            >
+                                <option value="">Seleccione una entidad...</option>
+                                {institutions.map((inst) => (
+                                    <option key={inst.id} value={inst.id}>
+                                        {inst.nombre_entidad} (NIT: {inst.nit})
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button
+                                className={styles.reportBtn}
+                                onClick={handlePreviewEntityFull}
+                                disabled={loading || !selectedInstitutionId}
+                            >
+                                {loading && currentReportType === 'entity_full' && !showPreview ? 'Cargando...' : 'Vista Previa y Descargar'}
+                            </button>
                         </div>
                     </div>
+
+                    {/* Preview Section */}
+                    {showPreview && previewData && (
+                        <div className={styles.previewSection} style={{ marginTop: '30px', padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h3 style={{ margin: 0 }}>{previewTitle}</h3>
+                                <button
+                                    onClick={handleClosePreview}
+                                    style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', background: 'white', cursor: 'pointer' }}
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+
+                            <div style={{ overflowX: 'auto', maxHeight: '500px', marginBottom: '20px' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                                            {(() => {
+                                                const data = Array.isArray(previewData) ? previewData : (previewData.data || [previewData]);
+                                                const firstItem = data[0];
+                                                if (!firstItem) return <th>No data</th>;
+                                                return Object.keys(firstItem).map(key => (
+                                                    typeof firstItem[key] !== 'object' && (
+                                                        <th key={key} style={{ padding: '12px', textTransform: 'capitalize' }}>
+                                                            {key.replace(/_/g, ' ')}
+                                                        </th>
+                                                    )
+                                                ));
+                                            })()}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(() => {
+                                            const data = Array.isArray(previewData) ? previewData : (previewData.data || [previewData]);
+                                            if (data.length === 0) return <tr><td colSpan={5} style={{ padding: '20px', textAlign: 'center' }}>No hay datos disponibles</td></tr>;
+
+                                            // Get headers again to match order
+                                            const firstItem = data[0];
+                                            const headers = firstItem ? Object.keys(firstItem).filter(k => typeof firstItem[k] !== 'object') : [];
+
+                                            return data.map((row: any, idx: number) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                                    {headers.map(header => (
+                                                        <td key={`${idx}-${header}`} style={{ padding: '12px' }}>
+                                                            {row[header]}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ));
+                                        })()}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button
+                                    onClick={handleConfirmDownload}
+                                    disabled={loading}
+                                    style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', fontWeight: 500 }}
+                                >
+                                    {loading ? 'Descargando...' : 'Descargar PDF'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
