@@ -12,14 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pagos_licencia', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
+            
             $table->id();
-            $table->foreignId('id_licencia')->constrained('licencias_sistema');
+            $table->string('id_licencia', 25);
+            $table->foreign('id_licencia', 'fk_pagos_lic_sis_id')->references('id')->on('licencias_sistema');
             $table->dateTime('fecha_pago');
             $table->enum('metodo_pago', ['efectivo', 'transferencia', 'tarjeta']);
-            $table->string('referencia', 100);
+            $table->string('referencia', 100)->nullable();
+            $table->decimal('monto', 10, 2);
+            $table->string('stripe_session_id')->nullable();
             $table->enum('estado', ['pagado', 'pendiente', 'anulado']);
             $table->dateTime('creado_en');
             $table->timestamps();
+            $table->enum('tipo_pago', ['compra', 'renovacion']);
         });
     }
 

@@ -5,7 +5,7 @@ import PublicDashboardPage from './pages/PublicDashboardPage';
 import MainPageDashborad from './pages/superadmin/MainPageDashborad';
 import LicensePlansPage from './pages/superadmin/LicensePlansPage';
 import InstitutionsPage from './pages/superadmin/InstitutionsPage';
-import InstitutionDetailsPage from './pages/superadmin/InstitutionDetailsPage';
+
 import ReportsPage from './pages/superadmin/ReportsPage';
 import SuperAdmin from './pages/superadmin/SuperAdmin';
 import RegisterEntity from './pages/user/RegisterEntity';
@@ -17,6 +17,8 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import ForgotPassword from './components/auth/ForgotPassword';
 import VerifyCode from './components/auth/VerifyCode';
 import ResetPassword from './components/auth/ResetPassword';
+import PaymentSuccess from './pages/user/normaladmin/PaymentSuccess';
+import PaymentCancel from './pages/user/normaladmin/PaymentCancel';
 
 function App() {
   return (
@@ -35,6 +37,8 @@ function App() {
         <Route path="/register-admin" element={<RegisterAdmin />} />
         <Route path="/dashboard" element={<NormalAdminDashboard />} />
         <Route path="/license-payment" element={<LicensePayment />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
 
         {/* Super Admin Routes */}
         <Route path="/superadmin/login" element={<LoginSuperAdmin />} />
@@ -45,7 +49,7 @@ function App() {
           <Route path="/superadmin/admins" element={<SuperAdmin />} />
           <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
           <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
-          <Route path="/superadmin/institutions/:id" element={<InstitutionDetailsPage />} />
+
           <Route path="/superadmin/reports" element={<ReportsPage />} />
         </Route>
 

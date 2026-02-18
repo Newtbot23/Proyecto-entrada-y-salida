@@ -6,13 +6,14 @@ import Header from '../../components/layout/Header';
 import { EditIcon, TrashIcon, ArrowLeftIcon } from '../../components/common/Icons';
 
 const InstitutionDetailsPage: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { nit } = useParams<{ nit: string }>();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [institution, setInstitution] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [adminName, setAdminName] = useState('Super Admin');
 
     useEffect(() => {
+        console.log('InstitutionDetailsPage mounted with nit parameter:', nit);
         const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
             try {
@@ -22,16 +23,27 @@ const InstitutionDetailsPage: React.FC = () => {
                 console.error('Error parsing admin user:', e);
             }
         }
-        fetchInstitutionDetails();
-    }, [id]);
+
+        if (nit && nit !== 'undefined') {
+            fetchInstitutionDetails();
+        } else {
+            setLoading(false);
+            console.warn('NIT is undefined or invalid string "undefined"');
+        }
+    }, [nit]);
 
     const fetchInstitutionDetails = async () => {
-        if (!id) return;
+        if (!nit || nit === 'undefined') {
+            console.error('Cannot fetch institution details: NIT is undefined');
+            return;
+        }
+
         try {
             setLoading(true);
             const token = sessionStorage.getItem('adminToken');
-            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/entidades/${id}`;
+            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/entidades/${nit}`;
 
+            console.log(`Fetching institution details from: ${API_URL}`);
             const response = await fetch(API_URL, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -39,11 +51,15 @@ const InstitutionDetailsPage: React.FC = () => {
                 }
             });
             const data = await response.json();
+            console.log('Institution details API response:', data);
             if (data.success) {
                 setInstitution(data.data);
+            } else {
+                console.error('API error fetching institution:', data.message);
+                setInstitution(null);
             }
         } catch (error) {
-            console.error('Failed to fetch institution details:', error);
+            console.error('Failed to fetch institution details (exception):', error);
         } finally {
             setLoading(false);
         }
@@ -107,8 +123,12 @@ const InstitutionDetailsPage: React.FC = () => {
                             {institution.licencia ? (
                                 <>
                                     <div className={styles.infoRow}>
+                                        <label>Plan:</label>
+                                        <span>{institution.licencia.plan?.nombre_plan || 'N/A'}</span>
+                                    </div>
+                                    <div className={styles.infoRow}>
                                         <label>Current Status:</label>
-                                        <span className={`${styles.statusBadge} ${styles[institution.licencia.estado]}`}>
+                                        <span className={`${styles.statusBadge} ${styles[institution.licencia.estado] || styles.inactive}`}>
                                             {institution.licencia.estado}
                                         </span>
                                     </div>

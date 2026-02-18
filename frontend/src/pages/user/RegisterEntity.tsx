@@ -57,7 +57,7 @@ const RegisterEntity: React.FC = () => {
                     navigate('/register-admin', {
                         state: {
                             planId,
-                            entidadId: response.data.id,
+                            entidadId: response.data.id || response.data.entidad.nit,
                             entidadNombre: formData.nombre_entidad
                         }
                     });
