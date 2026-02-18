@@ -56,22 +56,47 @@ const RegisterAdmin: React.FC = () => {
         fetchTiposDoc();
     }, [planId, entidadId, navigate]);
 
+    const REGEX = {
+        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        DOC_MAX_LENGTH: 20
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        if (fieldErrors[name]) {
-            setFieldErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
+
+        // Validate Regex
+        if ((name === 'primer_nombre' || name === 'segundo_nombre' || name === 'primer_apellido' || name === 'segundo_apellido') && value && !REGEX.NAME.test(value)) {
+            setFieldErrors(prev => ({ ...prev, [name]: ['Only letters and spaces allowed'] }));
+        } else if (name === 'doc' && value.length > REGEX.DOC_MAX_LENGTH) {
+            setFieldErrors(prev => ({ ...prev, doc: ['Document number too long'] }));
+        } else {
+            // Clear error
+            if (fieldErrors[name]) {
+                setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[name];
+                    return newErrors;
+                });
+            }
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Final Client-side Validation
+        const errors: Record<string, string[]> = {};
         if (formData.contrasena !== formData.confirm_contrasena) {
             setError('Passwords do not match');
+            return;
+        }
+
+        if (!REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = ['Only letters and spaces allowed'];
+        if (!REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = ['Only letters and spaces allowed'];
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             return;
         }
 
@@ -107,9 +132,13 @@ const RegisterAdmin: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Final registration error:', err);
-            setError(err.message || 'Error occurred during registration');
-            if (err.errors) {
+
+            // Handle ApiError from api.ts
+            if (err.status === 422 && err.errors) {
                 setFieldErrors(err.errors);
+                setError('Please correct the highlighted errors.');
+            } else {
+                setError(err.message || 'Error occurred during registration');
             }
         } finally {
             setLoading(false);

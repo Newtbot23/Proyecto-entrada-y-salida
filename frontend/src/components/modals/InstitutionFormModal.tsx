@@ -94,7 +94,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                 nit: ''
             });
         }
-        
+
         setErrors({});
         setServerError(null);
         setLoadingState('idle');
@@ -103,6 +103,13 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     // ------------------------------------------------------------------------
     // VALIDACIÓN
     // ------------------------------------------------------------------------
+
+    const REGEX = {
+        PHONE: /^[0-9]{7,15}$/,
+        NIT: /^[0-9]{6,15}$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+    };
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof InstitutionFormData, string>> = {};
@@ -115,7 +122,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
         if (!formData.correo.trim()) {
             newErrors.correo = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+        } else if (!REGEX.EMAIL.test(formData.correo)) {
             newErrors.correo = 'Invalid email format';
         } else if (formData.correo.length > 200) {
             newErrors.correo = 'Email must not exceed 200 characters';
@@ -129,20 +136,22 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
         if (!formData.nombre_titular.trim()) {
             newErrors.nombre_titular = 'Legal representative name is required';
+        } else if (!REGEX.NAME.test(formData.nombre_titular)) {
+            newErrors.nombre_titular = 'Only letters and spaces allowed';
         } else if (formData.nombre_titular.length > 100) {
-            newErrors.nombre_titular = 'Legal representative name must not exceed 100 characters';
+            newErrors.nombre_titular = 'Name must not exceed 100 characters';
         }
 
         if (!formData.telefono.trim()) {
             newErrors.telefono = 'Phone is required';
-        } else if (formData.telefono.length > 15) {
-            newErrors.telefono = 'Phone must not exceed 15 characters';
+        } else if (!REGEX.PHONE.test(formData.telefono)) {
+            newErrors.telefono = 'Phone must be 7-15 digits';
         }
 
         if (!formData.nit.trim()) {
             newErrors.nit = 'NIT is required';
-        } else if (formData.nit.length > 15) {
-            newErrors.nit = 'NIT must not exceed 15 characters';
+        } else if (!REGEX.NIT.test(formData.nit)) {
+            newErrors.nit = 'NIT must be 6-15 digits';
         }
 
         setErrors(newErrors);
@@ -165,29 +174,42 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
             setLoadingState('saving');
             await onSave(formData);
             setLoadingState('success');
-            
+
             setTimeout(() => {
                 onClose();
             }, 500);
 
-        } catch (error) {
+        } catch (error: any) {
             setLoadingState('error');
-            
-            if (error instanceof Error) {
-                setServerError(error.message);
+
+            // Si es un error de validación de API (ApiError)
+            if (error.status === 422 && error.errors) {
+                // Mapear errores del backend a los campos del formulario
+                const backendErrors: Partial<Record<keyof InstitutionFormData, string>> = {};
+
+                // Mapear cada campo si existe en la respuesta
+                if (error.errors.nombre_entidad) backendErrors.nombre_entidad = error.errors.nombre_entidad[0];
+                if (error.errors.correo) backendErrors.correo = error.errors.correo[0];
+                if (error.errors.direccion) backendErrors.direccion = error.errors.direccion[0];
+                if (error.errors.nombre_titular) backendErrors.nombre_titular = error.errors.nombre_titular[0];
+                if (error.errors.telefono) backendErrors.telefono = error.errors.telefono[0];
+                if (error.errors.nit) backendErrors.nit = error.errors.nit[0];
+
+                setErrors(backendErrors);
+                setServerError('Please correct the errors in the form.');
             } else {
-                setServerError('An unexpected error occurred. Please try again.');
+                setServerError(error.message || 'An unexpected error occurred. Please try again.');
             }
         }
     };
 
     const handleChange = (field: keyof InstitutionFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-        
+
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
         }
-        
+
         if (serverError) {
             setServerError(null);
         }
@@ -217,7 +239,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={getTitle()}>
             <form onSubmit={handleSubmit} className={styles.form}>
-                
+
                 {serverError && (
                     <div className={styles.serverError}>
                         <strong>Error:</strong> {serverError}
@@ -336,9 +358,8 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                     <input
                         id="nit"
                         type="text"
-                        className={`${styles.input} ${errors.nit ? styles.inputError : ''} ${
-                            mode === 'edit' ? styles.readOnly : ''
-                        }`}
+                        className={`${styles.input} ${errors.nit ? styles.inputError : ''} ${mode === 'edit' ? styles.readOnly : ''
+                            }`}
                         value={formData.nit}
                         onChange={(e) => mode === 'create' && handleChange('nit', e.target.value)}
                         placeholder="123456789-0"
@@ -360,9 +381,8 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                     </button>
                     <button
                         type="submit"
-                        className={`${styles.saveButton} ${
-                            loadingState === 'success' ? styles.success : ''
-                        } ${loadingState === 'error' ? styles.error : ''}`}
+                        className={`${styles.saveButton} ${loadingState === 'success' ? styles.success : ''
+                            } ${loadingState === 'error' ? styles.error : ''}`}
                         disabled={isSaveDisabled}
                     >
                         {getSaveButtonText()}

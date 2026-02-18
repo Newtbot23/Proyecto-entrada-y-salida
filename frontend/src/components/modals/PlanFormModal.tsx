@@ -57,6 +57,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
         if (!(formData.name || '').trim()) {
             newErrors.name = 'Plan name is required';
+        } else if (formData.name.length > 50) {
+            newErrors.name = 'Plan name must not exceed 50 characters';
         }
 
         if (formData.price <= 0) {
@@ -69,6 +71,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
         if (!(formData.description || '').trim()) {
             newErrors.description = 'Description is required';
+        } else if (formData.description.length > 255) {
+            newErrors.description = 'Description must not exceed 255 characters';
         }
 
         if (!(formData.caracteristicas || '').trim()) {
