@@ -182,6 +182,33 @@ class ApiClient {
     }
 
     /**
+     * Petición GET - Obtener archivo (Blob)
+     * @param endpoint - Ruta del endpoint
+     * @param config - Configuración adicional de la petición
+     * @returns Blob del archivo
+     */
+    async getBlob(endpoint: string, config?: RequestConfig): Promise<Blob> {
+        try {
+            const response = await fetch(this.buildUrl(endpoint), {
+                method: 'GET',
+                headers: this.getHeaders(config?.headers),
+                signal: config?.signal,
+            });
+
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
+            }
+
+            return await response.blob();
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error(`GET Blob ${endpoint} failed:`, error.message);
+            }
+            throw error;
+        }
+    }
+
+    /**
      * Petición POST - Crear datos
      * @param endpoint - Ruta del endpoint
      * @param body - Datos a enviar

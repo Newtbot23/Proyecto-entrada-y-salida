@@ -14,6 +14,18 @@ class LicenciasSistema extends Model
         'estado',
         'fecha_ultima_validacion',
         'id_plan_lic',
+        'id_entidad',
+        'referencia_pago'
+    ];
+
+    public function plan()
+    {
+        return $this->belongsTo(PlanesLicencia::class, 'id_plan_lic');
+    }
+
+    public function entidad()
+    {
+        return $this->belongsTo(Entidades::class, 'id_entidad', 'id');
         'nit_entidad',
         'referencia_pago',
     ];

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\LicenciasController;
 use App\Http\Controllers\Api\AdminsAuthController;
 use App\Http\Controllers\Api\AdminsController;
 use App\Http\Controllers\Api\PasswordRecoveryApiController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StripeCheckoutController;
 
 
@@ -81,3 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Common Data
 Route::get('/tipo-doc', [TipoDocController::class, 'index']);
+
+// Reports
+Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
+Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
+Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
