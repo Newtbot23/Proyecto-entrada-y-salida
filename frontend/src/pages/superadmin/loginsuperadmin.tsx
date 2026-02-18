@@ -17,6 +17,12 @@ const LoginSuperAdmin: React.FC = () => {
             return;
         }
 
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!EMAIL_REGEX.test(email)) {
+            setError('Invalid email format');
+            return;
+        }
+
         setLoading(true);
 
         try {

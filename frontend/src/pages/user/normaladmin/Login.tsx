@@ -19,6 +19,14 @@ const NormalAdminLogin: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validation
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!EMAIL_REGEX.test(formData.correo)) {
+            setError('Invalid email format');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 

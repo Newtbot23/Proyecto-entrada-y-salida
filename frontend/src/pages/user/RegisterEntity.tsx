@@ -28,21 +28,59 @@ const RegisterEntity: React.FC = () => {
         }
     }, [planId, navigate]);
 
+    const REGEX = {
+        PHONE: /^[0-9]{7,15}$/,
+        NIT: /^[0-9]{6,15}$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,  // Letters and spaces only
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear error for this field when user types
-        if (fieldErrors[name]) {
-            setFieldErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
+
+        // Validate Validation
+        if (name === 'telefono' && !REGEX.PHONE.test(value)) {
+            setFieldErrors(prev => ({ ...prev, telefono: ['Phone must be 7-15 digits'] }));
+        } else if (name === 'nit' && !REGEX.NIT.test(value)) {
+            setFieldErrors(prev => ({ ...prev, nit: ['NIT must be 6-15 digits'] }));
+        } else if (name === 'correo' && !REGEX.EMAIL.test(value)) {
+            setFieldErrors(prev => ({ ...prev, correo: ['Invalid email format'] }));
+        } else if (name === 'nombre_titular' && !REGEX.NAME.test(value)) {
+            setFieldErrors(prev => ({ ...prev, nombre_titular: ['Only letters and spaces allowed'] }));
+        } else if (name === 'nombre_entidad' && value.length > 200) {
+            setFieldErrors(prev => ({ ...prev, nombre_entidad: ['Name too long (max 200)'] }));
+        } else if (name === 'direccion' && value.length > 200) {
+            setFieldErrors(prev => ({ ...prev, direccion: ['Address too long (max 200)'] }));
+        } else {
+            // Clear error for this field
+            if (fieldErrors[name]) {
+                setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[name];
+                    return newErrors;
+                });
+            }
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Final regex check before submit
+        const errors: Record<string, string[]> = {};
+        if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = ['Phone must be 7-15 digits'];
+        if (!REGEX.NIT.test(formData.nit)) errors.nit = ['NIT must be 6-15 digits'];
+        if (!REGEX.EMAIL.test(formData.correo)) errors.correo = ['Invalid email format'];
+        if (!REGEX.NAME.test(formData.nombre_titular)) errors.nombre_titular = ['Only letters and spaces allowed'];
+        if (!formData.nombre_entidad.trim()) errors.nombre_entidad = ['Entity name is required'];
+        if (!formData.direccion.trim()) errors.direccion = ['Address is required'];
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setFieldErrors({});
@@ -65,9 +103,12 @@ const RegisterEntity: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Registration error:', err);
-            setError(err.message || 'Error creating entity. Please check the form.');
-            if (err.errors) {
+            // Handle ApiError with structured validation errors
+            if (err.status === 422 && err.errors) {
                 setFieldErrors(err.errors);
+                setError('Please correct the highlighted errors.');
+            } else {
+                setError(err.message || 'Error creating entity. Please check the form.');
             }
         } finally {
             setLoading(false);

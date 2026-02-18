@@ -16,6 +16,7 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   /**
    * Maneja el envío del formulario de recuperación de contraseña
@@ -26,6 +27,7 @@ const ForgotPassword = () => {
     // Limpiar mensajes previos
     setSuccessMessage('');
     setErrorMessage('');
+    setFieldErrors({});
     setLoading(true);
 
     try {
@@ -43,12 +45,12 @@ const ForgotPassword = () => {
         navigate(`/verify-code?email=${encodeURIComponent(email)}`);
       }, 2000);
 
-    } catch (error) {
+    } catch (error: any) {
       // Manejo de errores
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
+      if (error.status === 422 && error.errors) {
+        setFieldErrors(error.errors);
       } else {
-        setErrorMessage('Error al enviar la solicitud. Por favor, intenta nuevamente.');
+        setErrorMessage(error.message || 'Error al enviar la solicitud. Por favor, intenta nuevamente.');
       }
     } finally {
       setLoading(false);
@@ -73,6 +75,11 @@ const ForgotPassword = () => {
             required
             disabled={loading}
           />
+          {fieldErrors.email && (
+            <div style={{ color: 'red', marginTop: '5px' }}>
+              {fieldErrors.email[0]}
+            </div>
+          )}
         </div>
 
         <button type="submit" disabled={loading}>
