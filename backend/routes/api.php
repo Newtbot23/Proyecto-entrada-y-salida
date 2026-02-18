@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\AdminsAuthController;
 use App\Http\Controllers\Api\AdminsController;
 use App\Http\Controllers\Api\PasswordRecoveryApiController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\StripeCheckoutController;
 
 
 Route::get('/user', function (Request $request) {
@@ -70,8 +71,14 @@ Route::post('/licencias', [LicenciasController::class, 'store']);
 // Route::get('/licencias/{id}', [LicenciasController::class, 'show']); // Duplicate removed? No, it was there.
 Route::get('/licencias/{id}', [LicenciasController::class, 'show']);
 Route::put('/licencias/{id}/activate', [LicenciasController::class, 'activate']);
-Route::patch('/licencias-sistema/{id}/referencia', [LicenciasController::class, 'updateReferencia']);
 Route::patch('/licencias-sistema/{id}/estado', [LicenciasController::class, 'updateEstado']);
+Route::get('/licencia-actual', [LicenciasController::class, 'getActualLicense'])->middleware('auth:sanctum');
+
+// Stripe Payment
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/stripe/checkout-session', [StripeCheckoutController::class, 'createCheckoutSession']);
+    Route::post('/stripe/payment-success', [StripeCheckoutController::class, 'confirmPayment']);
+});
 
 // Common Data
 Route::get('/tipo-doc', [TipoDocController::class, 'index']);

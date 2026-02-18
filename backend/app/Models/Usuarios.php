@@ -27,7 +27,7 @@ class Usuarios extends Authenticatable
         'contrasena',
         'estado',
         'id_rol',
-        'id_licencia_sistema'
+        'nit_entidad'
     ];
 
     protected $casts = [
@@ -63,8 +63,13 @@ class Usuarios extends Authenticatable
         return $this->belongsTo(Roles::class, 'id_rol', 'id');
     }
 
+    public function entidad()
+    {
+        return $this->belongsTo(Entidades::class, 'nit_entidad', 'nit');
+    }
+
     public function licenciaSistema()
     {
-        return $this->belongsTo(LicenciasSistema::class, 'id_licencia_sistema', 'id');
+        return $this->hasOne(LicenciasSistema::class, 'nit_entidad', 'nit_entidad');
     }
 }

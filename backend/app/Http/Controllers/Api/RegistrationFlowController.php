@@ -54,7 +54,7 @@ class RegistrationFlowController extends Controller
                 'estado' => 'pendiente',
                 'fecha_ultima_validacion' => $fechaInicio,
                 'id_plan_lic' => $request->id_plan_lic,
-                'id_entidad' => $request->id_entidad,
+                'nit_entidad' => $request->id_entidad, // Fixed: Use nit_entidad column
             ]);
 
             // 2. Create Admin User linked to License

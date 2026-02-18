@@ -46,7 +46,7 @@ class EntidadController extends Controller
                 'message' => 'Entity created successfully',
                 'data' => [
                     'entidad' => $entidad,
-                    'id' => $entidad->id
+                    'id' => $entidad->nit // Explicitly return NIT as ID for frontend compatibility
                 ]
             ], 201);
 

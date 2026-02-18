@@ -108,14 +108,27 @@
     text-transform: capitalize;
 }
 
-.statusBadge.active {
+.statusBadge.active,
+.statusBadge.activo {
     background-color: rgba(34, 197, 94, 0.1);
     color: #22c55e;
 }
 
-.statusBadge.inactive {
+.statusBadge.inactive,
+.statusBadge.inactivo {
     background-color: rgba(156, 163, 175, 0.1);
     color: #9ca3af;
+}
+
+.statusBadge.expirado,
+.statusBadge.vencida {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.statusBadge.pendiente {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
 }
 
 .detailsGrid {

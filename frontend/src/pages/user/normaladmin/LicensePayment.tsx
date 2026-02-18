@@ -4,71 +4,73 @@ import styles from '../Registration.module.css';
 
 const LicensePayment: React.FC = () => {
     const navigate = useNavigate();
-    const [userData, setUserData] = useState<any>(null);
-    const [referencia, setReferencia] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [licenseStatus, setLicenseStatus] = useState<string>('');
+    const [licenseId, setLicenseId] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
-        const storedUser = sessionStorage.getItem('userData');
-        if (!storedUser) {
-            navigate('/login');
-            return;
-        }
-        const user = JSON.parse(storedUser);
-        if (user.license_status !== 'pendiente') {
-            navigate('/dashboard');
-            return;
-        }
-        setUserData(user);
+        const fetchLicenseStatus = async () => {
+            const storedUser = sessionStorage.getItem('userData');
+            const token = sessionStorage.getItem('userToken');
+
+            if (!storedUser || !token) {
+                navigate('/login');
+                return;
+            }
+
+            try {
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                // Fetch latest license status using the new NIT-based endpoint
+                const response = await fetch(`${API_URL}/licencia-actual`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Error al obtener el estado de la licencia');
+
+                const status = result.data.estado;
+                const id = result.data.id;
+
+                // Map logical states if necessary (activo, inactivo, expirado, pendiente)
+                // User mentioned: pendiente, vencida, expirada
+                setLicenseStatus(status);
+                setLicenseId(id);
+
+                // If license is active, redirect to dashboard
+                if (status === 'activo') {
+                    navigate('/dashboard');
+                }
+
+            } catch (err: any) {
+                console.error('Error fetching license status:', err);
+                setError('No se pudo cargar el estado de tu licencia.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLicenseStatus();
     }, [navigate]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!referencia.trim()) {
-            setError('Please enter your payment reference');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-            const response = await fetch(`${API_URL}/licencias-sistema/${userData.license_id}/referencia`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('userToken')}`
-                },
-                body: JSON.stringify({ referencia_pago: referencia }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw result;
-
-            setSubmitted(true);
-
-        } catch (err: any) {
-            setError(err.message || 'Failed to submit payment reference');
-        } finally {
-            setLoading(false);
-        }
+    const formatStatus = (status: string) => {
+        const states: Record<string, string> = {
+            'pendiente': 'Pendiente',
+            'expirado': 'Expirada/Vencida',
+            'inactivo': 'Inactiva',
+            'activo': 'Activa'
+        };
+        return states[status] || status;
     };
 
-    if (submitted) {
+    if (loading) {
         return (
             <div className={styles.container}>
                 <div className={styles.card}>
-                    <h2 className={styles.title} style={{ color: '#008f39' }}>Payment Submitted!</h2>
-                    <p className={styles.subtitle} style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
-                        Espera un momento o ponte en contacto con nuestro representante al <strong>3242594286</strong>
-                    </p>
-                    <button onClick={() => navigate('/login')} className={styles.button}>
-                        Back to Login
-                    </button>
+                    <p className={styles.subtitle}>Cargando información de licencia...</p>
                 </div>
             </div>
         );
@@ -77,32 +79,76 @@ const LicensePayment: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h2 className={styles.title}>License Payment</h2>
-                <p className={styles.subtitle} style={{ marginBottom: '1.5rem' }}>
-                    Aun no has pagado tu licencia, por favor paga por los medios a continuacion
-                </p>
+                <h2 className={styles.title}>Estado de Licencia</h2>
 
-                <div style={{ backgroundColor: '#f0fdf4', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
-                    <p style={{ margin: 0, color: '#166534', fontWeight: 'bold' }}>Nequi Account:</p>
-                    <p style={{ fontSize: '1.5rem', margin: '0.5rem 0', color: '#008f39', fontWeight: 'bold' }}>3242594286</p>
+                <div style={{
+                    backgroundColor: '#fffbeb',
+                    border: '1px solid #fcd34d',
+                    padding: '1.5rem',
+                    borderRadius: '12px',
+                    marginBottom: '2rem',
+                    textAlign: 'center'
+                }}>
+                    <p style={{ margin: 0, color: '#92400e', fontSize: '1.1rem' }}>
+                        Tu licencia de sistema actualmente se encuentra en estado:
+                    </p>
+                    <p style={{
+                        fontSize: '1.5rem',
+                        margin: '1rem 0',
+                        color: licenseStatus === 'pendiente' ? '#b45309' : '#b91c1c',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase'
+                    }}>
+                        {formatStatus(licenseStatus)}
+                    </p>
                 </div>
 
                 {error && <div className={styles.error}>{error}</div>}
 
-                <form onSubmit={handleSubmit} className={styles.form}>
-                    <div className={styles.formGroup}>
-                        <label>Payment Reference Number</label>
-                        <input
-                            type="text"
-                            placeholder="Enter the reference from your Nequi transaction"
-                            value={referencia}
-                            onChange={(e) => setReferencia(e.target.value)}
-                            required
-                        />
-                    </div>
+                <div className={styles.form}>
+                    <button
+                        type="button"
+                        className={styles.button}
+                        onClick={async () => {
+                            if (!licenseId) {
+                                setError('No se encontró el ID de la licencia.');
+                                return;
+                            }
 
-                    <button type="submit" className={styles.button} disabled={loading}>
-                        {loading ? 'Submitting...' : 'Submit Reference'}
+                            try {
+                                setLoading(true);
+                                const token = sessionStorage.getItem('userToken');
+                                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+                                const response = await fetch(`${API_URL}/stripe/checkout-session`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({
+                                        licencia_id: licenseId,
+                                        tipo_pago: 'compra' // Defaulting to 'compra' as per requirement, or logic to determine
+                                    })
+                                });
+
+                                const data = await response.json();
+
+                                if (data.url) {
+                                    window.location.href = data.url;
+                                } else {
+                                    console.error('Stripe session creation failed:', data);
+                                    setError('No se pudo iniciar el pago. ' + (data.error || 'Intente nuevamente.'));
+                                    setLoading(false);
+                                }
+                            } catch (e) {
+                                console.error('Error connecting to payment gateway:', e);
+                                setError('Error de conexión con la pasarela de pagos.');
+                                setLoading(false);
+                            }
+                        }}
+                    >
+                        Pagar con Stripe
                     </button>
 
                     <button
@@ -110,9 +156,9 @@ const LicensePayment: React.FC = () => {
                         onClick={() => navigate('/login')}
                         style={{ background: 'transparent', border: 'none', color: '#666', marginTop: '1rem', cursor: 'pointer' }}
                     >
-                        Back to Login
+                        Volver al Login
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     );

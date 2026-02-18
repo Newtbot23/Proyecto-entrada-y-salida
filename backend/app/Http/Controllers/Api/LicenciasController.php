@@ -255,4 +255,46 @@ class LicenciasController extends Controller
             ], 500);
         }
     }
+    /**
+     * Get the license associated with the authenticated user's entity.
+     * GET /api/licencia-actual
+     */
+    public function getActualLicense(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user || !$user->nit_entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado o no vinculado a una entidad'
+                ], 401);
+            }
+
+            // Find the license associated with the entity's NIT
+            $licencia = LicenciasSistema::with(['entidad', 'plan'])
+                ->where('nit_entidad', $user->nit_entidad)
+                ->first();
+
+            if (!$licencia) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una licencia para esta entidad'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $licencia
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error en getActualLicense: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la licencia actual',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

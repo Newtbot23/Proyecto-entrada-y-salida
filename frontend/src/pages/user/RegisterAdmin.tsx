@@ -32,7 +32,7 @@ const RegisterAdmin: React.FC = () => {
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
     useEffect(() => {
-        if (!planId || !entidadId) {
+        if (!entidadId) {
             navigate('/plans');
             return;
         }

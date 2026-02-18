@@ -1,6 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../config/api';
+import styles from '../../pages/user/Registration.module.css';
 
 /**
  * Componente de recuperación de contraseña (Forgot Password)
@@ -58,48 +60,57 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div>
-      <h1>Recuperar Contraseña</h1>
-      <p>Ingresa tu correo electrónico y te enviaremos un código de 6 dígitos para restablecer tu contraseña.</p>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h2 className={styles.title}>Recuperar Contraseña</h2>
+        <p className={styles.subtitle}>
+          Ingresa tu correo electrónico y te enviaremos un código de 6 dígitos para restablecer tu contraseña.
+        </p>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Correo Electrónico</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu-email@ejemplo.com"
-            required
-            disabled={loading}
-          />
-          {fieldErrors.email && (
-            <div style={{ color: 'red', marginTop: '5px' }}>
-              {fieldErrors.email[0]}
-            </div>
-          )}
-        </div>
+        {/* Mensajes de éxito */}
+        {successMessage && (
+          <div className={styles.success}>
+            {successMessage}
+          </div>
+        )}
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Enviando...' : 'Enviar Código de Recuperación'}
-        </button>
-      </form>
+        {/* Mensajes de error */}
+        {errorMessage && (
+          <div className={styles.error}>
+            {errorMessage}
+          </div>
+        )}
 
-      {/* Mensajes de éxito */}
-      {successMessage && (
-        <div>
-          <p>{successMessage}</p>
-        </div>
-      )}
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.formGroup}>
+            <label htmlFor="email">Correo Electrónico</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu-email@ejemplo.com"
+              required
+              disabled={loading}
+            />
+          </div>
 
-      {/* Mensajes de error */}
-      {errorMessage && (
-        <div>
-          <p>{errorMessage}</p>
-        </div>
-      )}
+          <button type="submit" className={styles.button} disabled={loading}>
+            {loading ? 'Enviando...' : 'Enviar Código de Recuperación'}
+          </button>
+
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <a
+              href="/login"
+              style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
+              onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+            >
+              Volver al Inicio de Sesión
+            </a>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

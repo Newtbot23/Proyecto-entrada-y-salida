@@ -21,16 +21,6 @@ class NormalAdminAuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        // Validation is automatically handled by the LoginRequest
-
-        if (false) { // Validator is now handled by FormRequest
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             // Find user by email
             $user = Usuarios::where('correo', $request->correo)->first();
@@ -39,51 +29,47 @@ class NormalAdminAuthController extends Controller
             if (!$user || !Hash::check($request->contrasena, $user->contrasena)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Credenciales inválidas'
                 ], 401);
             }
 
             // Verify if the user is an Admin (id_rol = 1)
+            // Roll map: 1 could be Admin based on user's setup
             if ($user->id_rol != 1) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Access denied. Only administrators can login here.'
+                    'message' => 'Acceso denegado. Solo administradores pueden iniciar sesión aquí.'
                 ], 403);
             }
 
-            // Load license relationship
+            // Load license relationship (now correctly fetching via nit_entidad)
             $user->load('licenciaSistema');
             $licencia = $user->licenciaSistema;
 
             if (!$licencia) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No license associated with this account. Contact support.'
+                    'message' => 'No hay una licencia asociada a la entidad de este usuario. Contacte a soporte.'
                 ], 403);
             }
 
             $currentDate = now();
             $licenseExpired = false;
 
-            // 1. Check if expired
+            // 1. Check if expired (expirado)
             if ($licencia->fecha_vencimiento < $currentDate) {
-                $licencia->update(['estado' => 'expirado']);
+                if ($licencia->estado !== 'expirado') {
+                    $licencia->update(['estado' => 'expirado']);
+                }
                 $licenseExpired = true;
             }
 
-            // 2. Validate status
+            // 2. Validate status (activo, inactivo, expirado, pendiente)
             if ($licencia->estado === 'inactivo') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Your license is inactive. Please contact support.'
+                    'message' => 'Tu licencia está inactiva. Por favor, contacte a soporte.'
                 ], 403);
-            }
-
-            if ($licencia->estado === 'pendiente' && !$licenseExpired) {
-                // If pending, we allow login but frontend should redirect to payment
-                // UNLESS business rule says NO LOGIN.
-                // User requirement: "If estado == 'pendiente': Redirect to payment page"
-                // So we allow login but provide the status.
             }
 
             // Create Sanctum token
@@ -91,12 +77,13 @@ class NormalAdminAuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Login successful',
+                'message' => 'Inicio de sesión exitoso',
                 'data' => [
                     'user' => [
-                        'id' => $user->id,
+                        'id' => $user->doc,
                         'nombre' => $user->primer_nombre . ' ' . $user->primer_apellido,
                         'correo' => $user->correo,
+                        'nit_entidad' => $user->nit_entidad,
                         'license_id' => $licencia->id,
                         'license_status' => $licencia->estado,
                         'license_expired' => $licenseExpired
@@ -108,7 +95,7 @@ class NormalAdminAuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login error',
+                'message' => 'Error al iniciar sesión',
                 'error' => $e->getMessage()
             ], 500);
         }

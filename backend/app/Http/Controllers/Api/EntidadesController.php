@@ -8,6 +8,7 @@ use App\Models\Entidades;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use App\Http\Requests\Api\Entidades\StoreEntidadRequest;
 use App\Http\Requests\Api\Entidades\UpdateEntidadRequest;
 
@@ -21,7 +22,7 @@ class EntidadesController extends Controller
     {
         try {
             $perPage = $request->query('per_page', 10);
-            $entidades = Entidades::paginate($perPage);
+            $entidades = Entidades::with(['licencia', 'licencia.plan'])->paginate($perPage);
             
             return response()->json([
                 'success' => true,
@@ -67,7 +68,7 @@ class EntidadesController extends Controller
 
             $entidad = Entidades::create($validated);
 
-            Log::info('Entidad creada con ID: ' . $entidad->id);
+            Log::info('Entidad creada con NIT: ' . $entidad->nit);
 
             return response()->json([
                 'success' => true,
@@ -99,10 +100,10 @@ class EntidadesController extends Controller
      * Display the specified resource.
      * GET /api/entidades/{id}
      */
-    public function show(string $id)
+    public function show(string $nit)
     {
         try {
-            $entidad = Entidades::find($id);
+            $entidad = Entidades::with(['licencia', 'licencia.plan'])->find($nit);
 
             if (!$entidad) {
                 return response()->json([
@@ -130,10 +131,10 @@ class EntidadesController extends Controller
      * Update the specified resource in storage.
      * PUT/PATCH /api/entidades/{id}
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $nit)
     {
         try {
-            $entidad = Entidades::find($id);
+            $entidad = Entidades::find($nit);
 
             if (!$entidad) {
                 return response()->json([
@@ -142,16 +143,28 @@ class EntidadesController extends Controller
                 ], 404);
             }
 
-            Log::info('Datos recibidos para actualizar entidad ID ' . $id . ':', $request->all());
+            Log::info('Datos recibidos para actualizar entidad NIT ' . $nit . ':', $request->all());
 
             // Validación - el email y nit pueden ser únicos excepto para este registro
             $validated = $request->validate([
                 'nombre_entidad' => 'sometimes|required|string|max:255',
-                'correo' => 'sometimes|required|email|max:255|unique:entidades,correo,' . $id,
+                'correo' => [
+                    'sometimes',
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('entidades', 'correo')->ignore($nit, 'nit')
+                ],
                 'direccion' => 'sometimes|required|string|max:255',
                 'nombre_titular' => 'sometimes|required|string|max:255',
                 'telefono' => 'sometimes|required|string|max:20',
-                'nit' => 'sometimes|required|string|max:50|unique:entidades,nit,' . $id,
+                'nit' => [
+                    'sometimes',
+                    'required',
+                    'string',
+                    'max:50',
+                    Rule::unique('entidades', 'nit')->ignore($nit, 'nit')
+                ],
                 'status' => 'sometimes|string|in:active,inactive',
             ]);
 
@@ -163,7 +176,7 @@ class EntidadesController extends Controller
             // Recargar el modelo para obtener los datos actualizados
             $entidad->refresh();
 
-            Log::info('Entidad actualizada ID: ' . $entidad->id);
+            Log::info('Entidad actualizada NIT: ' . $entidad->nit);
 
             return response()->json([
                 'success' => true,
@@ -195,10 +208,10 @@ class EntidadesController extends Controller
      * Remove the specified resource from storage.
      * DELETE /api/entidades/{id}
      */
-    public function destroy(string $id)
+    public function destroy(string $nit)
     {
         try {
-            $entidad = Entidades::find($id);
+            $entidad = Entidades::find($nit);
 
             if (!$entidad) {
                 return response()->json([
@@ -212,7 +225,7 @@ class EntidadesController extends Controller
 
             $entidad->delete();
 
-            Log::info('Entidad eliminada ID: ' . $id);
+            Log::info('Entidad eliminada NIT: ' . $nit);
 
             return response()->json([
                 'success' => true,

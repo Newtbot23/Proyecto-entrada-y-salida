@@ -1,6 +1,8 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../config/api';
+import styles from '../../pages/user/Registration.module.css';
 
 /**
  * Componente de restablecimiento de contraseña (Reset Password)
@@ -82,83 +84,94 @@ const ResetPassword = () => {
     };
 
     return (
-        <div>
-            <h1>Restablecer Contraseña</h1>
-            <p>Ingresa tu nueva contraseña para restablecer tu cuenta.</p>
+        <div className={styles.container}>
+            <div className={styles.card}>
+                <h2 className={styles.title}>Restablecer Contraseña</h2>
+                <p className={styles.subtitle}>
+                    Ingresa tu nueva contraseña para restablecer tu cuenta.
+                </p>
 
-            <form onSubmit={handleSubmit}>
-                {/* Campos ocultos */}
-                <input type="hidden" name="code" value={code} />
-                <input type="hidden" name="email" value={email} />
+                {/* Mensaje de error general */}
+                {errorMessage && (
+                    <div className={styles.error}>
+                        {errorMessage}
+                    </div>
+                )}
 
-                {/* Campo de email (readonly para referencia visual) */}
-                <div>
-                    <label htmlFor="email">Correo Electrónico</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={email}
-                        readOnly
-                        disabled={loading}
-                    />
-                    {validationErrors.email && <span>{validationErrors.email}</span>}
-                </div>
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    {/* Campos ocultos */}
+                    <input type="hidden" name="code" value={code} />
+                    <input type="hidden" name="email" value={email} />
 
-                {/* Campo de nueva contraseña */}
-                <div>
-                    <label htmlFor="password">Nueva Contraseña</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Ingresa tu nueva contraseña"
-                        required
-                        disabled={loading}
-                        minLength={8}
-                    />
-                    {validationErrors.password && <span>{validationErrors.password}</span>}
-                </div>
+                    {/* Campo de email (readonly para referencia visual) */}
+                    <div className={styles.formGroup}>
+                        <label htmlFor="email">Correo Electrónico</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={email}
+                            readOnly
+                            disabled={loading}
+                            style={{ backgroundColor: '#f9fafb', cursor: 'default' }}
+                        />
+                        {validationErrors.email && <span className={styles.fieldError}>{validationErrors.email}</span>}
+                    </div>
 
-                {/* Campo de confirmar contraseña */}
-                <div>
-                    <label htmlFor="password_confirmation">Confirmar Contraseña</label>
-                    <input
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        value={passwordConfirmation}
-                        onChange={(e) => setPasswordConfirmation(e.target.value)}
-                        placeholder="Confirma tu nueva contraseña"
-                        required
-                        disabled={loading}
-                        minLength={8}
-                    />
-                    {validationErrors.password_confirmation && (
-                        <span>{validationErrors.password_confirmation}</span>
-                    )}
-                </div>
+                    {/* Campo de nueva contraseña */}
+                    <div className={styles.formGroup}>
+                        <label htmlFor="password">Nueva Contraseña</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Mínimo 8 caracteres"
+                            required
+                            disabled={loading}
+                            minLength={8}
+                        />
+                        {validationErrors.password && <span className={styles.fieldError}>{validationErrors.password}</span>}
+                    </div>
 
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
-                </button>
-            </form>
+                    {/* Campo de confirmar contraseña */}
+                    <div className={styles.formGroup}>
+                        <label htmlFor="password_confirmation">Confirmar Contraseña</label>
+                        <input
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            value={passwordConfirmation}
+                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            placeholder="Repite tu contraseña"
+                            required
+                            disabled={loading}
+                            minLength={8}
+                        />
+                        {validationErrors.password_confirmation && (
+                            <span className={styles.fieldError}>{validationErrors.password_confirmation}</span>
+                        )}
+                        {password && passwordConfirmation && password !== passwordConfirmation && (
+                            <span className={styles.fieldError}>Las contraseñas no coinciden.</span>
+                        )}
+                    </div>
 
-            {/* Mensaje de error general */}
-            {errorMessage && (
-                <div>
-                    <p>{errorMessage}</p>
-                </div>
-            )}
+                    <button type="submit" className={styles.button} disabled={loading}>
+                        {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
+                    </button>
 
-            {/* Validación en el cliente (opcional - feedback visual) */}
-            {password && passwordConfirmation && password !== passwordConfirmation && (
-                <div>
-                    <p>Las contraseñas no coinciden.</p>
-                </div>
-            )}
+                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                        <a
+                            href="/login"
+                            style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
+                            onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+                        >
+                            Cancelar y volver al login
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };
