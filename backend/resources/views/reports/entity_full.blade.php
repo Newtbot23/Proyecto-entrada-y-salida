@@ -27,8 +27,10 @@
     @if($entity->licencia)
     <div class="section">
         <h3>Licencia Actual</h3>
-        <p><span class="label">Nombre:</span> {{ $entity->licencia->nombre }}</p>
-        <p><span class="label">Descripción:</span> {{ $entity->licencia->descripcion }}</p>
+        <p><span class="label">ID Licencia:</span> {{ $entity->licencia->id }}</p>
+        <p><span class="label">Estado:</span> {{ $entity->licencia->estado }}</p>
+        <p><span class="label">Fecha Inicio:</span> {{ $entity->licencia->fecha_inicio }}</p>
+        <p><span class="label">Fecha Vencimiento:</span> {{ $entity->licencia->fecha_vencimiento }}</p>
     </div>
     @endif
 
@@ -53,7 +55,7 @@
                     <td>{{ $usuario->primer_nombre }}</td>
                     <td>{{ $usuario->primer_apellido }}</td>
                     <td>{{ $usuario->correo }}</td>
-                    <td>{{ $usuario->rol ? $usuario->rol->nombre : 'N/A' }}</td>
+                    <td>{{ $usuario->rol ? $usuario->rol->rol : 'N/A' }}</td>
                     <td>{{ $usuario->estado }}</td>
                 </tr>
                 @endforeach

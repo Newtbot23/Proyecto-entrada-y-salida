@@ -13,7 +13,7 @@ class ReportController extends Controller
     public function downloadLicenses(Request $request)
     {
         try {
-            $licenses = LicenciasSistema::all();
+            $licenses = LicenciasSistema::with(['plan', 'entidad'])->get();
 
             if ($request->query('format') === 'json') {
                 return response()->json(['data' => $licenses]);
@@ -31,7 +31,7 @@ class ReportController extends Controller
     {
         try {
             // Select specific fields as requested: Name, Representative, Email, etc.
-            $entities = Entidades::select('nit', 'nombre_entidad', 'nombre_titular', 'correo', 'telefono')->get();
+            $entities = Entidades::select('nit', 'nombre_entidad', 'nombre_titular', 'correo', 'telefono', 'direccion')->get();
 
             if ($request->query('format') === 'json') {
                 return response()->json(['data' => $entities]);

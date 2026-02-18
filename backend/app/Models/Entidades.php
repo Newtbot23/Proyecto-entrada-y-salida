@@ -23,11 +23,18 @@ class Entidades extends Model
 
     public function usuarios()
     {
-        return $this->hasMany(Usuarios::class, 'nit_entidad', 'nit');
+        return $this->hasManyThrough(
+            Usuarios::class,
+            LicenciasSistema::class,
+            'id_entidad', // Foreign key on licencias_sistema table
+            'id_licencia_sistema', // Foreign key on usuarios table
+            'id', // Local key on entidades table
+            'id' // Local key on licencias_sistema table
+        );
     }
 
     public function licencia()
     {
-        return $this->hasOne(LicenciasSistema::class, 'id_entidad', 'nit');
+        return $this->hasOne(LicenciasSistema::class, 'id_entidad', 'id');
     }
 }
