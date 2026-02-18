@@ -138,38 +138,38 @@ const SuperAdmin: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Administrator Management" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header title="Gestión de Administradores" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
-                            <h2 className={styles.pageTitle}>System Administrators</h2>
-                            <p className={styles.pageSubtitle}>List and manage SuperAdmin access credentials</p>
+                            <h2 className={styles.pageTitle}>Administradores del Sistema</h2>
+                            <p className={styles.pageSubtitle}>Listar y gestionar credenciales de acceso de SuperAdmin</p>
                         </div>
                         <button className={styles.createButton} onClick={openCreateModal}>
                             <PlusIcon width={20} height={20} />
-                            <span>Add Administrator</span>
+                            <span>Agregar Administrador</span>
                         </button>
                     </div>
 
                     {loading ? (
-                        <div className={styles.loadingContainer}>Loading administrators...</div>
+                        <div className={styles.loadingContainer}>Cargando administradores...</div>
                     ) : (
                         <div className={styles.tableContainer}>
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
                                         <th>Doc</th>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Phone</th>
-                                        <th>Actions</th>
+                                        <th>Nombre</th>
+                                        <th>Correo</th>
+                                        <th>Teléfono</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {admins.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className={styles.emptyState}>No administrators found</td>
+                                            <td colSpan={5} className={styles.emptyState}>No se encontraron administradores</td>
                                         </tr>
                                     ) : (
                                         admins.map(admin => (
@@ -180,10 +180,10 @@ const SuperAdmin: React.FC = () => {
                                                 <td>{admin.telefono}</td>
                                                 <td>
                                                     <div className={styles.actionButtons}>
-                                                        <button className={styles.actionButton} title="Edit Admin" onClick={() => openEditModal(admin)}>
+                                                        <button className={styles.actionButton} title="Editar Admin" onClick={() => openEditModal(admin)}>
                                                             <EditIcon width={18} height={18} />
                                                         </button>
-                                                        <button className={`${styles.actionButton} ${styles.danger}`} title="Delete Admin" onClick={() => openDeleteModal(admin)}>
+                                                        <button className={`${styles.actionButton} ${styles.danger}`} title="Eliminar Admin" onClick={() => openDeleteModal(admin)}>
                                                             <TrashIcon width={18} height={18} />
                                                         </button>
                                                     </div>
@@ -210,9 +210,9 @@ const SuperAdmin: React.FC = () => {
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteAdmin}
-                title="Delete Administrator"
-                message={`Are you sure you want to delete ${selectedAdmin?.nombre}? This action cannot be undone.`}
-                confirmText="Delete Admin"
+                title="Eliminar Administrador"
+                message={`¿Está seguro de que desea eliminar a ${selectedAdmin?.nombre}? Esta acción no se puede deshacer.`}
+                confirmText="Eliminar Admin"
                 variant="danger"
             />
         </div>

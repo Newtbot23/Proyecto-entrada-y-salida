@@ -101,26 +101,26 @@ const LicensePlansPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="License Plans" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header title="Planes de Licencia" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
-                            <h2 className={styles.pageTitle}>License Plans</h2>
-                            <p className={styles.pageSubtitle}>Define subscription tiers and pricing</p>
+                            <h2 className={styles.pageTitle}>Planes de Licencia</h2>
+                            <p className={styles.pageSubtitle}>Definir niveles de suscripción y precios</p>
                         </div>
                         <button className={styles.createButton} onClick={openCreateModal}>
                             <PlusIcon width={20} height={20} />
-                            <span>Create New Plan</span>
+                            <span>Crear Nuevo Plan</span>
                         </button>
                     </div>
 
                     {loading ? (
-                        <div className={styles.loadingContainer}>Loading plans...</div>
+                        <div className={styles.loadingContainer}>Cargando planes...</div>
                     ) : (
                         <div className={styles.plansGrid}>
                             {plans.length === 0 ? (
-                                <p className={styles.emptyState}>No plans found</p>
+                                <p className={styles.emptyState}>No se encontraron planes</p>
                             ) : (
                                 plans.map((plan, index) => (
                                     <div key={plan.id || `plan-${index}`} className={styles.planCard}>
@@ -128,17 +128,17 @@ const LicensePlansPage: React.FC = () => {
                                             <h3>{plan.name}</h3>
                                             <div className={styles.planPrice}>
                                                 <span className={styles.amount}>${plan.price.toLocaleString()}</span>
-                                                <span className={styles.period}>/{plan.billingPeriod === 'yearly' ? 'year' : 'month'}</span>
+                                                <span className={styles.period}>/{plan.billingPeriod === 'yearly' ? 'año' : 'mes'}</span>
                                             </div>
                                         </div>
                                         <div className={styles.planDetails}>
                                             <p>{plan.description}</p>
                                         </div>
                                         <div className={styles.planActions}>
-                                            <button className={styles.iconBtn} title="Edit" onClick={() => openEditModal(plan)}>
+                                            <button className={styles.iconBtn} title="Editar" onClick={() => openEditModal(plan)}>
                                                 <EditIcon width={18} height={18} />
                                             </button>
-                                            <button className={`${styles.iconBtn} ${styles.danger}`} title="Delete" onClick={() => openDeleteModal(plan)}>
+                                            <button className={`${styles.iconBtn} ${styles.danger}`} title="Eliminar" onClick={() => openDeleteModal(plan)}>
                                                 <TrashIcon width={18} height={18} />
                                             </button>
                                         </div>
@@ -162,9 +162,9 @@ const LicensePlansPage: React.FC = () => {
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeletePlan}
-                title="Disable License Plan"
-                message={`Are you sure you want to disable the plan "${selectedPlan?.name}"? This action will prevent new subscriptions.`}
-                confirmText="Disable Plan"
+                title="Deshabilitar Plan de Licencia"
+                message={`¿Está seguro de que desea deshabilitar el plan "${selectedPlan?.name}"? Esta acción evitará nuevas suscripciones.`}
+                confirmText="Deshabilitar Plan"
                 variant="danger"
             />
         </div>

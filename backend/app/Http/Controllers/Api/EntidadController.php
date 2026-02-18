@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Entidades;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+ 
 use App\Http\Requests\Api\Entidad\StoreEntidadRequest;
 
 class EntidadController extends Controller
@@ -22,13 +22,8 @@ class EntidadController extends Controller
     {
         // Validation is automatically handled by the StoreEntidadRequest
 
-        if (false) { // Validator is now handled by FormRequest
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        // Validation is automatically handled by the StoreEntidadRequest
+
 
         try {
             // Create the entity. 

@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-    title = 'Dashboard',
+    title = 'Panel',
     userName = 'Super Admin',
     role = 'Administrador',
     onLogout
@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
                     <span className={styles.userRole}>{role}</span>
                 </div>
                 <button className={styles.logoutBtn} onClick={onLogout}>
-                    Logout
+                    Cerrar Sesión
                 </button>
             </div>
         </header>

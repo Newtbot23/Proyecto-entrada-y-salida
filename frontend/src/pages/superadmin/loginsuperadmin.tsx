@@ -13,13 +13,13 @@ const LoginSuperAdmin: React.FC = () => {
 
         // Basic client-side validation
         if (!email.trim() || !password.trim()) {
-            setError('Please fill in all fields.');
+            setError('Por favor completa todos los campos.');
             return;
         }
 
         const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!EMAIL_REGEX.test(email)) {
-            setError('Invalid email format');
+            setError('Formato de correo inválido');
             return;
         }
 
@@ -39,7 +39,7 @@ const LoginSuperAdmin: React.FC = () => {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.message || 'Login failed. Please check your credentials.');
+                throw new Error(data.message || 'Inicio de sesión fallido. Por favor verifica tus credenciales.');
             }
 
             const data = await response.json();
@@ -54,7 +54,7 @@ const LoginSuperAdmin: React.FC = () => {
 
         } catch (err: any) {
             console.error('Login error:', err);
-            setError(err.message || 'An unexpected error occurred.');
+            setError(err.message || 'Ocurrió un error inesperado.');
         } finally {
             setLoading(false);
         }
@@ -63,20 +63,20 @@ const LoginSuperAdmin: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h1 className={styles.title}>Login</h1>
+                <h1 className={styles.title}>Iniciar Sesión</h1>
 
                 {error && <div className={styles.errorMessage}>{error}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label htmlFor="email" className={styles.label}>
-                            Email
+                            Correo Electrónico
                         </label>
                         <input
                             type="email"
                             id="email"
                             className={styles.input}
-                            placeholder="Enter your email"
+                            placeholder="Ingresa tu correo"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={loading}
@@ -85,13 +85,13 @@ const LoginSuperAdmin: React.FC = () => {
 
                     <div className={styles.formGroup}>
                         <label htmlFor="password" className={styles.label}>
-                            Password
+                            Contraseña
                         </label>
                         <input
                             type="password"
                             id="password"
                             className={styles.input}
-                            placeholder="Enter your password"
+                            placeholder="Ingresa tu contraseña"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             disabled={loading}
@@ -99,7 +99,7 @@ const LoginSuperAdmin: React.FC = () => {
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
+                        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </button>
                 </form>
             </div>

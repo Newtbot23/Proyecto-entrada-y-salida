@@ -56,27 +56,27 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
         const newErrors: Partial<Record<keyof PlanFormData, string>> = {};
 
         if (!(formData.name || '').trim()) {
-            newErrors.name = 'Plan name is required';
+            newErrors.name = 'El nombre del plan es obligatorio';
         } else if (formData.name.length > 50) {
-            newErrors.name = 'Plan name must not exceed 50 characters';
+            newErrors.name = 'El nombre del plan no debe exceder los 50 caracteres';
         }
 
         if (formData.price <= 0) {
-            newErrors.price = 'Price must be greater than 0';
+            newErrors.price = 'El precio debe ser mayor que 0';
         }
 
         if (formData.duration <= 0) {
-            newErrors.duration = 'Duration must be greater than 0';
+            newErrors.duration = 'La duración debe ser mayor que 0';
         }
 
         if (!(formData.description || '').trim()) {
-            newErrors.description = 'Description is required';
+            newErrors.description = 'La descripción es obligatoria';
         } else if (formData.description.length > 255) {
-            newErrors.description = 'Description must not exceed 255 characters';
+            newErrors.description = 'La descripción no debe exceder los 255 caracteres';
         }
 
         if (!(formData.caracteristicas || '').trim()) {
-            newErrors.caracteristicas = 'Features are required';
+            newErrors.caracteristicas = 'Las características son obligatorias';
         }
 
         setErrors(newErrors);
@@ -103,13 +103,13 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
     const getTitle = () => {
         switch (mode) {
             case 'create':
-                return 'Create New License Plan';
+                return 'Crear Nuevo Plan de Licencia';
             case 'edit':
-                return 'Edit License Plan';
+                return 'Editar Plan de Licencia';
             case 'duplicate':
-                return 'Duplicate License Plan';
+                return 'Duplicar Plan de Licencia';
             default:
-                return 'License Plan';
+                return 'Plan de Licencia';
         }
     };
 
@@ -118,7 +118,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGroup}>
                     <label htmlFor="planName" className={styles.label}>
-                        Plan Name <span className={styles.required}>*</span>
+                        Nombre del Plan <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="planName"
@@ -126,7 +126,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                         className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
-                        placeholder="Enter plan name"
+                        placeholder="Ingrese el nombre del plan"
                     />
                     {errors.name && <span className={styles.errorText}>{errors.name}</span>}
                 </div>
@@ -134,7 +134,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                 <div className={styles.formRow}>
                     <div className={styles.formGroup}>
                         <label htmlFor="price" className={styles.label}>
-                            Price ($) <span className={styles.required}>*</span>
+                            Precio ($) <span className={styles.required}>*</span>
                         </label>
                         <input
                             id="price"
@@ -151,7 +151,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
                     <div className={styles.formGroup}>
                         <label htmlFor="billingPeriod" className={styles.label}>
-                            Billing Period <span className={styles.required}>*</span>
+                            Periodo de Facturación <span className={styles.required}>*</span>
                         </label>
                         <select
                             id="billingPeriod"
@@ -159,15 +159,15 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                             value={formData.billingPeriod}
                             onChange={(e) => handleChange('billingPeriod', e.target.value)}
                         >
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
+                            <option value="monthly">Mensual</option>
+                            <option value="yearly">Anual</option>
                         </select>
                     </div>
                 </div>
 
                 <div className={styles.formGroup}>
                     <label htmlFor="duration" className={styles.label}>
-                        Duration (months) <span className={styles.required}>*</span>
+                        Duración (meses) <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="duration"
@@ -183,14 +183,14 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="description" className={styles.label}>
-                        Description <span className={styles.required}>*</span>
+                        Descripción <span className={styles.required}>*</span>
                     </label>
                     <textarea
                         id="description"
                         className={`${styles.textarea} ${errors.description ? styles.inputError : ''}`}
                         value={formData.description}
                         onChange={(e) => handleChange('description', e.target.value)}
-                        placeholder="Enter plan description"
+                        placeholder="Ingrese la descripción del plan"
                         rows={4}
                     />
                     {errors.description && <span className={styles.errorText}>{errors.description}</span>}
@@ -198,26 +198,26 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="caracteristicas" className={styles.label}>
-                        Features (comma separated) <span className={styles.required}>*</span>
+                        Características (separadas por coma) <span className={styles.required}>*</span>
                     </label>
                     <textarea
                         id="caracteristicas"
                         className={`${styles.textarea} ${errors.caracteristicas ? styles.inputError : ''}`}
                         value={formData.caracteristicas}
                         onChange={(e) => handleChange('caracteristicas', e.target.value)}
-                        placeholder="Feature 1, Feature 2, Feature 3"
+                        placeholder="Característica 1, Característica 2, Característica 3"
                         rows={3}
                     />
-                    <p className={styles.helperText}>Separate each feature with a comma (,) to display them as a list.</p>
+                    <p className={styles.helperText}>Separa cada característica con una coma (,) para mostrarlas como una lista.</p>
                     {errors.caracteristicas && <span className={styles.errorText}>{errors.caracteristicas}</span>}
                 </div>
 
                 <div className={styles.actions}>
                     <button type="button" onClick={onClose} className={styles.cancelButton}>
-                        Cancel
+                        Cancelar
                     </button>
                     <button type="submit" className={styles.saveButton}>
-                        {mode === 'create' ? 'Create Plan' : 'Save Changes'}
+                        {mode === 'create' ? 'Crear Plan' : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

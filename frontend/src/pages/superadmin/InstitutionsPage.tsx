@@ -128,40 +128,40 @@ const InstitutionsPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Institutions" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header title="Instituciones" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
                         <div>
-                            <h2 className={styles.pageTitle}>Registered Institutions</h2>
-                            <p className={styles.pageSubtitle}>Manage all entities using the system</p>
+                            <h2 className={styles.pageTitle}>Instituciones Registradas</h2>
+                            <p className={styles.pageSubtitle}>Administra todas las entidades que usan el sistema</p>
                         </div>
                         <button className={styles.createButton} onClick={() => window.location.href = '/register-entity'}>
                             <PlusIcon width={20} height={20} />
-                            <span>Add Institution</span>
+                            <span>Agregar Institución</span>
                         </button>
                     </div>
 
                     {loading ? (
-                        <div className={styles.loadingContainer}>Loading institutions...</div>
+                        <div className={styles.loadingContainer}>Cargando instituciones...</div>
                     ) : (
                         <div className={styles.tableContainer}>
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
                                         <th>NIT</th>
-                                        <th>Name</th>
+                                        <th>Nombre</th>
                                         <th>Plan</th>
-                                        <th>Contact Person</th>
-                                        <th>Phone</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
+                                        <th>Representante</th>
+                                        <th>Teléfono</th>
+                                        <th>Correo</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {institutions.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className={styles.emptyState}>No institutions found</td>
+                                            <td colSpan={7} className={styles.emptyState}>No se encontraron instituciones</td>
                                         </tr>
                                     ) : (
                                         institutions.map((inst, idx) => {
@@ -174,7 +174,7 @@ const InstitutionsPage: React.FC = () => {
                                                     <td>{inst.nombre_entidad}</td>
                                                     <td>
                                                         <span className={styles.planBadge}>
-                                                            {inst.licencia?.plan?.nombre_plan || 'No Plan'}
+                                                            {inst.licencia?.plan?.nombre_plan || 'Sin Plan'}
                                                         </span>
                                                     </td>
                                                     <td>{inst.nombre_titular}</td>
@@ -184,19 +184,19 @@ const InstitutionsPage: React.FC = () => {
                                                         <div className={styles.actionButtons}>
                                                             <button
                                                                 className={styles.actionButton}
-                                                                title="View Details"
+                                                                title="Ver Detalles"
                                                                 onClick={() => handleViewDetails(inst)}
                                                             >
                                                                 <ExternalLinkIcon width={18} height={18} />
                                                             </button>
                                                             <button
                                                                 className={styles.actionButton}
-                                                                title="Edit"
+                                                                title="Editar"
                                                                 onClick={() => handleEditClick(inst)}
                                                             >
                                                                 <EditIcon width={18} height={18} />
                                                             </button>
-                                                            <button className={`${styles.actionButton} ${styles.danger}`} title="Delete">
+                                                            <button className={`${styles.actionButton} ${styles.danger}`} title="Eliminar">
                                                                 <TrashIcon width={18} height={18} />
                                                             </button>
                                                         </div>
@@ -216,77 +216,77 @@ const InstitutionsPage: React.FC = () => {
             <Modal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
-                title="Institution Details"
+                title="Detalles de la Institución"
             >
                 {selectedInstitution && (
                     <div className={styles.detailsModalContent}>
                         <div className={styles.detailsSection}>
-                            <h4 className={styles.sectionTitle}>General Information</h4>
+                            <h4 className={styles.sectionTitle}>Información General</h4>
                             <div className={styles.detailsGrid}>
                                 <div className={styles.detailItem}>
                                     <label>NIT:</label>
                                     <span>{selectedInstitution.nit || selectedInstitution.id}</span>
                                 </div>
                                 <div className={styles.detailItem}>
-                                    <label>Entity Name:</label>
+                                    <label>Nombre de la Entidad:</label>
                                     <span>{selectedInstitution.nombre_entidad}</span>
                                 </div>
                                 <div className={styles.detailItem}>
-                                    <label>Contact Person:</label>
+                                    <label>Representante Legal:</label>
                                     <span>{selectedInstitution.nombre_titular}</span>
                                 </div>
                                 <div className={styles.detailItem}>
-                                    <label>Email:</label>
+                                    <label>Correo:</label>
                                     <span>{selectedInstitution.correo}</span>
                                 </div>
                                 <div className={styles.detailItem}>
-                                    <label>Phone:</label>
+                                    <label>Teléfono:</label>
                                     <span>{selectedInstitution.telefono}</span>
                                 </div>
                                 <div className={styles.detailItem}>
-                                    <label>Address:</label>
+                                    <label>Dirección:</label>
                                     <span>{selectedInstitution.direccion}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className={styles.detailsSection}>
-                            <h4 className={styles.sectionTitle}>License & Plan</h4>
+                            <h4 className={styles.sectionTitle}>Licencia y Plan</h4>
                             {selectedInstitution.licencia ? (
                                 <div className={styles.detailsGrid}>
                                     <div className={styles.detailItem}>
-                                        <label>Current Plan:</label>
+                                        <label>Plan Actual:</label>
                                         <span className={styles.planBadgeHighlight}>{selectedInstitution.licencia.plan?.nombre_plan || 'N/A'}</span>
                                     </div>
                                     <div className={styles.detailItem}>
-                                        <label>License Status:</label>
+                                        <label>Estado de Licencia:</label>
                                         <span className={`${styles.statusBadge} ${styles[selectedInstitution.licencia.estado]}`}>
                                             {selectedInstitution.licencia.estado}
                                         </span>
                                     </div>
                                     <div className={styles.detailItem}>
-                                        <label>Expires on:</label>
+                                        <label>Expira el:</label>
                                         <span>{selectedInstitution.licencia.fecha_vencimiento ? new Date(selectedInstitution.licencia.fecha_vencimiento).toLocaleDateString() : 'N/A'}</span>
                                     </div>
                                     <div className={styles.detailItem}>
-                                        <label>Payment Ref:</label>
-                                        <code className={styles.refCode}>{selectedInstitution.licencia.referencia_pago || 'None'}</code>
+                                        <label>Ref. de Pago:</label>
+                                        <code className={styles.refCode}>{selectedInstitution.licencia.referencia_pago || 'Ninguna'}</code>
                                     </div>
                                 </div>
                             ) : (
-                                <p className={styles.noLicense}>No current license found for this entity.</p>
+                                <p className={styles.noLicense}>No se encontró licencia actual para esta entidad.</p>
                             )}
                         </div>
 
                         <div className={styles.modalActions}>
                             <button className={styles.cancelButton} onClick={() => setIsDetailsModalOpen(false)}>
-                                Close
+                                Cerrar
                             </button>
                             <button className={styles.submitButton} onClick={() => {
                                 setIsDetailsModalOpen(false);
                                 handleEditClick(selectedInstitution);
                             }}>
-                                Edit Entity
+                                Editar Entidad
                             </button>
                         </div>
                     </div>
@@ -297,19 +297,19 @@ const InstitutionsPage: React.FC = () => {
             <Modal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
-                title="Edit Institution"
+                title="Editar Institución"
             >
                 <form className={styles.editForm} onSubmit={handleEditSubmit}>
                     <div className={styles.formGroup}>
-                        <label>NIT (Read only)</label>
+                        <label>NIT (Solo lectura)</label>
                         <input type="text" value={editFormData.nit} readOnly className={styles.readOnlyInput} />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Name (Read only)</label>
+                        <label>Nombre (Solo lectura)</label>
                         <input type="text" value={editFormData.nombre_entidad} readOnly className={styles.readOnlyInput} />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Contact Person</label>
+                        <label>Representante Legal</label>
                         <input
                             type="text"
                             value={editFormData.nombre_titular}
@@ -318,7 +318,7 @@ const InstitutionsPage: React.FC = () => {
                         />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Email</label>
+                        <label>Correo</label>
                         <input
                             type="email"
                             value={editFormData.correo}
@@ -327,7 +327,7 @@ const InstitutionsPage: React.FC = () => {
                         />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Phone</label>
+                        <label>Teléfono</label>
                         <input
                             type="text"
                             value={editFormData.telefono}
@@ -336,7 +336,7 @@ const InstitutionsPage: React.FC = () => {
                         />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Address</label>
+                        <label>Dirección</label>
                         <input
                             type="text"
                             value={editFormData.direccion}
@@ -346,10 +346,10 @@ const InstitutionsPage: React.FC = () => {
                     </div>
                     <div className={styles.modalActions}>
                         <button type="button" className={styles.cancelButton} onClick={() => setIsEditModalOpen(false)}>
-                            Cancel
+                            Cancelar
                         </button>
                         <button type="submit" className={styles.submitButton}>
-                            Save Changes
+                            Guardar Cambios
                         </button>
                     </div>
                 </form>

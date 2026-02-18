@@ -25,18 +25,18 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
     return (
         <div className={styles.tableContainer}>
             <div className={styles.header}>
-                <h2 className={styles.title}>All System Licenses</h2>
+                <h2 className={styles.title}>Todas las Licencias del Sistema</h2>
             </div>
             <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>Institution / Entity</th>
+                            <th>Institución / Entidad</th>
                             <th>Plan</th>
-                            <th>Status</th>
-                            <th>Payment Reference</th>
-                            <th>Expiration Date</th>
-                            <th>Actions</th>
+                            <th>Estado</th>
+                            <th>Referencia de Pago</th>
+                            <th>Fecha de Expiración</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -53,7 +53,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                     {row.referencia_pago ? (
                                         <code className={styles.refCode}>{row.referencia_pago}</code>
                                     ) : (
-                                        <span className={styles.noRef}>None</span>
+                                        <span className={styles.noRef}>Ninguna</span>
                                     )}
                                 </td>
                                 <td>{row.fecha_vencimiento}</td>
@@ -65,17 +65,17 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                                     className={styles.actionBtn}
                                                     style={{ color: '#166534', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
                                                     onClick={() => onUpdateStatus?.(row.id, 'activo')}
-                                                    title="Approve Payment"
+                                                    title="Aprobar Pago"
                                                 >
-                                                    Approve
+                                                    Aprobar
                                                 </button>
                                                 <button
                                                     className={styles.actionBtn}
                                                     style={{ color: '#991b1b', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
                                                     onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
-                                                    title="Reject Payment"
+                                                    title="Rechazar Pago"
                                                 >
-                                                    Reject
+                                                    Rechazar
                                                 </button>
                                             </>
                                         )}
@@ -84,7 +84,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                                 className={styles.actionBtn}
                                                 onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
                                             >
-                                                Suspend
+                                                Suspender
                                             </button>
                                         )}
                                         {row.estado === 'inactivo' && (
@@ -92,17 +92,17 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                                 className={styles.actionBtn}
                                                 onClick={() => onUpdateStatus?.(row.id, 'activo')}
                                             >
-                                                Re-Activate
+                                                Reactivar
                                             </button>
                                         )}
-                                        <button className={styles.actionBtn}>View Details</button>
+                                        <button className={styles.actionBtn}>Ver Detalles</button>
                                     </div>
                                 </td>
                             </tr>
                         ))}
                         {data.length === 0 && (
                             <tr>
-                                <td colSpan={5} className={styles.emptyMessage}>No licenses found</td>
+                                <td colSpan={5} className={styles.emptyMessage}>No se encontraron licencias</td>
                             </tr>
                         )}
                     </tbody>

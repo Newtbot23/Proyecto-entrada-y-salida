@@ -20,7 +20,7 @@ class FinishRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_entidad' => 'required|exists:entidades,id',
+            'id_entidad' => 'required|exists:entidades,nit',
             'id_plan_lic' => 'required|exists:planes_licencia,id',
             
             // Admin User Data

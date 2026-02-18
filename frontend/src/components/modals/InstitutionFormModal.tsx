@@ -115,43 +115,43 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
         const newErrors: Partial<Record<keyof InstitutionFormData, string>> = {};
 
         if (!formData.nombre_entidad.trim()) {
-            newErrors.nombre_entidad = 'Institution name is required';
+            newErrors.nombre_entidad = 'El nombre de la institución es obligatorio';
         } else if (formData.nombre_entidad.length > 200) {
-            newErrors.nombre_entidad = 'Institution name must not exceed 200 characters';
+            newErrors.nombre_entidad = 'El nombre de la institución no debe exceder los 200 caracteres';
         }
 
         if (!formData.correo.trim()) {
-            newErrors.correo = 'Email is required';
+            newErrors.correo = 'El correo es obligatorio';
         } else if (!REGEX.EMAIL.test(formData.correo)) {
-            newErrors.correo = 'Invalid email format';
+            newErrors.correo = 'Formato de correo inválido';
         } else if (formData.correo.length > 200) {
-            newErrors.correo = 'Email must not exceed 200 characters';
+            newErrors.correo = 'El correo no debe exceder los 200 caracteres';
         }
 
         if (!formData.direccion.trim()) {
-            newErrors.direccion = 'Address is required';
+            newErrors.direccion = 'La dirección es obligatoria';
         } else if (formData.direccion.length > 200) {
-            newErrors.direccion = 'Address must not exceed 200 characters';
+            newErrors.direccion = 'La dirección no debe exceder los 200 caracteres';
         }
 
         if (!formData.nombre_titular.trim()) {
-            newErrors.nombre_titular = 'Legal representative name is required';
+            newErrors.nombre_titular = 'El nombre del representante legal es obligatorio';
         } else if (!REGEX.NAME.test(formData.nombre_titular)) {
-            newErrors.nombre_titular = 'Only letters and spaces allowed';
+            newErrors.nombre_titular = 'Solo se permiten letras y espacios';
         } else if (formData.nombre_titular.length > 100) {
-            newErrors.nombre_titular = 'Name must not exceed 100 characters';
+            newErrors.nombre_titular = 'El nombre no debe exceder los 100 caracteres';
         }
 
         if (!formData.telefono.trim()) {
-            newErrors.telefono = 'Phone is required';
+            newErrors.telefono = 'El teléfono es obligatorio';
         } else if (!REGEX.PHONE.test(formData.telefono)) {
-            newErrors.telefono = 'Phone must be 7-15 digits';
+            newErrors.telefono = 'El teléfono debe tener entre 7 y 15 dígitos';
         }
 
         if (!formData.nit.trim()) {
-            newErrors.nit = 'NIT is required';
+            newErrors.nit = 'El NIT es obligatorio';
         } else if (!REGEX.NIT.test(formData.nit)) {
-            newErrors.nit = 'NIT must be 6-15 digits';
+            newErrors.nit = 'El NIT debe tener entre 6 y 15 dígitos';
         }
 
         setErrors(newErrors);
@@ -196,9 +196,9 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                 if (error.errors.nit) backendErrors.nit = error.errors.nit[0];
 
                 setErrors(backendErrors);
-                setServerError('Please correct the errors in the form.');
+                setServerError('Por favor corrija los errores en el formulario.');
             } else {
-                setServerError(error.message || 'An unexpected error occurred. Please try again.');
+                setServerError(error.message || 'Ocurrió un error inesperado. Por favor intente nuevamente.');
             }
         }
     };
@@ -216,7 +216,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     };
 
     const getTitle = () => {
-        return mode === 'create' ? 'Create New Institution' : 'Edit Institution';
+        return mode === 'create' ? 'Crear Nueva Institución' : 'Editar Institución';
     };
 
     const isSaveDisabled = loadingState === 'saving' || loadingState === 'success';
@@ -224,11 +224,11 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     const getSaveButtonText = () => {
         switch (loadingState) {
             case 'saving':
-                return 'Saving...';
+                return 'Guardando...';
             case 'success':
-                return 'Saved!';
+                return '¡Guardado!';
             default:
-                return mode === 'create' ? 'Create Institution' : 'Save Changes';
+                return mode === 'create' ? 'Crear Institución' : 'Guardar Cambios';
         }
     };
 
@@ -261,7 +261,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="nombre_entidad" className={styles.label}>
-                        Institution Name <span className={styles.required}>*</span>
+                        Nombre de la Institución <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="nombre_entidad"
@@ -269,7 +269,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.nombre_entidad ? styles.inputError : ''}`}
                         value={formData.nombre_entidad}
                         onChange={(e) => handleChange('nombre_entidad', e.target.value)}
-                        placeholder="Enter institution name"
+                        placeholder="Ingrese el nombre de la institución"
                         maxLength={200}
                         disabled={isSaveDisabled}
                     />
@@ -280,7 +280,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="correo" className={styles.label}>
-                        Email <span className={styles.required}>*</span>
+                        Correo Electrónico <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="correo"
@@ -297,14 +297,14 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="direccion" className={styles.label}>
-                        Address <span className={styles.required}>*</span>
+                        Dirección <span className={styles.required}>*</span>
                     </label>
                     <textarea
                         id="direccion"
                         className={`${styles.textarea} ${errors.direccion ? styles.inputError : ''}`}
                         value={formData.direccion}
                         onChange={(e) => handleChange('direccion', e.target.value)}
-                        placeholder="Enter institution address"
+                        placeholder="Ingrese la dirección de la institución"
                         rows={3}
                         maxLength={200}
                         disabled={isSaveDisabled}
@@ -314,7 +314,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="nombre_titular" className={styles.label}>
-                        Legal Representative Name <span className={styles.required}>*</span>
+                        Nombre del Representante Legal <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="nombre_titular"
@@ -322,7 +322,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.nombre_titular ? styles.inputError : ''}`}
                         value={formData.nombre_titular}
                         onChange={(e) => handleChange('nombre_titular', e.target.value)}
-                        placeholder="Enter legal representative name"
+                        placeholder="Ingrese el nombre del representante legal"
                         maxLength={100}
                         disabled={isSaveDisabled}
                     />
@@ -333,7 +333,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label htmlFor="telefono" className={styles.label}>
-                        Phone <span className={styles.required}>*</span>
+                        Teléfono <span className={styles.required}>*</span>
                     </label>
                     <input
                         id="telefono"
@@ -352,7 +352,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                     <label htmlFor="nit" className={styles.label}>
                         NIT <span className={styles.required}>*</span>
                         {mode === 'edit' && (
-                            <span className={styles.immutableNote}> (Cannot be changed)</span>
+                            <span className={styles.immutableNote}> (No se puede cambiar)</span>
                         )}
                     </label>
                     <input
@@ -377,7 +377,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={styles.cancelButton}
                         disabled={isSaveDisabled}
                     >
-                        Cancel
+                        Cancelar
                     </button>
                     <button
                         type="submit"

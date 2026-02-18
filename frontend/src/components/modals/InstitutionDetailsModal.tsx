@@ -17,7 +17,7 @@ export const InstitutionDetailsModal: React.FC<InstitutionDetailsModalProps> = (
     if (!institution) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Institution Details">
+        <Modal isOpen={isOpen} onClose={onClose} title="Detalles de la Institución">
             <div className={styles.detailsContainer}>
                 <div className={styles.detailRow}>
                     <span className={styles.label}>ID</span>
@@ -25,27 +25,27 @@ export const InstitutionDetailsModal: React.FC<InstitutionDetailsModalProps> = (
                 </div>
 
                 <div className={styles.detailRow}>
-                    <span className={styles.label}>Institution Name</span>
+                    <span className={styles.label}>Nombre de la Institución</span>
                     <span className={styles.value}>{institution.nombre_entidad}</span>
                 </div>
 
                 <div className={styles.detailRow}>
-                    <span className={styles.label}>Email</span>
+                    <span className={styles.label}>Correo Electrónico</span>
                     <span className={styles.value}>{institution.correo}</span>
                 </div>
 
                 <div className={styles.detailRow}>
-                    <span className={styles.label}>Address</span>
+                    <span className={styles.label}>Dirección</span>
                     <span className={styles.value}>{institution.direccion}</span>
                 </div>
 
                 <div className={styles.detailRow}>
-                    <span className={styles.label}>Legal Representative Name</span>
+                    <span className={styles.label}>Nombre del Representante Legal</span>
                     <span className={styles.value}>{institution.nombre_titular}</span>
                 </div>
 
                 <div className={styles.detailRow}>
-                    <span className={styles.label}>Phone</span>
+                    <span className={styles.label}>Teléfono</span>
                     <span className={styles.value}>{institution.telefono}</span>
                 </div>
 
@@ -56,7 +56,7 @@ export const InstitutionDetailsModal: React.FC<InstitutionDetailsModalProps> = (
 
                 {institution.status && (
                     <div className={styles.detailRow}>
-                        <span className={styles.label}>Status</span>
+                        <span className={styles.label}>Estado</span>
                         <span className={`${styles.statusBadge} ${styles[institution.status]}`}>
                             {institution.status}
                         </span>
@@ -65,14 +65,14 @@ export const InstitutionDetailsModal: React.FC<InstitutionDetailsModalProps> = (
 
                 {institution.activeLicensesCount !== undefined && (
                     <div className={styles.detailRow}>
-                        <span className={styles.label}>Active Licenses</span>
+                        <span className={styles.label}>Licencias Activas</span>
                         <span className={styles.value}>{institution.activeLicensesCount}</span>
                     </div>
                 )}
 
                 {institution.created_at && (
                     <div className={styles.detailRow}>
-                        <span className={styles.label}>Created At</span>
+                        <span className={styles.label}>Creado El</span>
                         <span className={styles.value}>
                             {new Date(institution.created_at).toLocaleDateString()}
                         </span>
@@ -81,7 +81,7 @@ export const InstitutionDetailsModal: React.FC<InstitutionDetailsModalProps> = (
 
                 {institution.updated_at && (
                     <div className={styles.detailRow}>
-                        <span className={styles.label}>Last Updated</span>
+                        <span className={styles.label}>Última Actualización</span>
                         <span className={styles.value}>
                             {new Date(institution.updated_at).toLocaleDateString()}
                         </span>

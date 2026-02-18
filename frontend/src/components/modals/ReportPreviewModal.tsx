@@ -22,7 +22,7 @@ export const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
     // Helper to format data for display
     const renderContent = () => {
         if (!data) {
-            return <div className={styles.emptyState}>No data available.</div>;
+            return <div className={styles.emptyState}>No hay datos disponibles.</div>;
         }
 
         let displayData: any[] = [];
@@ -37,7 +37,7 @@ export const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
         }
 
         if (displayData.length === 0) {
-            return <div className={styles.emptyState}>No records found.</div>;
+            return <div className={styles.emptyState}>No se encontraron registros.</div>;
         }
 
         // Get headers from first item, excluding nested objects/arrays for simplicity in table

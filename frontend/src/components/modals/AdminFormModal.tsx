@@ -67,39 +67,39 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
         const newErrors: Partial<Record<keyof AdminFormData, string>> = {};
 
         if (!formData.doc.trim()) {
-            newErrors.doc = 'Document number is required';
+            newErrors.doc = 'El número de documento es obligatorio';
         } else if (!REGEX.DOC.test(formData.doc)) {
-            newErrors.doc = 'Document must be numeric';
+            newErrors.doc = 'El documento solo debe contener números';
         } else if (formData.doc.length > 20) {
-            newErrors.doc = 'Document number must not exceed 20 digits';
+            newErrors.doc = 'El número de documento no debe exceder los 20 dígitos';
         }
 
         if (!formData.nombre.trim()) {
-            newErrors.nombre = 'Name is required';
+            newErrors.nombre = 'El nombre es obligatorio';
         } else if (!REGEX.NAME.test(formData.nombre)) {
-            newErrors.nombre = 'Name must contain only letters and spaces';
+            newErrors.nombre = 'El nombre solo debe contener letras y espacios';
         } else if (formData.nombre.length > 100) {
-            newErrors.nombre = 'Name must not exceed 100 characters';
+            newErrors.nombre = 'El nombre no debe exceder los 100 caracteres';
         }
 
         if (!formData.correo.trim()) {
-            newErrors.correo = 'Email is required';
+            newErrors.correo = 'El correo es obligatorio';
         } else if (!REGEX.EMAIL.test(formData.correo)) {
-            newErrors.correo = 'Invalid email format';
+            newErrors.correo = 'Formato de correo inválido';
         } else if (formData.correo.length > 100) {
-            newErrors.correo = 'Email must not exceed 100 characters';
+            newErrors.correo = 'El correo no debe exceder los 100 caracteres';
         }
 
         if (!formData.telefono.trim()) {
-            newErrors.telefono = 'Phone is required';
+            newErrors.telefono = 'El teléfono es obligatorio';
         } else if (!REGEX.PHONE.test(formData.telefono)) {
-            newErrors.telefono = 'Phone must be 7-15 digits';
+            newErrors.telefono = 'El teléfono debe tener entre 7 y 15 dígitos';
         }
 
         if (mode === 'create' && !formData.contrasena?.trim()) {
-            newErrors.contrasena = 'Password is required for new admins';
+            newErrors.contrasena = 'La contraseña es obligatoria para nuevos administradores';
         } else if (formData.contrasena && formData.contrasena.length < 8) {
-            newErrors.contrasena = 'Password must be at least 8 characters';
+            newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres';
         }
 
         setErrors(newErrors);
@@ -128,7 +128,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
             if (error instanceof Error) {
                 setServerError(error.message);
             } else {
-                setServerError('An unexpected error occurred.');
+                setServerError('Ocurrió un error inesperado.');
             }
         }
     };
@@ -143,7 +143,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
     const isSaveDisabled = loadingState === 'saving' || loadingState === 'success';
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={mode === 'create' ? 'Create New Admin' : 'Edit Admin'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={mode === 'create' ? 'Crear Nuevo Administrador' : 'Editar Administrador'}>
             <form onSubmit={handleSubmit} className={styles.form}>
 
                 {serverError && (
@@ -153,7 +153,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 )}
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Document Number <span className={styles.required}>*</span></label>
+                    <label className={styles.label}>Número de Documento <span className={styles.required}>*</span></label>
                     <input
                         type="number"
                         className={`${styles.input} ${errors.doc ? styles.inputError : ''} ${mode === 'edit' ? styles.readOnly : ''}`}
@@ -165,7 +165,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Full Name <span className={styles.required}>*</span></label>
+                    <label className={styles.label}>Nombre Completo <span className={styles.required}>*</span></label>
                     <input
                         type="text"
                         className={`${styles.input} ${errors.nombre ? styles.inputError : ''}`}
@@ -177,7 +177,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Email Address <span className={styles.required}>*</span></label>
+                    <label className={styles.label}>Correo Electrónico <span className={styles.required}>*</span></label>
                     <input
                         type="email"
                         className={`${styles.input} ${errors.correo ? styles.inputError : ''}`}
@@ -189,7 +189,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Phone Number <span className={styles.required}>*</span></label>
+                    <label className={styles.label}>Teléfono <span className={styles.required}>*</span></label>
                     <input
                         type="text"
                         className={`${styles.input} ${errors.telefono ? styles.inputError : ''}`}
@@ -202,7 +202,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
 
                 <div className={styles.formGroup}>
                     <label className={styles.label}>
-                        Password {mode === 'edit' && '(Leave blank to keep current)'} {mode === 'create' && <span className={styles.required}>*</span>}
+                        Contraseña {mode === 'edit' && '(Dejar en blanco para mantener la actual)'} {mode === 'create' && <span className={styles.required}>*</span>}
                     </label>
                     <input
                         type="password"
@@ -216,10 +216,10 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
 
                 <div className={styles.actions}>
                     <button type="button" onClick={onClose} className={styles.cancelButton} disabled={isSaveDisabled}>
-                        Cancel
+                        Cancelar
                     </button>
                     <button type="submit" className={styles.saveButton} disabled={isSaveDisabled}>
-                        {loadingState === 'saving' ? 'Saving...' : mode === 'create' ? 'Create Admin' : 'Save Changes'}
+                        {loadingState === 'saving' ? 'Guardando...' : mode === 'create' ? 'Crear Administrador' : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

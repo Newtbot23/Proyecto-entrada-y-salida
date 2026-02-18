@@ -67,19 +67,19 @@ const MainPageDashborad: React.FC = () => {
 
     const statCards = [
         {
-            title: 'Active Institutions',
+            title: 'Instituciones Activas',
             value: stats?.active_institutions ?? 0,
-            subtitle: 'Currently active'
+            subtitle: 'Actualmente activas'
         },
         {
-            title: 'Licenses About to Expire',
+            title: 'Licencias por Expirar',
             value: stats?.expiring_licenses ?? 0,
-            subtitle: 'Next 30 days'
+            subtitle: 'Próximos 30 días'
         },
         {
-            title: 'Monthly Revenue',
+            title: 'Ingresos Mensuales',
             value: `${(stats?.total_revenue ?? 0).toLocaleString()}$`,
-            subtitle: 'Total earned'
+            subtitle: 'Total ganado'
         },
     ];
 
@@ -113,13 +113,13 @@ const MainPageDashborad: React.FC = () => {
             />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Dashboard" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header title="Panel" userName={adminName} role="Administrador" onLogout={handleLogout} />
 
                 <div className={styles.contentWrapper}>
                     {/* Stats Row */}
                     <div className={styles.statsGrid}>
                         {loading ? (
-                            <p>Loading stats...</p>
+                            <p>Cargando estadísticas...</p>
                         ) : (
                             statCards.map((stat, index) => (
                                 <StatCard
@@ -134,7 +134,7 @@ const MainPageDashborad: React.FC = () => {
 
                     {/* Recent Activity Table */}
                     {loading ? (
-                        <p>Loading licenses...</p>
+                        <p>Cargando licencias...</p>
                     ) : (
                         <LicenseTable
                             data={licenses}

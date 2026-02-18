@@ -26,12 +26,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     const activePath = location.pathname;
 
     const menuItems = [
-        { label: 'Dashboard', path: '/superadmin/dashboard', icon: DashboardIcon },
-        { label: 'Admins', path: '/superadmin/admins', icon: InstitutionIcon }, // Using InstitutionIcon for now
-        { label: 'Institutions', path: '/superadmin/institutions', icon: InstitutionIcon },
-        { label: 'License Plans', path: '/superadmin/license-plans', icon: LicenseIcon },
-        { label: 'Reports', path: '/superadmin/reports', icon: ReportIcon },
-        { label: 'System Logs', path: '/superadmin/logs', icon: SystemLogIcon },
+        { label: 'Panel', path: '/superadmin/dashboard', icon: DashboardIcon },
+        { label: 'Administradores', path: '/superadmin/admins', icon: InstitutionIcon }, // Using InstitutionIcon for now
+        { label: 'Instituciones', path: '/superadmin/institutions', icon: InstitutionIcon },
+        { label: 'Planes de Licencia', path: '/superadmin/license-plans', icon: LicenseIcon },
+        { label: 'Reportes', path: '/superadmin/reports', icon: ReportIcon },
+        { label: 'Logs del Sistema', path: '/superadmin/logs', icon: SystemLogIcon },
     ];
 
     return (
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
                 className={styles.toggleBtn}
                 onClick={onToggle}
-                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-label={isCollapsed ? "Abrir barra lateral" : "Cerrar barra lateral"}
             >
                 {isCollapsed ? <ChevronRightIcon width={20} height={20} /> : <ChevronLeftIcon width={20} height={20} />}
             </button>

@@ -41,17 +41,17 @@ const RegisterEntity: React.FC = () => {
 
         // Validate Validation
         if (name === 'telefono' && !REGEX.PHONE.test(value)) {
-            setFieldErrors(prev => ({ ...prev, telefono: ['Phone must be 7-15 digits'] }));
+            setFieldErrors(prev => ({ ...prev, telefono: ['El teléfono debe tener entre 7 y 15 dígitos'] }));
         } else if (name === 'nit' && !REGEX.NIT.test(value)) {
-            setFieldErrors(prev => ({ ...prev, nit: ['NIT must be 6-15 digits'] }));
+            setFieldErrors(prev => ({ ...prev, nit: ['El NIT debe tener entre 6 y 15 dígitos'] }));
         } else if (name === 'correo' && !REGEX.EMAIL.test(value)) {
-            setFieldErrors(prev => ({ ...prev, correo: ['Invalid email format'] }));
+            setFieldErrors(prev => ({ ...prev, correo: ['Formato de correo inválido'] }));
         } else if (name === 'nombre_titular' && !REGEX.NAME.test(value)) {
-            setFieldErrors(prev => ({ ...prev, nombre_titular: ['Only letters and spaces allowed'] }));
+            setFieldErrors(prev => ({ ...prev, nombre_titular: ['Solo se permiten letras y espacios'] }));
         } else if (name === 'nombre_entidad' && value.length > 200) {
-            setFieldErrors(prev => ({ ...prev, nombre_entidad: ['Name too long (max 200)'] }));
+            setFieldErrors(prev => ({ ...prev, nombre_entidad: ['Nombre demasiado largo (máx 200)'] }));
         } else if (name === 'direccion' && value.length > 200) {
-            setFieldErrors(prev => ({ ...prev, direccion: ['Address too long (max 200)'] }));
+            setFieldErrors(prev => ({ ...prev, direccion: ['Dirección demasiado larga (máx 200)'] }));
         } else {
             // Clear error for this field
             if (fieldErrors[name]) {
@@ -69,12 +69,12 @@ const RegisterEntity: React.FC = () => {
 
         // Final regex check before submit
         const errors: Record<string, string[]> = {};
-        if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = ['Phone must be 7-15 digits'];
-        if (!REGEX.NIT.test(formData.nit)) errors.nit = ['NIT must be 6-15 digits'];
-        if (!REGEX.EMAIL.test(formData.correo)) errors.correo = ['Invalid email format'];
-        if (!REGEX.NAME.test(formData.nombre_titular)) errors.nombre_titular = ['Only letters and spaces allowed'];
-        if (!formData.nombre_entidad.trim()) errors.nombre_entidad = ['Entity name is required'];
-        if (!formData.direccion.trim()) errors.direccion = ['Address is required'];
+        if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = ['El teléfono debe tener entre 7 y 15 dígitos'];
+        if (!REGEX.NIT.test(formData.nit)) errors.nit = ['El NIT debe tener entre 6 y 15 dígitos'];
+        if (!REGEX.EMAIL.test(formData.correo)) errors.correo = ['Formato de correo inválido'];
+        if (!REGEX.NAME.test(formData.nombre_titular)) errors.nombre_titular = ['Solo se permiten letras y espacios'];
+        if (!formData.nombre_entidad.trim()) errors.nombre_entidad = ['El nombre de la entidad es obligatorio'];
+        if (!formData.direccion.trim()) errors.direccion = ['La dirección es obligatoria'];
 
         if (Object.keys(errors).length > 0) {
             setFieldErrors(errors);
@@ -89,7 +89,7 @@ const RegisterEntity: React.FC = () => {
             const response = await registrationService.createEntity(formData);
 
             if (response.success) {
-                setSuccess('Entity created successfully! Redirecting to admin registration...');
+                setSuccess('¡Entidad creada exitosamente! Redirigiendo al registro de administrador...');
                 // Wait 2 seconds so the user sees the success message
                 setTimeout(() => {
                     navigate('/register-admin', {
@@ -106,9 +106,9 @@ const RegisterEntity: React.FC = () => {
             // Handle ApiError with structured validation errors
             if (err.status === 422 && err.errors) {
                 setFieldErrors(err.errors);
-                setError('Please correct the highlighted errors.');
+                setError('Por favor corrija los errores resaltados.');
             } else {
-                setError(err.message || 'Error creating entity. Please check the form.');
+                setError(err.message || 'Error al crear la entidad. Por favor verifique el formulario.');
             }
         } finally {
             setLoading(false);
@@ -118,15 +118,15 @@ const RegisterEntity: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h2 className={styles.title}>Entity Registration</h2>
-                <p className={styles.subtitle}>Selected Plan ID: {planId}</p>
+                <h2 className={styles.title}>Registro de Entidad</h2>
+                <p className={styles.subtitle}>ID del Plan Seleccionado: {planId}</p>
 
                 {error && <div className={styles.error}>{error}</div>}
                 {success && <div className={styles.success}>{success}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
-                        <label>Entity Name</label>
+                        <label>Nombre de la Entidad</label>
                         <input
                             type="text"
                             name="nombre_entidad"
@@ -137,7 +137,7 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.nombre_entidad && <span className={styles.fieldError}>{fieldErrors.nombre_entidad[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Email</label>
+                        <label>Correo Electrónico</label>
                         <input
                             type="email"
                             name="correo"
@@ -148,7 +148,7 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Address</label>
+                        <label>Dirección</label>
                         <input
                             type="text"
                             name="direccion"
@@ -159,7 +159,7 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.direccion && <span className={styles.fieldError}>{fieldErrors.direccion[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Legal Representative Name</label>
+                        <label>Nombre del Representante Legal</label>
                         <input
                             type="text"
                             name="nombre_titular"
@@ -170,7 +170,7 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.nombre_titular && <span className={styles.fieldError}>{fieldErrors.nombre_titular[0]}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Phone</label>
+                        <label>Teléfono</label>
                         <input
                             type="number"
                             name="telefono"
@@ -193,7 +193,7 @@ const RegisterEntity: React.FC = () => {
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading || !!success}>
-                        {loading ? 'Processing...' : success ? 'Redirecting...' : 'Next: Register Admin'}
+                        {loading ? 'Procesando...' : success ? 'Redirigiendo...' : 'Siguiente: Registrar Administrador'}
                     </button>
                 </form>
             </div>

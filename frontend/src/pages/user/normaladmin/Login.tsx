@@ -23,7 +23,7 @@ const NormalAdminLogin: React.FC = () => {
         // Validation
         const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!EMAIL_REGEX.test(formData.correo)) {
-            setError('Invalid email format');
+            setError('Formato de correo inválido');
             return;
         }
 
@@ -46,7 +46,7 @@ const NormalAdminLogin: React.FC = () => {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || 'Login failed');
+                throw new Error(result.message || 'Inicio de sesión fallido');
             }
 
             // Store token and user data in sessionStorage
@@ -63,7 +63,7 @@ const NormalAdminLogin: React.FC = () => {
             }
 
         } catch (err: any) {
-            setError(err.message || 'Login failed');
+            setError(err.message || 'Inicio de sesión fallido');
         } finally {
             setLoading(false);
         }
@@ -72,14 +72,14 @@ const NormalAdminLogin: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h2 className={styles.title}>Admin sistem Login</h2>
-                <p className={styles.subtitle}>Welcome back! Please enter your credentials.</p>
+                <h2 className={styles.title}>Ingreso al Sistema</h2>
+                <p className={styles.subtitle}>¡Bienvenido de vuelta! Por favor ingrese sus credenciales.</p>
 
                 {error && <div className={styles.error}>{error}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
-                        <label>Email</label>
+                        <label>Correo Electrónico</label>
                         <input
                             type="email"
                             name="correo"
@@ -89,7 +89,7 @@ const NormalAdminLogin: React.FC = () => {
                         />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Password</label>
+                        <label>Contraseña</label>
                         <input
                             type="password"
                             name="contrasena"
@@ -100,7 +100,7 @@ const NormalAdminLogin: React.FC = () => {
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
+                        {loading ? 'Ingresando...' : 'Ingresar'}
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
@@ -108,7 +108,7 @@ const NormalAdminLogin: React.FC = () => {
                             ¿Olvidaste tu contraseña?
                         </a>
                         <a href="/plans" style={{ color: '#008f39', fontSize: '0.875rem' }}>
-                            Back to Plans
+                            Volver a Planes
                         </a>
                     </div>
                 </form>

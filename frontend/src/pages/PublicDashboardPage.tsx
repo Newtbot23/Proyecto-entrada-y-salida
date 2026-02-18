@@ -233,7 +233,7 @@ const PublicDashboardPage: React.FC = () => {
                             </li>
                             <li>
                                 <button className={styles.footerLink} onClick={() => navigate('/login')}>
-                                    Login
+                                    Iniciar Sesión
                                 </button>
                             </li>
                         </ul>

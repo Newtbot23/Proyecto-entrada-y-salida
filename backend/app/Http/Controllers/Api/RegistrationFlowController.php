@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+
 use App\Http\Requests\Api\Registration\FinishRegistrationRequest;
 use Carbon\Carbon;
 
@@ -33,13 +33,8 @@ class RegistrationFlowController extends Controller
     {
         // Validation is automatically handled by the FinishRegistrationRequest
 
-        if (false) { // Validator is now handled by FormRequest
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        // Validation is automatically handled by the FinishRegistrationRequest
+
 
         DB::beginTransaction();
 
@@ -62,7 +57,7 @@ class RegistrationFlowController extends Controller
             $user = Usuarios::create([
                 'doc' => $request->doc,
                 'id_tip_doc' => $request->id_tip_doc,
-                'id_licencia_sistema' => $licencia->id,
+                'nit_entidad' => $request->id_entidad,
                 'primer_nombre' => $request->primer_nombre,
                 'segundo_nombre' => $request->segundo_nombre ?? null,
                 'primer_apellido' => $request->primer_apellido,
@@ -87,9 +82,12 @@ class RegistrationFlowController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            // Debug logging
+            file_put_contents(storage_path('logs/registration_error.log'), $e->getMessage() . "\n" . $e->getTraceAsString());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error completing registration',
+                'message' => 'Error completing registration: ' . $e->getMessage(), // Temporarily expose error
                 'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }
