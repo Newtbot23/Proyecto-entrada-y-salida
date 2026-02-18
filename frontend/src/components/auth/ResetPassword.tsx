@@ -70,29 +70,13 @@ const ResetPassword = () => {
             // Si la petición es exitosa, redirigir al login
             alert('Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.');
             navigate('/login');
-        } catch (error) {
-            // Manejo de errores
-            if (error instanceof Error) {
-                const errorMsg = error.message;
-
-                // Intentar parsear errores de validación de Laravel
-                if (errorMsg.includes(':')) {
-                    const errors: Record<string, string> = {};
-                    const errorParts = errorMsg.split(', ');
-
-                    errorParts.forEach((part) => {
-                        const [field, message] = part.split(':').map(s => s.trim());
-                        if (field && message) {
-                            errors[field] = message;
-                        }
-                    });
-
-                    setValidationErrors(errors);
-                } else {
-                    setErrorMessage(errorMsg);
-                }
+        } catch (error: any) {
+            // Manejo de errores con ApiError
+            if (error.status === 422 && error.errors) {
+                setValidationErrors(error.errors);
+                setErrorMessage('Por favor corrige los errores en el formulario.');
             } else {
-                setErrorMessage('Error al restablecer la contraseña. Por favor, intenta nuevamente.');
+                setErrorMessage(error.message || 'Error al restablecer la contraseña. Por favor, intenta nuevamente.');
             }
         } finally {
             setLoading(false);

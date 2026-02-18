@@ -28,6 +28,10 @@ console.log('Mi URL de API es:', import.meta.env.VITE_API_URL);
  * Estructura estándar de respuesta de la API Laravel
  * Todas las respuestas de Laravel siguen este formato
  */
+/**
+ * Estructura estándar de respuesta de la API Laravel
+ * Todas las respuestas de Laravel siguen este formato
+ */
 interface ApiResponse<T> {
     success: boolean;
     data?: T;
@@ -42,6 +46,30 @@ interface ApiResponse<T> {
 interface RequestConfig {
     headers?: Record<string, string>;
     signal?: AbortSignal;
+}
+
+// ============================================================================
+// CLASE DE ERROR PERSONALIZADA
+// ============================================================================
+
+/**
+ * Error personalizado para respuestas de API
+ * Permite acceder a los detalles del error, incluyendo errores de validación estructurados.
+ */
+export class ApiError extends Error {
+    public status: number;
+    public statusText: string;
+    public data: any;
+    public errors?: Record<string, string[]>;
+
+    constructor(message: string, status: number, statusText: string, data: any, errors?: Record<string, string[]>) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+        this.statusText = statusText;
+        this.data = data;
+        this.errors = errors;
+    }
 }
 
 // ============================================================================
@@ -90,21 +118,25 @@ class ApiClient {
     }
 
     /**
-     * Maneja errores HTTP y los transforma en errores descriptivos
+     * Maneja errores HTTP y los transforma en objetos ApiError detallados
      * @param response - Respuesta HTTP de fetch
-     * @throws Error con mensaje descriptivo
+     * @throws ApiError con detalles completos
      */
     private async handleErrorResponse(response: Response): Promise<never> {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorData: any = {};
+        let validationErrors: Record<string, string[]> | undefined = undefined;
 
         try {
             // Intentar parsear el error de Laravel
-            const errorData: ApiResponse<any> = await response.json();
+            errorData = await response.json();
 
             if (errorData.errors) {
-                // Errores de validación de Laravel (422) - Prioridad máxima para feedback detallado
-                const validationErrors = Object.values(errorData.errors).flat();
-                errorMessage = validationErrors.join(', ');
+                // Errores de validación de Laravel (422)
+                validationErrors = errorData.errors;
+                // Crear un mensaje resumen con el primer error encontrado
+                const allErrors = validationErrors ? Object.values(validationErrors).flat() : [];
+                errorMessage = allErrors.length > 0 ? allErrors[0] : (errorData.message || 'Error de validación');
             } else if (errorData.message) {
                 errorMessage = errorData.message;
             } else if (errorData.error) {
@@ -115,7 +147,7 @@ class ApiClient {
             console.error('Error parsing error response:', e);
         }
 
-        throw new Error(errorMessage);
+        throw new ApiError(errorMessage, response.status, response.statusText, errorData, validationErrors);
     }
 
     /**

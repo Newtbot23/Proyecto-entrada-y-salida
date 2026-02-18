@@ -56,29 +56,50 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
         setLoadingState('idle');
     }, [isOpen, initialData, mode]);
 
+    const REGEX = {
+        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        DOC: /^[0-9]+$/,
+        PHONE: /^[0-9]{7,15}$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    };
+
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof AdminFormData, string>> = {};
 
         if (!formData.doc.trim()) {
             newErrors.doc = 'Document number is required';
+        } else if (!REGEX.DOC.test(formData.doc)) {
+            newErrors.doc = 'Document must be numeric';
+        } else if (formData.doc.length > 20) {
+            newErrors.doc = 'Document number must not exceed 20 digits';
         }
 
         if (!formData.nombre.trim()) {
             newErrors.nombre = 'Name is required';
+        } else if (!REGEX.NAME.test(formData.nombre)) {
+            newErrors.nombre = 'Name must contain only letters and spaces';
+        } else if (formData.nombre.length > 100) {
+            newErrors.nombre = 'Name must not exceed 100 characters';
         }
 
         if (!formData.correo.trim()) {
             newErrors.correo = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+        } else if (!REGEX.EMAIL.test(formData.correo)) {
             newErrors.correo = 'Invalid email format';
+        } else if (formData.correo.length > 100) {
+            newErrors.correo = 'Email must not exceed 100 characters';
         }
 
         if (!formData.telefono.trim()) {
             newErrors.telefono = 'Phone is required';
+        } else if (!REGEX.PHONE.test(formData.telefono)) {
+            newErrors.telefono = 'Phone must be 7-15 digits';
         }
 
         if (mode === 'create' && !formData.contrasena?.trim()) {
             newErrors.contrasena = 'Password is required for new admins';
+        } else if (formData.contrasena && formData.contrasena.length < 8) {
+            newErrors.contrasena = 'Password must be at least 8 characters';
         }
 
         setErrors(newErrors);
