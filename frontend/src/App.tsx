@@ -19,6 +19,8 @@ import VerifyCode from './components/auth/VerifyCode';
 import ResetPassword from './components/auth/ResetPassword';
 import PaymentSuccess from './pages/user/normaladmin/PaymentSuccess';
 import PaymentCancel from './pages/user/normaladmin/PaymentCancel';
+import NormalAdminLayout from './components/layout/NormalAdminLayout';
+import DynamicCrud from './components/dynamic/DynamicCrud';
 
 function App() {
   return (
@@ -35,10 +37,16 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register-entity" element={<RegisterEntity />} />
         <Route path="/register-admin" element={<RegisterAdmin />} />
-        <Route path="/dashboard" element={<NormalAdminDashboard />} />
-        <Route path="/license-payment" element={<LicensePayment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/payment-cancel" element={<PaymentCancel />} />
+
+        {/* Protected Normal Admin Area */}
+        <Route element={<NormalAdminLayout />}>
+          <Route path="/dashboard" element={<NormalAdminDashboard />} />
+          <Route path="/user/normaladmin/dashboard" element={<Navigate to="/dashboard" replace />} /> {/* Alias if needed */}
+          <Route path="/user/normaladmin/tables/:tableName" element={<DynamicCrud />} />
+          <Route path="/license-payment" element={<LicensePayment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancel" element={<PaymentCancel />} />
+        </Route>
 
         {/* Super Admin Routes */}
         <Route path="/superadmin/login" element={<LoginSuperAdmin />} />

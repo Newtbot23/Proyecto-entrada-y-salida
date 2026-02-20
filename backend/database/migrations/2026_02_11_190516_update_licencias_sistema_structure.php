@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::table('licencias_sistema', function (Blueprint $table) {
             if (!Schema::hasColumn('licencias_sistema', 'referencia_pago')) {
                 // Add referencia_pago
-                $table->string('referencia_pago')->nullable()->default(null)->after('id_entidad');
+                $table->string('referencia_pago')->nullable()->default(null)->after('nit_entidad');
             }
         });
 

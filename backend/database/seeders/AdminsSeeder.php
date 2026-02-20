@@ -15,10 +15,10 @@ class AdminsSeeder extends Seeder
     {
         Admins::create([
             'doc' => 123456789,
-            'nombre' => 'Super Administrador',
-            'telefono' => '3001234567',
-            'correo' => 'admin@example.com',
-            'contrasena' => Hash::make('admin123'),
+                'nombre' => 'Super Administrador',
+                'telefono' => '3001234567',
+                'correo' => 'admin@example.com',
+                'contrasena' => Hash::make('admin123'),
         ]);
     }
 }

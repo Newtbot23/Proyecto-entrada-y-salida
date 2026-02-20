@@ -87,3 +87,10 @@ Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
 Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
 Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
+
+// Dynamic Tables for Normal Admins
+Route::get('/tablas-cortas', [\App\Http\Controllers\Api\DynamicTableController::class, 'getShortTables']);
+Route::get('/esquema/{table}', [\App\Http\Controllers\Api\DynamicTableController::class, 'getTableSchema']);
+Route::get('/datos/{table}', [\App\Http\Controllers\Api\DynamicTableController::class, 'index']);
+Route::post('/datos/{table}', [\App\Http\Controllers\Api\DynamicTableController::class, 'store']);
+Route::put('/datos/{table}/{id}', [\App\Http\Controllers\Api\DynamicTableController::class, 'update']);
