@@ -128,7 +128,7 @@ const LicensePlansPage: React.FC = () => {
                                             <h3>{plan.name}</h3>
                                             <div className={styles.planPrice}>
                                                 <span className={styles.amount}>${plan.price.toLocaleString()}</span>
-                                                <span className={styles.period}>/{plan.billingPeriod === 'yearly' ? 'año' : 'mes'}</span>
+                                                <span className={styles.period}>/{plan.billingPeriod === 'anual' ? 'año' : 'mes'}</span>
                                             </div>
                                         </div>
                                         <div className={styles.planDetails}>

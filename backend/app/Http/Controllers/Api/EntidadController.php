@@ -45,10 +45,26 @@ class EntidadController extends Controller
                 ]
             ], 201);
 
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El NIT, correo o nombre de la entidad ya se encuentran en uso.',
+                    'errors' => [
+                        'duplicado' => ['Uno de los datos únicos introducidos ya está registrado en el sistema.']
+                    ]
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la base de datos',
+                'errors' => ['server' => [$e->getMessage()]]
+            ], 500);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating entity',
+                'message' => 'Error al crear la entidad',
                 'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }

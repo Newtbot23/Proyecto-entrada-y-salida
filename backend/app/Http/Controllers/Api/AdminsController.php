@@ -8,6 +8,7 @@ use App\Models\Admins;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use App\Http\Requests\Api\Admins\StoreAdminRequest;
 use App\Http\Requests\Api\Admins\UpdateAdminRequest;
 
@@ -54,13 +55,24 @@ class AdminsController extends Controller
     public function store(StoreAdminRequest $request)
     {
         try {
+            $mensajes = [
+                'required' => 'El :attribute es obligatorio.',
+                'string' => 'El :attribute debe ser texto.',
+                'max' => 'El :attribute no debe exceder los :max caracteres.',
+                'min' => 'El :attribute debe tener al menos :min caracteres.',
+                'email' => 'El formato de correo es inválido.',
+                'unique' => 'El :attribute ya se encuentra registrado.',
+                'regex' => 'El formato del :attribute es inválido.',
+                'integer' => 'El :attribute debe ser un número entero.',
+            ];
+
             $validated = $request->validate([
                 'doc' => 'required|integer|unique:admins,doc',
                 'nombre' => 'required|string|max:200',
-                'telefono' => 'required|string|max:200',
+                'telefono' => ['required', 'string', 'regex:/^(3[0-9]{9}|60[0-9]{8})$/'],
                 'correo' => 'required|email|max:200|unique:admins,correo',
                 'contrasena' => 'required|string|min:6',
-            ]);
+            ], $mensajes);
 
             $validated['contrasena'] = Hash::make($validated['contrasena']);
             
@@ -92,10 +104,10 @@ class AdminsController extends Controller
      * Display the specified admin.
      * GET /api/admins/{id}
      */
-    public function show(string $id)
+    public function show(string $doc)
     {
         try {
-            $admin = Admins::find($id);
+            $admin = Admins::find($doc);
 
             if (!$admin) {
                 return response()->json([
@@ -123,10 +135,10 @@ class AdminsController extends Controller
      * Update the specified admin in storage.
      * PUT/PATCH /api/admins/{id}
      */
-    public function update(UpdateAdminRequest $request, string $id)
+    public function update(UpdateAdminRequest $request, string $doc)
     {
         try {
-            $admin = Admins::find($id);
+            $admin = Admins::find($doc);
 
             if (!$admin) {
                 return response()->json([
@@ -135,13 +147,28 @@ class AdminsController extends Controller
                 ], 404);
             }
 
+            $mensajes = [
+                'required' => 'El :attribute es obligatorio.',
+                'string' => 'El :attribute debe ser texto.',
+                'max' => 'El :attribute no debe exceder los :max caracteres.',
+                'min' => 'El :attribute debe tener al menos :min caracteres.',
+                'email' => 'El formato de correo es inválido.',
+                'unique' => 'El :attribute ya se encuentra registrado.',
+                'regex' => 'El formato del :attribute es inválido.',
+            ];
+
             $validated = $request->validate([
-                'doc' => 'sometimes|required|integer|unique:admins,doc,' . $id,
                 'nombre' => 'sometimes|required|string|max:200',
-                'telefono' => 'sometimes|required|string|max:200',
-                'correo' => 'sometimes|required|email|max:200|unique:admins,correo,' . $id,
+                'telefono' => ['sometimes', 'required', 'string', 'regex:/^(3[0-9]{9}|60[0-9]{8})$/'],
+                'correo' => [
+                    'sometimes',
+                    'required',
+                    'email',
+                    'max:200',
+                    Rule::unique('admins', 'correo')->ignore($doc, 'doc')
+                ],
                 'contrasena' => 'sometimes|nullable|string|min:6',
-            ]);
+            ], $mensajes);
 
             if (isset($validated['contrasena']) && !empty($validated['contrasena'])) {
                 $validated['contrasena'] = Hash::make($validated['contrasena']);
@@ -177,10 +204,10 @@ class AdminsController extends Controller
      * Remove the specified admin from storage.
      * DELETE /api/admins/{id}
      */
-    public function destroy(string $id)
+    public function destroy(string $doc)
     {
         try {
-            $admin = Admins::find($id);
+            $admin = Admins::find($doc);
 
             if (!$admin) {
                 return response()->json([

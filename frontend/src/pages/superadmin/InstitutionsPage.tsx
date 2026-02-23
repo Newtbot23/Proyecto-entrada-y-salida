@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './InstitutionsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
-import { PlusIcon, EditIcon, TrashIcon, ExternalLinkIcon } from '../../components/common/Icons';
+import { PlusIcon, EditIcon, TrashIcon, ExternalLinkIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, CheckIcon } from '../../components/common/Icons';
 import { Modal } from '../../components/common/Modal';
+import { useDebounce } from '../../hooks/useDebounce';
+import { getInstitutions, disableInstitution, enableInstitution } from '../../services/institutionService';
 
 import { API_BASE_URL } from '../../config/api';
 
@@ -12,6 +14,12 @@ const InstitutionsPage: React.FC = () => {
     const [institutions, setInstitutions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [adminName, setAdminName] = useState('Super Admin');
+
+    // Pagination & Search State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
     // Modals State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -26,6 +34,17 @@ const InstitutionsPage: React.FC = () => {
         nombre_titular: ''
     });
 
+    const [errors, setErrors] = useState<Partial<Record<keyof typeof editFormData, string>>>({});
+    const [serverError, setServerError] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    const REGEX = {
+        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    };
+
     useEffect(() => {
         const adminUserStr = sessionStorage.getItem('adminUser');
         if (adminUserStr) {
@@ -36,34 +55,136 @@ const InstitutionsPage: React.FC = () => {
                 console.error('Error parsing admin user:', e);
             }
         }
-        fetchInstitutions();
     }, []);
+
+    useEffect(() => {
+        fetchInstitutions();
+    }, [debouncedSearch, currentPage]);
 
     const fetchInstitutions = async () => {
         try {
             setLoading(true);
-            const token = sessionStorage.getItem('adminToken');
-            const url = `${API_BASE_URL}/entidades`;
+            // Use the service which handles pagination and search params
+            const response = await getInstitutions({
+                search: debouncedSearch,
+                statuses: []
+            }, currentPage, 10); // 10 items per page
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            // Eager loading should already bring relationships
-            const items = data.data?.data || data.data || [];
-            if (Array.isArray(items)) {
-                setInstitutions(items);
-            } else {
-                console.warn('Unexpected API response structure:', data);
-                setInstitutions([]);
+            setInstitutions(response.data);
+            setTotalPages(response.meta.totalPages);
+
+            // Adjust current page if out of bounds (e.g. after search reduces results)
+            if (currentPage > response.meta.totalPages && response.meta.totalPages > 0) {
+                setCurrentPage(1);
             }
+
         } catch (error) {
             console.error('Failed to fetch institutions:', error);
+            setInstitutions([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // ✅ VALIDACIÓN EN TIEMPO REAL POR CAMPO
+    const validateField = (field: keyof typeof editFormData, value: string) => {
+        let error: string | undefined;
+
+        switch (field) {
+            case 'nombre_titular':
+                if (!value.trim())
+                    error = 'El nombre del representante es obligatorio';
+                else if (!REGEX.NAME.test(value))
+                    error = 'El nombre solo debe contener letras y espacios';
+                else if (value.length > 100)
+                    error = 'El nombre no debe exceder los 100 caracteres';
+                break;
+            case 'correo':
+                if (!value.trim())
+                    error = 'El correo es obligatorio';
+                else if (!REGEX.EMAIL.test(value))
+                    error = 'Formato de correo inválido';
+                else if (value.length > 255)
+                    error = 'El correo no debe exceder los 255 caracteres';
+                break;
+            case 'telefono':
+                if (!value.trim())
+                    error = 'El teléfono es obligatorio';
+                else if (value.startsWith('+'))
+                    error = 'No incluya prefijos internacionales como +57';
+                else if (!/^(3[0-9]{9}|60[0-9]{8})$/.test(value))
+                    error = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                break;
+            case 'direccion':
+                if (!value.trim())
+                    error = 'La dirección es obligatoria';
+                else if (value.length > 255)
+                    error = 'La dirección no debe exceder los 255 caracteres';
+                break;
+        }
+
+        setErrors(prev => ({ ...prev, [field]: error }));
+    };
+
+    // ✅ HANDLE CHANGE CON DEBOUNCE 500ms
+    const handleChange = (field: keyof typeof editFormData, value: string) => {
+        setEditFormData(prev => ({ ...prev, [field]: value }));
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            validateField(field, value);
+        }, 500);
+    };
+
+    const validate = (): boolean => {
+        const newErrors: Partial<Record<keyof typeof editFormData, string>> = {};
+
+        if (!editFormData.nombre_titular.trim()) {
+            newErrors.nombre_titular = 'El nombre del representante es obligatorio';
+        } else if (!REGEX.NAME.test(editFormData.nombre_titular)) {
+            newErrors.nombre_titular = 'El nombre solo debe contener letras y espacios';
+        } else if (editFormData.nombre_titular.length > 100) {
+            newErrors.nombre_titular = 'El nombre no debe exceder los 100 caracteres';
+        }
+
+        if (!editFormData.correo.trim()) {
+            newErrors.correo = 'El correo es obligatorio';
+        } else if (!REGEX.EMAIL.test(editFormData.correo)) {
+            newErrors.correo = 'Formato de correo inválido';
+        } else if (editFormData.correo.length > 255) {
+            newErrors.correo = 'El correo no debe exceder los 255 caracteres';
+        }
+
+        if (!editFormData.telefono.trim()) {
+            newErrors.telefono = 'El teléfono es obligatorio';
+        } else if (editFormData.telefono.startsWith('+')) {
+            newErrors.telefono = 'No incluya prefijos internacionales como +57';
+        } else if (!/^(3[0-9]{9}|60[0-9]{8})$/.test(editFormData.telefono)) {
+            newErrors.telefono = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+        }
+
+        if (!editFormData.direccion.trim()) {
+            newErrors.direccion = 'La dirección es obligatoria';
+        } else if (editFormData.direccion.length > 255) {
+            newErrors.direccion = 'La dirección no debe exceder los 255 caracteres';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        // Reset to page 1 when user starts typing
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
         }
     };
 
@@ -77,6 +198,8 @@ const InstitutionsPage: React.FC = () => {
             direccion: inst.direccion || '',
             nombre_titular: inst.nombre_titular || ''
         });
+        setErrors({});
+        setServerError(null);
         setIsEditModalOpen(true);
     };
 
@@ -87,7 +210,12 @@ const InstitutionsPage: React.FC = () => {
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setServerError(null);
+
+        if (!validate()) return;
+
         try {
+            setIsSaving(true);
             const token = sessionStorage.getItem('adminToken');
             const nitToUpdate = selectedInstitution.nit || selectedInstitution.id;
             const url = `${API_BASE_URL}/entidades/${nitToUpdate}`;
@@ -110,17 +238,42 @@ const InstitutionsPage: React.FC = () => {
             } else {
                 const errorData = await response.json();
                 console.error('Update failed:', errorData);
-                alert(errorData.message || 'Error al actualizar la institución');
+                setServerError(errorData.message || 'Error al actualizar la institución');
             }
         } catch (error) {
             console.error('Failed to update institution:', error);
-            alert('Error de red al actualizar la institución');
+            setServerError('Error de red al actualizar la institución');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/superadmin/login');
+    const handleDisableClick = async (inst: any) => {
+        if (window.confirm(`¿Estás seguro de que deseas desactivar la institución "${inst.nombre_entidad}"? No se podrá editar mientras esté inactiva.`)) {
+            try {
+                const idToDisable = inst.nit || inst.id;
+                await disableInstitution(idToDisable);
+                alert('Institución desactivada exitosamente');
+                fetchInstitutions();
+            } catch (error: any) {
+                console.error('Failed to disable institution:', error);
+                alert(error.response?.data?.message || 'Error al desactivar la institución');
+            }
+        }
+    };
+
+    const handleEnableClick = async (inst: any) => {
+        if (window.confirm(`¿Estás seguro de que deseas reactivar la institución "${inst.nombre_entidad}"?`)) {
+            try {
+                const idToEnable = inst.nit || inst.id;
+                await enableInstitution(idToEnable);
+                alert('Institución reactivada exitosamente');
+                fetchInstitutions();
+            } catch (error: any) {
+                console.error('Failed to enable institution:', error);
+                alert(error.response?.data?.message || 'Error al reactivar la institución');
+            }
+        }
     };
 
     return (
@@ -128,7 +281,7 @@ const InstitutionsPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Instituciones" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
@@ -142,6 +295,33 @@ const InstitutionsPage: React.FC = () => {
                         </button>
                     </div>
 
+                    <div className={styles.controlsContainer} style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>
+                            Buscador por nit, correo y nombre de la entidad
+                        </label>
+                        <div className={styles.searchContainer} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '350px' }}>
+                            <SearchIcon
+                                width={18}
+                                height={18}
+                                style={{ color: '#6b7280', flexShrink: 0 }}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Buscar..."
+                                value={searchQuery}
+                                onChange={handleSearchChange}
+                                className={styles.searchInput}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #d1d5db',
+                                    fontSize: '0.9rem'
+                                }}
+                            />
+                        </div>
+                    </div>
+
                     {loading ? (
                         <div className={styles.loadingContainer}>Cargando instituciones...</div>
                     ) : (
@@ -151,6 +331,7 @@ const InstitutionsPage: React.FC = () => {
                                     <tr>
                                         <th>NIT</th>
                                         <th>Nombre</th>
+                                        <th>Estado</th>
                                         <th>Plan</th>
                                         <th>Representante</th>
                                         <th>Teléfono</th>
@@ -173,6 +354,11 @@ const InstitutionsPage: React.FC = () => {
                                                     <td>{inst.nit || inst.id}</td>
                                                     <td>{inst.nombre_entidad}</td>
                                                     <td>
+                                                        <span className={`${styles.statusBadge} ${styles[inst.estado || 'activo']}`}>
+                                                            {inst.estado || 'activo'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
                                                         <span className={styles.planBadge}>
                                                             {inst.licencia?.plan?.nombre_plan || 'Sin Plan'}
                                                         </span>
@@ -191,14 +377,29 @@ const InstitutionsPage: React.FC = () => {
                                                             </button>
                                                             <button
                                                                 className={styles.actionButton}
-                                                                title="Editar"
+                                                                title={inst.estado === 'inactivo' ? "No se puede editar inactivos" : "Editar"}
                                                                 onClick={() => handleEditClick(inst)}
+                                                                disabled={inst.estado === 'inactivo'}
                                                             >
                                                                 <EditIcon width={18} height={18} />
                                                             </button>
-                                                            <button className={`${styles.actionButton} ${styles.danger}`} title="Eliminar">
-                                                                <TrashIcon width={18} height={18} />
-                                                            </button>
+                                                            {inst.estado === 'inactivo' ? (
+                                                                <button
+                                                                    className={`${styles.actionButton} ${styles.success}`}
+                                                                    title="Reactivar"
+                                                                    onClick={() => handleEnableClick(inst)}
+                                                                >
+                                                                    <CheckIcon width={18} height={18} />
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className={`${styles.actionButton} ${styles.danger}`}
+                                                                    title="Desactivar"
+                                                                    onClick={() => handleDisableClick(inst)}
+                                                                >
+                                                                    <TrashIcon width={18} height={18} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -207,6 +408,50 @@ const InstitutionsPage: React.FC = () => {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {!loading && institutions.length > 0 && (
+                        <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '1rem' }}>
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={styles.pageButton}
+                                style={{
+                                    padding: '6px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: currentPage === 1 ? '#f3f4f6' : 'white',
+                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <ChevronLeftIcon width={16} height={16} />
+                                <span style={{ marginLeft: '4px' }}>Anterior</span>
+                            </button>
+
+                            <span style={{ fontSize: '0.9rem', color: '#4b5563' }}>
+                                Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                            </span>
+
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className={styles.pageButton}
+                                style={{
+                                    padding: '6px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: currentPage === totalPages ? '#f3f4f6' : 'white',
+                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <span style={{ marginRight: '4px' }}>Siguiente</span>
+                                <ChevronRightIcon width={16} height={16} />
+                            </button>
                         </div>
                     )}
                 </div>
@@ -300,6 +545,11 @@ const InstitutionsPage: React.FC = () => {
                 title="Editar Institución"
             >
                 <form className={styles.editForm} onSubmit={handleEditSubmit}>
+                    {serverError && (
+                        <div style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                            <strong>Error:</strong> {serverError}
+                        </div>
+                    )}
                     <div className={styles.formGroup}>
                         <label>NIT (Solo lectura)</label>
                         <input type="text" value={editFormData.nit} readOnly className={styles.readOnlyInput} />
@@ -309,47 +559,68 @@ const InstitutionsPage: React.FC = () => {
                         <input type="text" value={editFormData.nombre_entidad} readOnly className={styles.readOnlyInput} />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Representante Legal</label>
+                        <label>Representante Legal <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                             type="text"
                             value={editFormData.nombre_titular}
-                            onChange={(e) => setEditFormData({ ...editFormData, nombre_titular: e.target.value })}
-                            required
+                            onChange={(e) => handleChange('nombre_titular', e.target.value)}
+                            className={errors.nombre_titular ? styles.inputError : ''}
                         />
+                        {errors.nombre_titular && (
+                            <span className={styles.errorText}>
+                                {errors.nombre_titular}
+                            </span>
+                        )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Correo</label>
+                        <label>Correo <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                             type="email"
                             value={editFormData.correo}
-                            onChange={(e) => setEditFormData({ ...editFormData, correo: e.target.value })}
-                            required
+                            onChange={(e) => handleChange('correo', e.target.value)}
+                            className={errors.correo ? styles.inputError : ''}
                         />
+                        {errors.correo && (
+                            <span className={styles.errorText}>
+                                {errors.correo}
+                            </span>
+                        )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Teléfono</label>
+                        <label>Teléfono <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                             type="text"
+                            inputMode="numeric"
                             value={editFormData.telefono}
-                            onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
-                            required
+                            onChange={(e) => handleChange('telefono', e.target.value)}
+                            className={errors.telefono ? styles.inputError : ''}
                         />
+                        {errors.telefono && (
+                            <span className={styles.errorText}>
+                                {errors.telefono}
+                            </span>
+                        )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Dirección</label>
+                        <label>Dirección <span style={{ color: '#ef4444' }}>*</span></label>
                         <input
                             type="text"
                             value={editFormData.direccion}
-                            onChange={(e) => setEditFormData({ ...editFormData, direccion: e.target.value })}
-                            required
+                            onChange={(e) => handleChange('direccion', e.target.value)}
+                            className={errors.direccion ? styles.inputError : ''}
                         />
+                        {errors.direccion && (
+                            <span className={styles.errorText}>
+                                {errors.direccion}
+                            </span>
+                        )}
                     </div>
                     <div className={styles.modalActions}>
-                        <button type="button" className={styles.cancelButton} onClick={() => setIsEditModalOpen(false)}>
+                        <button type="button" className={styles.cancelButton} onClick={() => setIsEditModalOpen(false)} disabled={isSaving}>
                             Cancelar
                         </button>
-                        <button type="submit" className={styles.submitButton}>
-                            Guardar Cambios
+                        <button type="submit" className={styles.submitButton} disabled={isSaving}>
+                            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
                     </div>
                 </form>

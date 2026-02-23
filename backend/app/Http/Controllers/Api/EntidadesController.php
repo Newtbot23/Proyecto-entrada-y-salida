@@ -22,7 +22,19 @@ class EntidadesController extends Controller
     {
         try {
             $perPage = $request->query('per_page', 10);
-            $entidades = Entidades::with(['licencia', 'licencia.plan'])->paginate($perPage);
+            $search = $request->query('search', '');
+            
+            $query = Entidades::with(['licencia', 'licencia.plan']);
+
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('nombre_entidad', 'LIKE', "%{$search}%")
+                      ->orWhere('nit', 'LIKE', "%{$search}%")
+                      ->orWhere('correo', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $entidades = $query->paginate($perPage);
             
             return response()->json([
                 'success' => true,
@@ -54,15 +66,26 @@ class EntidadesController extends Controller
         try {
             Log::info('Datos recibidos en store:', $request->all());
             
+            $mensajes = [
+                'required' => 'El :attribute es obligatorio.',
+                'string' => 'El :attribute debe ser texto.',
+                'max' => 'El :attribute no debe exceder los :max caracteres.',
+                'min' => 'El :attribute debe tener al menos :min caracteres.',
+                'email' => 'El formato de correo es inválido.',
+                'unique' => 'El :attribute ya se encuentra registrado.',
+                'regex' => 'El formato del :attribute es inválido.',
+                'in' => 'El valor seleccionado para :attribute es inválido.',
+            ];
+
             $validated = $request->validate([
                 'nombre_entidad' => 'required|string|max:255',
                 'correo' => 'required|email|max:255|unique:entidades,correo',
                 'direccion' => 'required|string|max:255',
                 'nombre_titular' => 'required|string|max:255',
-                'telefono' => 'required|string|max:20',
-                'nit' => 'required|string|max:50|unique:entidades,nit',
-                'status' => 'sometimes|string|in:active,inactive',
-            ]);
+                'telefono' => ['required', 'string', 'regex:/^(3[0-9]{9}|60[0-9]{8})$/'],
+                'nit' => ['required', 'string', 'regex:/^[0-9]{8,15}(-[0-9])?$/', 'unique:entidades,nit'],
+                'estado' => 'sometimes|string|in:activo,inactivo',
+            ], $mensajes);
 
             Log::info('Datos validados:', $validated);
 
@@ -146,6 +169,17 @@ class EntidadesController extends Controller
             Log::info('Datos recibidos para actualizar entidad NIT ' . $nit . ':', $request->all());
 
             // Validación - el email y nit pueden ser únicos excepto para este registro
+            $mensajes = [
+                'required' => 'El :attribute es obligatorio.',
+                'string' => 'El :attribute debe ser texto.',
+                'max' => 'El :attribute no debe exceder los :max caracteres.',
+                'min' => 'El :attribute debe tener al menos :min caracteres.',
+                'email' => 'El formato de correo es inválido.',
+                'unique' => 'El :attribute ya se encuentra registrado.',
+                'regex' => 'El formato del :attribute es inválido.',
+                'in' => 'El valor seleccionado para :attribute es inválido.',
+            ];
+
             $validated = $request->validate([
                 'nombre_entidad' => 'sometimes|required|string|max:255',
                 'correo' => [
@@ -157,16 +191,16 @@ class EntidadesController extends Controller
                 ],
                 'direccion' => 'sometimes|required|string|max:255',
                 'nombre_titular' => 'sometimes|required|string|max:255',
-                'telefono' => 'sometimes|required|string|max:20',
+                'telefono' => ['sometimes', 'required', 'string', 'regex:/^(3[0-9]{9}|60[0-9]{8})$/'],
                 'nit' => [
                     'sometimes',
                     'required',
                     'string',
-                    'max:50',
+                    'regex:/^[0-9]{8,15}(-[0-9])?$/',
                     Rule::unique('entidades', 'nit')->ignore($nit, 'nit')
                 ],
-                'status' => 'sometimes|string|in:active,inactive',
-            ]);
+                'estado' => 'sometimes|string|in:activo,inactivo',
+            ], $mensajes);
 
             Log::info('Datos validados para actualización:', $validated);
 
@@ -245,3 +279,7 @@ class EntidadesController extends Controller
         }
     }
 }
+
+
+
+[] 

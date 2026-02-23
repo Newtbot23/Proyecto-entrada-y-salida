@@ -21,7 +21,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
     const [formData, setFormData] = useState<PlanFormData>({
         name: '',
         price: 0,
-        billingPeriod: 'monthly',
+        billingPeriod: 'mensual',
         duration: 12,
         description: '',
         caracteristicas: ''
@@ -34,7 +34,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
             setFormData({
                 name: mode === 'duplicate' ? `${initialData.name || ''} (Copy)` : (initialData.name || ''),
                 price: initialData.price || 0,
-                billingPeriod: initialData.billingPeriod || 'monthly',
+                billingPeriod: initialData.billingPeriod || 'mensual',
                 duration: initialData.duration || 12,
                 description: initialData.description || '',
                 caracteristicas: initialData.caracteristicas || ''
@@ -43,7 +43,7 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
             setFormData({
                 name: '',
                 price: 0,
-                billingPeriod: 'monthly',
+                billingPeriod: 'mensual',
                 duration: 12,
                 description: '',
                 caracteristicas: ''
@@ -159,8 +159,8 @@ export const PlanFormModal: React.FC<PlanFormModalProps> = ({
                             value={formData.billingPeriod}
                             onChange={(e) => handleChange('billingPeriod', e.target.value)}
                         >
-                            <option value="monthly">Mensual</option>
-                            <option value="yearly">Anual</option>
+                            <option value="mensual">Mensual</option>
+                            <option value="anual">Anual</option>
                         </select>
                     </div>
                 </div>

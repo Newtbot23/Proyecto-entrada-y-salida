@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './LicenseTable.module.css';
 import { type LicenseData } from '../../services/licenseDashboardService';
+import { LicenseDetailsModal } from '../modals/LicenseDetailsModal';
 
 interface LicenseTableProps {
     data: LicenseData[];
@@ -8,6 +9,14 @@ interface LicenseTableProps {
 }
 
 const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => {
+
+    const [selectedLicense, setSelectedLicense] = useState<LicenseData | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleOpenDetails = (license: LicenseData) => {
+        setSelectedLicense(license);
+        setIsModalOpen(true);
+    };
 
     const getStatusClass = (status: string) => {
         switch (status.toLowerCase()) {
@@ -59,26 +68,6 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                 <td>{row.fecha_vencimiento}</td>
                                 <td>
                                     <div className={styles.actions}>
-                                        {row.estado === 'pendiente' && (
-                                            <>
-                                                <button
-                                                    className={styles.actionBtn}
-                                                    style={{ color: '#166534', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
-                                                    onClick={() => onUpdateStatus?.(row.id, 'activo')}
-                                                    title="Aprobar Pago"
-                                                >
-                                                    Aprobar
-                                                </button>
-                                                <button
-                                                    className={styles.actionBtn}
-                                                    style={{ color: '#991b1b', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
-                                                    onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
-                                                    title="Rechazar Pago"
-                                                >
-                                                    Rechazar
-                                                </button>
-                                            </>
-                                        )}
                                         {row.estado === 'activo' && (
                                             <button
                                                 className={styles.actionBtn}
@@ -95,7 +84,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                                                 Reactivar
                                             </button>
                                         )}
-                                        <button className={styles.actionBtn}>Ver Detalles</button>
+                                        <button className={styles.actionBtn} onClick={() => handleOpenDetails(row)}>Ver Detalles</button>
                                     </div>
                                 </td>
                             </tr>
@@ -108,6 +97,12 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                     </tbody>
                 </table>
             </div>
+
+            <LicenseDetailsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                license={selectedLicense}
+            />
         </div>
     );
 };

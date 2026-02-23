@@ -29,4 +29,17 @@ class StoreEntidadRequest extends FormRequest
             'estado' => 'sometimes|string|in:activo,pendiente,inactivo',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'required' => 'El campo :attribute es obligatorio.',
+            'string' => 'El :attribute debe ser texto.',
+            'max' => 'El :attribute no debe exceder de :max caracteres.',
+            'email' => 'El formato del correo es inválido.',
+            'unique' => 'El :attribute ya se encuentra registrado.',
+            'regex' => 'El formato del campo :attribute es inválido.',
+            'in' => 'El valor seleccionado para :attribute no es válido.',
+        ];
+    }
 }

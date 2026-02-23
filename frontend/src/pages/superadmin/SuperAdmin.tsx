@@ -12,8 +12,6 @@ const SuperAdmin: React.FC = () => {
     const [admins, setAdmins] = useState<Admin[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Admin info from localStorage
-    const [adminName, setAdminName] = useState('Super Admin');
 
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -22,16 +20,6 @@ const SuperAdmin: React.FC = () => {
     const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
 
     useEffect(() => {
-        // Load session data
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
-            }
-        }
         fetchAdmins();
     }, []);
 
@@ -62,7 +50,7 @@ const SuperAdmin: React.FC = () => {
         try {
             const token = sessionStorage.getItem('adminToken');
             const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins';
-            const url = formMode === 'edit' && selectedAdmin ? `${baseUrl}/${selectedAdmin.id}` : baseUrl;
+            const url = formMode === 'edit' && selectedAdmin ? `${baseUrl}/${selectedAdmin.doc}` : baseUrl;
             const method = formMode === 'edit' ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -91,7 +79,7 @@ const SuperAdmin: React.FC = () => {
         if (!selectedAdmin) return;
         try {
             const token = sessionStorage.getItem('adminToken');
-            const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/admins/${selectedAdmin.id}`;
+            const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/admins/${selectedAdmin.doc}`;
 
             const response = await fetch(url, {
                 method: 'DELETE',
@@ -111,10 +99,6 @@ const SuperAdmin: React.FC = () => {
         }
     };
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/superadmin/login');
-    };
 
     const openCreateModal = () => {
         setFormMode('create');
@@ -138,7 +122,7 @@ const SuperAdmin: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Gestión de Administradores" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
@@ -173,7 +157,7 @@ const SuperAdmin: React.FC = () => {
                                         </tr>
                                     ) : (
                                         admins.map(admin => (
-                                            <tr key={admin.id}>
+                                            <tr key={admin.doc}>
                                                 <td>{admin.doc}</td>
                                                 <td>{admin.nombre}</td>
                                                 <td>{admin.correo}</td>

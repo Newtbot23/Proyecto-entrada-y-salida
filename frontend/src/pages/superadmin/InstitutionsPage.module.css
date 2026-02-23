@@ -369,6 +369,20 @@
     border-color: var(--color-border) !important;
 }
 
+.inputError {
+    border-color: #ef4444 !important;
+}
+
+.inputError:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.errorText {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
 .modalActions {
     display: flex;
     justify-content: flex-end;

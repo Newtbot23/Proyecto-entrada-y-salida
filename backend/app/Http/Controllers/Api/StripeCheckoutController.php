@@ -107,8 +107,15 @@ class StripeCheckoutController extends Controller
             Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
             $session = Session::retrieve($sessionId);
 
-            if ($session->payment_status !== 'paid') {
-                return response()->json(['error' => 'El pago no ha sido completado'], 400);
+            $estadoPago = 'pendiente';
+            if ($session->payment_status === 'paid') {
+                $estadoPago = 'pagado';
+            } elseif (in_array($session->status, ['expired', 'canceled'])) {
+                $estadoPago = 'anulado';
+            }
+
+            if ($estadoPago !== 'pagado') {
+                return response()->json(['error' => 'El pago no ha sido completado de manera exitosa'], 400);
             }
 
             $licenciaId = $session->metadata->licencia_id ?? null;
@@ -124,21 +131,39 @@ class StripeCheckoutController extends Controller
                 'id_licencia' => $licenciaId,
                 'fecha_pago' => now(),
                 'metodo_pago' => 'tarjeta',
-                'referencia' => $session->payment_intent, // Using payment_intent as reference
+                'referencia' => $session->payment_intent ?? $session->id, // Using payment_intent as reference
                 'monto' => $session->amount_total / 100, // Convert cents back to main currency unit
                 'stripe_session_id' => $session->id,
-                'estado' => 'pagado',
+                'estado' => $estadoPago,
                 'tipo_pago' => $tipoPago,
                 'creado_en' => now()
             ]);
 
             // Update License Status
-            $licencia = LicenciasSistema::find($licenciaId);
-            if ($licencia) {
-                $licencia->update([
-                    'estado' => 'activo',
-                    'fecha_ultima_validacion' => now()
-                ]);
+            if ($estadoPago === 'pagado') {
+                $licencia = LicenciasSistema::with('plan')->find($licenciaId);
+                if ($licencia) {
+                    $licenciaData = [
+                        'estado' => 'activo',
+                        'fecha_ultima_validacion' => now(),
+                        'referencia_pago' => $pago->referencia // Copy reference from payment
+                    ];
+
+                    // Si es renovación, recalcular expiración desde la actual
+                    if ($tipoPago === 'renovacion' && $licencia->plan) {
+                        $currentExp = $licencia->fecha_vencimiento ? \Carbon\Carbon::parse($licencia->fecha_vencimiento) : now();
+                        $baseDate = $currentExp->isFuture() ? clone $currentExp : now();
+                        
+                        if (strtolower($licencia->plan->periodo_facturacion) === 'anual') {
+                            $baseDate->addYears($licencia->plan->duracion_plan);
+                        } else {
+                            $baseDate->addMonths($licencia->plan->duracion_plan);
+                        }
+                        $licenciaData['fecha_vencimiento'] = $baseDate;
+                    }
+
+                    $licencia->update($licenciaData);
+                }
             }
 
             return response()->json([
