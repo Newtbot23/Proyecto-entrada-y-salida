@@ -21,6 +21,8 @@ import PaymentSuccess from './pages/user/normaladmin/PaymentSuccess';
 import PaymentCancel from './pages/user/normaladmin/PaymentCancel';
 import NormalAdminLayout from './components/layout/NormalAdminLayout';
 import DynamicCrud from './components/dynamic/DynamicCrud';
+import UserLayout from './components/layout/UserLayout';
+import UserDashboard from './pages/user/regular/UserDashboard';
 
 function App() {
   return (
@@ -59,6 +61,11 @@ function App() {
           <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
 
           <Route path="/superadmin/reports" element={<ReportsPage />} />
+        </Route>
+
+        {/* Protected Regular User Area */}
+        <Route element={<UserLayout />}>
+          <Route path="/user/dashboard" element={<UserDashboard />} />
         </Route>
 
         {/* Legacy/Specific Redirects if needed */}

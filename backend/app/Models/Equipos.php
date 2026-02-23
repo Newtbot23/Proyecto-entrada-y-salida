@@ -22,4 +22,9 @@ class Equipos extends Model
         'caracteristicas',
         'id_sistema_operativo'
     ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuarios::class, 'doc', 'doc');
+    }
 }

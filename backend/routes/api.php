@@ -64,6 +64,7 @@ Route::post('/normaladmin/login', [NormalAdminAuthController::class, 'login']);
 
 // Dashboard Stats
 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+Route::get('/normaladmin/stats', [DashboardController::class, 'normalAdminStats'])->middleware('auth:sanctum');
 
 // Licenses Management
 Route::get('/licencias', [LicenciasController::class, 'index']);

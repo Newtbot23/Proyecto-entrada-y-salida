@@ -83,7 +83,7 @@ const DynamicCrud: React.FC = () => {
 
     return (
         <div style={{ padding: '0' }}>
-            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', textTransform: 'capitalize' }}>
                     Gestión de {tableName}
                 </h2>
@@ -95,8 +95,8 @@ const DynamicCrud: React.FC = () => {
             {!loading && schema.length > 0 && (
                 <>
                     <DynamicForm schema={schema} onSubmit={handleCreate} isLoading={loading} />
-                    <div style={{ marginTop: '2rem' }}>
-                        <h3 style={{ marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.25rem' }}>Registros Actuales</h3>
+                    <div style={{ marginTop: '1rem' }}>
+                        <h3 style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '1.25rem' }}>Registros Actuales</h3>
                         <DynamicTable schema={schema} data={data} onEdit={handleEdit} />
                     </div>
 

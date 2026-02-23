@@ -51,7 +51,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ schema, onSubmit, isLoading =
     );
 
     return (
-        <form onSubmit={handleSubmit} style={{ padding: '1.5rem', background: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '2rem' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '1rem', background: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '1rem' }}>
             <h3 style={{ marginBottom: '1rem', fontWeight: 'bold' }}>{title || 'Agregar Nuevo Registro'}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
                 {editableColumns.map(col => {
@@ -84,7 +84,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ schema, onSubmit, isLoading =
                     );
                 })}
             </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                     type="submit"
                     disabled={isLoading}

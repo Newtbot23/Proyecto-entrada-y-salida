@@ -58,8 +58,12 @@ const NormalAdminLogin: React.FC = () => {
             if (user.license_status === 'pendiente') {
                 navigate('/license-payment');
             } else {
-                // Redirect to dashboard
-                navigate('/dashboard');
+                // Redirect to dashboard based on role
+                if (user.id_rol === 2) {
+                    navigate('/user/dashboard');
+                } else {
+                    navigate('/dashboard');
+                }
             }
 
         } catch (err: any) {

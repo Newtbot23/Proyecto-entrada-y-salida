@@ -5,6 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LicenciasSistema;
 use App\Models\PagosLicencia;
+use App\Models\Registros;
+use App\Models\RegistrosEquipos;
+use App\Models\Vehiculos;
+use App\Models\Equipos;
+use App\Models\Asignaciones;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -52,6 +58,52 @@ class DashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener estadísticas del dashboard',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get statistics for a specific entity (Normal Admin).
+     * GET /api/normaladmin/stats
+     */
+    public function normalAdminStats(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user || !$user->nit_entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado o no vinculado a una entidad'
+                ], 401);
+            }
+
+            $nit = $user->nit_entidad;
+
+            // 1. Vehículos registrados por la entidad
+            $vehiculosCount = Vehiculos::whereHas('usuario', function ($query) use ($nit) {
+                $query->where('nit_entidad', $nit);
+            })->count();
+
+            // 2. Equipos propios traídos (asignados a usuarios de la entidad)
+            $equiposCount = Asignaciones::whereHas('usuario', function ($query) use ($nit) {
+                $query->where('nit_entidad', $nit);
+            })->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'vehiculos_ingresados' => $vehiculosCount,
+                    'equipos_propios' => $equiposCount
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error en DashboardController@normalAdminStats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas de la entidad',
                 'error' => $e->getMessage()
             ], 500);
         }
