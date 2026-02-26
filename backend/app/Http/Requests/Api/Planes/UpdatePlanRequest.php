@@ -21,7 +21,7 @@ class UpdatePlanRequest extends FormRequest
     {
         return [
             'nombre_plan' => 'sometimes|required|string|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$/',
-            'periodo_facturacion' => 'sometimes|required|string|in:monthly,yearly',
+            'periodo_facturacion' => 'sometimes|required|string|in:mensual,anual',
             'caracteristicas' => 'sometimes|array',
             'descripcion' => 'sometimes|required|string',
             'duracion_plan' => 'sometimes|required|integer|min:1',

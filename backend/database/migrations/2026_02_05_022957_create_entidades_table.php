@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('direccion', 200);
             $table->string('nombre_titular', 100);
             $table->string('telefono', 15);
-            $table->enum('estado', ['activo', 'pendiente','inactivo'])->default('pendiente');
+            $table->enum('estado', ['activo','inactivo'])->default('activo');
             $table->timestamps();
         });
     }

@@ -2,7 +2,7 @@ export interface LicensePlan {
     id: string;
     name: string;
     price: number;
-    billingPeriod: 'monthly' | 'yearly';
+    billingPeriod: 'mensual' | 'anual';
     duration: number; // in months
     description: string;
     caracteristicas: string;
@@ -16,7 +16,7 @@ export type PlanFormMode = 'create' | 'edit' | 'duplicate';
 export interface PlanFormData {
     name: string;
     price: number;
-    billingPeriod: 'monthly' | 'yearly';
+    billingPeriod: 'mensual' | 'anual';
     duration: number;
     description: string;
     caracteristicas: string;

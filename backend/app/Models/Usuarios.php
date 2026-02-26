@@ -13,6 +13,19 @@ class Usuarios extends Authenticatable
     public $incrementing = false;
     protected $keyType = 'int';
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($usuario) {
+            \Illuminate\Support\Facades\DB::table('vehiculos')->where('doc', $usuario->doc)->delete();
+            \Illuminate\Support\Facades\DB::table('registros_equipos')->where('doc', $usuario->doc)->delete();
+            \Illuminate\Support\Facades\DB::table('registros')->where('doc', $usuario->doc)->delete();
+            \Illuminate\Support\Facades\DB::table('asignaciones')->where('doc', $usuario->doc)->delete();
+            \Illuminate\Support\Facades\DB::table('detalle_ficha_usuarios')->where('doc', $usuario->doc)->delete();
+        });
+    }
+
     protected $fillable = [
         'doc',
         'id_tip_doc',

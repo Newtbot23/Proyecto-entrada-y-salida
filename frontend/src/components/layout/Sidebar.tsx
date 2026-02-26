@@ -29,9 +29,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Panel', path: '/superadmin/dashboard', icon: DashboardIcon },
         { label: 'Administradores', path: '/superadmin/admins', icon: InstitutionIcon }, // Using InstitutionIcon for now
         { label: 'Instituciones', path: '/superadmin/institutions', icon: InstitutionIcon },
+        { label: 'Admin Entidades', path: '/superadmin/entities-admins', icon: InstitutionIcon },
         { label: 'Planes de Licencia', path: '/superadmin/license-plans', icon: LicenseIcon },
         { label: 'Reportes', path: '/superadmin/reports', icon: ReportIcon },
-        { label: 'Logs del Sistema', path: '/superadmin/logs', icon: SystemLogIcon },
     ];
 
     return (

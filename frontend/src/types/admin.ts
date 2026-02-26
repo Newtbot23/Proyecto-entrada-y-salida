@@ -1,5 +1,4 @@
 export interface Admin {
-    id: number;
     doc: number;      // Document number
     nombre: string;   // Name
     telefono: string; // Phone

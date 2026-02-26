@@ -44,7 +44,8 @@ export const PlansPage: React.FC = () => {
 
     const gridStyle: React.CSSProperties = {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 350px))',
+        justifyContent: 'center',
         gap: '2rem',
         width: '100%',
         paddingTop: '16px',

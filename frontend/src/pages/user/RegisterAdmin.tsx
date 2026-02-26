@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { registrationService } from '../../services/registrationService';
 import styles from './Registration.module.css';
@@ -29,7 +29,8 @@ const RegisterAdmin: React.FC = () => {
     const [tiposDoc, setTiposDoc] = useState<TipoDoc[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (!entidadId) {
@@ -57,46 +58,90 @@ const RegisterAdmin: React.FC = () => {
     }, [planId, entidadId, navigate]);
 
     const REGEX = {
-        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-        DOC_MAX_LENGTH: 20
+        NAME: /^[^0-9]+$/, // No numbers
+        DOC: /^[0-9]{7,10}$/, // 7 to 10 digits
+        PHONE: /^(3[0-9]{9}|60[0-9]{8})$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/ // Min 8, 1 uppercase, 1 lowercase, 1 special char
+    };
+
+    const validateField = (field: keyof typeof formData, value: string) => {
+        let errorMsg: string | undefined;
+
+        switch (field) {
+            case 'doc':
+                if (!value.trim()) errorMsg = 'El documento es obligatorio';
+                else if (!REGEX.DOC.test(value)) errorMsg = 'El documento debe tener entre 7 y 10 dígitos numéricos';
+                break;
+            case 'primer_nombre':
+            case 'primer_apellido':
+                if (!value.trim()) errorMsg = 'Este campo es obligatorio';
+                else if (!REGEX.NAME.test(value)) errorMsg = 'No puede contener números';
+                break;
+            case 'segundo_nombre':
+            case 'segundo_apellido':
+                if (value && !REGEX.NAME.test(value)) errorMsg = 'No puede contener números';
+                break;
+            case 'telefono':
+                if (!value.trim()) errorMsg = 'El teléfono es obligatorio';
+                else if (!REGEX.PHONE.test(value)) errorMsg = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                break;
+            case 'correo':
+                if (!value.trim()) errorMsg = 'El correo es obligatorio';
+                else if (!REGEX.EMAIL.test(value)) errorMsg = 'Formato de correo inválido';
+                break;
+            case 'contrasena':
+                if (!value.trim()) errorMsg = 'La contraseña es obligatoria';
+                else if (!REGEX.PASSWORD.test(value)) errorMsg = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
+                break;
+            case 'confirm_contrasena':
+                if (value !== formData.contrasena) errorMsg = 'Las contraseñas no coinciden';
+                break;
+        }
+
+        setFieldErrors(prev => {
+            const next = { ...prev };
+            if (errorMsg) next[field] = errorMsg;
+            else delete next[field];
+            return next;
+        });
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const field = name as keyof typeof formData;
 
-        // Validate Regex
-        if ((name === 'primer_nombre' || name === 'segundo_nombre' || name === 'primer_apellido' || name === 'segundo_apellido') && value && !REGEX.NAME.test(value)) {
-            setFieldErrors(prev => ({ ...prev, [name]: ['Solo se permiten letras y espacios'] }));
-        } else if (name === 'doc' && value.length > REGEX.DOC_MAX_LENGTH) {
-            setFieldErrors(prev => ({ ...prev, doc: ['Número de documento demasiado largo'] }));
-        } else {
-            // Clear error
-            if (fieldErrors[name]) {
-                setFieldErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors[name];
-                    return newErrors;
-                });
-            }
+        setFormData(prev => ({ ...prev, [field]: value }));
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
         }
+
+        debounceRef.current = setTimeout(() => {
+            validateField(field, value);
+        }, 500);
+    };
+
+    const validateForm = (): boolean => {
+        const errors: Record<string, string> = {};
+
+        if (!REGEX.DOC.test(formData.doc)) errors.doc = 'El documento debe tener entre 7 y 10 dígitos numéricos';
+        if (!formData.id_tip_doc) errors.id_tip_doc = 'Seleccione un tipo de documento';
+        if (!formData.primer_nombre.trim() || !REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = 'Nombre inválido';
+        if (!formData.primer_apellido.trim() || !REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = 'Apellido inválido';
+        if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = 'Teléfono inválido';
+        if (!REGEX.EMAIL.test(formData.correo)) errors.correo = 'Correo inválido';
+        if (!REGEX.PASSWORD.test(formData.contrasena)) errors.contrasena = 'La contraseña no cumple los requisitos';
+        if (formData.contrasena !== formData.confirm_contrasena) errors.confirm_contrasena = 'Las contraseñas no coinciden';
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Final Client-side Validation
-        const errors: Record<string, string[]> = {};
-        if (formData.contrasena !== formData.confirm_contrasena) {
-            setError('Las contraseñas no coinciden');
-            return;
-        }
-
-        if (!REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = ['Solo se permiten letras y espacios'];
-        if (!REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = ['Solo se permiten letras y espacios'];
-
-        if (Object.keys(errors).length > 0) {
-            setFieldErrors(errors);
+        if (!validateForm()) {
             return;
         }
 
@@ -135,7 +180,13 @@ const RegisterAdmin: React.FC = () => {
 
             // Handle ApiError from api.ts
             if (err.status === 422 && err.errors) {
-                setFieldErrors(err.errors);
+                const formattedErrors: Record<string, string> = {};
+                Object.keys(err.errors).forEach(key => {
+                    // map "user_correo" to "correo", "user_telefono" to "telefono" for UI highlighting if needed
+                    const fieldName = key === 'user_correo' ? 'correo' : (key === 'user_telefono' ? 'telefono' : key);
+                    formattedErrors[fieldName] = err.errors[key][0];
+                });
+                setFieldErrors(formattedErrors);
                 setError('Por favor corrija los errores resaltados.');
             } else {
                 setError(err.message || 'Ocurrió un error durante el registro');
@@ -156,13 +207,13 @@ const RegisterAdmin: React.FC = () => {
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label>Número de Documento</label>
-                        <input type="number" name="doc" value={formData.doc} onChange={handleChange} required />
-                        {fieldErrors.doc && <span className={styles.fieldError}>{fieldErrors.doc[0]}</span>}
+                        <input type="text" inputMode="numeric" name="doc" value={formData.doc} onChange={handleChange} className={fieldErrors.doc ? styles.inputError : ''} required />
+                        {fieldErrors.doc && <span className={styles.fieldError}>{fieldErrors.doc}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Tipo de Documento</label>
-                        <select name="id_tip_doc" value={formData.id_tip_doc} onChange={handleChange} required>
+                        <select name="id_tip_doc" value={formData.id_tip_doc} onChange={handleChange} className={fieldErrors.id_tip_doc ? styles.inputError : ''} required>
                             <option value="">Seleccione Tipo</option>
                             {tiposDoc.map(type => (
                                 <option key={type.id_tip_doc} value={type.id_tip_doc}>
@@ -170,56 +221,57 @@ const RegisterAdmin: React.FC = () => {
                                 </option>
                             ))}
                         </select>
-                        {fieldErrors.id_tip_doc && <span className={styles.fieldError}>{fieldErrors.id_tip_doc[0]}</span>}
+                        {fieldErrors.id_tip_doc && <span className={styles.fieldError}>{fieldErrors.id_tip_doc}</span>}
                     </div>
 
                     <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>Primer Nombre</label>
-                            <input type="text" name="primer_nombre" value={formData.primer_nombre} onChange={handleChange} required />
-                            {fieldErrors.primer_nombre && <span className={styles.fieldError}>{fieldErrors.primer_nombre[0]}</span>}
+                            <input type="text" name="primer_nombre" value={formData.primer_nombre} onChange={handleChange} className={fieldErrors.primer_nombre ? styles.inputError : ''} required />
+                            {fieldErrors.primer_nombre && <span className={styles.fieldError}>{fieldErrors.primer_nombre}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Segundo Nombre (Opcional)</label>
-                            <input type="text" name="segundo_nombre" value={formData.segundo_nombre} onChange={handleChange} />
-                            {fieldErrors.segundo_nombre && <span className={styles.fieldError}>{fieldErrors.segundo_nombre[0]}</span>}
+                            <input type="text" name="segundo_nombre" value={formData.segundo_nombre} onChange={handleChange} className={fieldErrors.segundo_nombre ? styles.inputError : ''} />
+                            {fieldErrors.segundo_nombre && <span className={styles.fieldError}>{fieldErrors.segundo_nombre}</span>}
                         </div>
                     </div>
 
                     <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>Primer Apellido</label>
-                            <input type="text" name="primer_apellido" value={formData.primer_apellido} onChange={handleChange} required />
-                            {fieldErrors.primer_apellido && <span className={styles.fieldError}>{fieldErrors.primer_apellido[0]}</span>}
+                            <input type="text" name="primer_apellido" value={formData.primer_apellido} onChange={handleChange} className={fieldErrors.primer_apellido ? styles.inputError : ''} required />
+                            {fieldErrors.primer_apellido && <span className={styles.fieldError}>{fieldErrors.primer_apellido}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Segundo Apellido (Opcional)</label>
-                            <input type="text" name="segundo_apellido" value={formData.segundo_apellido} onChange={handleChange} />
-                            {fieldErrors.segundo_apellido && <span className={styles.fieldError}>{fieldErrors.segundo_apellido[0]}</span>}
+                            <input type="text" name="segundo_apellido" value={formData.segundo_apellido} onChange={handleChange} className={fieldErrors.segundo_apellido ? styles.inputError : ''} />
+                            {fieldErrors.segundo_apellido && <span className={styles.fieldError}>{fieldErrors.segundo_apellido}</span>}
                         </div>
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Teléfono</label>
-                        <input type="number" name="telefono" value={formData.telefono} onChange={handleChange} required />
-                        {fieldErrors.user_telefono && <span className={styles.fieldError}>{fieldErrors.user_telefono[0]}</span>}
+                        <input type="text" inputMode="numeric" name="telefono" value={formData.telefono} onChange={handleChange} className={fieldErrors.telefono ? styles.inputError : ''} required />
+                        {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Correo Electrónico</label>
-                        <input type="email" name="correo" value={formData.correo} onChange={handleChange} required />
-                        {fieldErrors.user_correo && <span className={styles.fieldError}>{fieldErrors.user_correo[0]}</span>}
+                        <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={fieldErrors.correo ? styles.inputError : ''} required />
+                        {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Contraseña</label>
-                        <input type="password" name="contrasena" value={formData.contrasena} onChange={handleChange} required />
-                        {fieldErrors.contrasena && <span className={styles.fieldError}>{fieldErrors.contrasena[0]}</span>}
+                        <input type="password" name="contrasena" value={formData.contrasena} onChange={handleChange} className={fieldErrors.contrasena ? styles.inputError : ''} required />
+                        {fieldErrors.contrasena && <span className={styles.fieldError}>{fieldErrors.contrasena}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
                         <label>Confirmar Contraseña</label>
-                        <input type="password" name="confirm_contrasena" value={formData.confirm_contrasena} onChange={handleChange} required />
+                        <input type="password" name="confirm_contrasena" value={formData.confirm_contrasena} onChange={handleChange} className={fieldErrors.confirm_contrasena ? styles.inputError : ''} required />
+                        {fieldErrors.confirm_contrasena && <span className={styles.fieldError}>{fieldErrors.confirm_contrasena}</span>}
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading}>

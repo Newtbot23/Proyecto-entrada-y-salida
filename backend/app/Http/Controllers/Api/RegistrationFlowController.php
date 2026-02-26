@@ -40,8 +40,19 @@ class RegistrationFlowController extends Controller
 
         try {
             // 1. Create License (Status = pendiente by default)
+            $plan = \App\Models\PlanesLicencia::find($request->id_plan_lic);
             $fechaInicio = Carbon::now();
-            $fechaVencimiento = Carbon::now()->addYear();
+            $fechaVencimiento = clone $fechaInicio;
+            
+            if ($plan) {
+                if (strtolower($plan->periodo_facturacion) === 'anual') {
+                    $fechaVencimiento->addYears($plan->duracion_plan);
+                } else {
+                    $fechaVencimiento->addMonths($plan->duracion_plan);
+                }
+            } else {
+                $fechaVencimiento->addYear(); // fallback
+            }
 
             $licencia = LicenciasSistema::create([
                 'fecha_inicio' => $fechaInicio,
@@ -80,6 +91,23 @@ class RegistrationFlowController extends Controller
                 ]
             ], 201);
 
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El documento o correo ya se encuentran en uso.',
+                    'errors' => [
+                        'duplicado' => ['Uno de los datos únicos introducidos ya está registrado en el sistema.']
+                    ]
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la base de datos',
+                'errors' => ['server' => [$e->getMessage()]]
+            ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
             // Debug logging
@@ -87,7 +115,7 @@ class RegistrationFlowController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error completing registration: ' . $e->getMessage(), // Temporarily expose error
+                'message' => 'Error al completar el registro',
                 'errors' => ['server' => [$e->getMessage()]]
             ], 500);
         }

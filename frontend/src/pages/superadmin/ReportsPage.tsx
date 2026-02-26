@@ -8,7 +8,6 @@ import type { Institution } from '../../types/institution';
 
 const ReportsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [adminName, setAdminName] = useState('Super Admin');
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -20,15 +19,6 @@ const ReportsPage: React.FC = () => {
     const [currentReportType, setCurrentReportType] = useState<string>('');
 
     useEffect(() => {
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
-            }
-        }
         fetchInstitutions();
     }, []);
 
@@ -39,11 +29,6 @@ const ReportsPage: React.FC = () => {
         } catch (error) {
             console.error('Error fetching institutions:', error);
         }
-    };
-
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/superadmin/login');
     };
 
     const handlePreviewLicenses = async () => {
@@ -83,7 +68,7 @@ const ReportsPage: React.FC = () => {
         }
         try {
             setLoading(true);
-            const selectedInst = institutions.find(i => i.id.toString() === selectedInstitutionId);
+            const selectedInst = institutions.find(i => i.nit === selectedInstitutionId);
             if (selectedInst) {
                 const data = await reportService.getEntityPreview(selectedInst.nit);
                 setPreviewData(data);
@@ -106,7 +91,7 @@ const ReportsPage: React.FC = () => {
             } else if (currentReportType === 'entities') {
                 await reportService.downloadEntitiesReport();
             } else if (currentReportType === 'entity_full') {
-                const institution = institutions.find(i => i.id.toString() === selectedInstitutionId);
+                const institution = institutions.find(i => i.nit === selectedInstitutionId);
                 if (institution) await reportService.downloadEntityFullReport(institution.nit);
             }
         } catch (error) {
@@ -126,7 +111,7 @@ const ReportsPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Reportes del Sistema" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>
@@ -181,8 +166,8 @@ const ReportsPage: React.FC = () => {
                                 }}
                             >
                                 <option value="">Seleccione una entidad...</option>
-                                {institutions.map((inst) => (
-                                    <option key={inst.id} value={inst.id}>
+                                {institutions.map((inst, idx) => (
+                                    <option key={inst.nit || idx} value={inst.nit}>
                                         {inst.nombre_entidad} (NIT: {inst.nit})
                                     </option>
                                 ))}

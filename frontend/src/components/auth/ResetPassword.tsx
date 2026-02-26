@@ -13,6 +13,7 @@ import styles from '../../pages/user/Registration.module.css';
 const ResetPassword = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const typeParam = searchParams.get('type') || 'usuario';
 
     // Estados del formulario
     const [email, setEmail] = useState('');
@@ -24,6 +25,46 @@ const ResetPassword = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+    const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/;
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPassword(val);
+
+        setValidationErrors(prev => {
+            const next = { ...prev };
+            if (!val.trim()) {
+                next.password = 'La contraseña es obligatoria';
+            } else if (!REGEX_PASSWORD.test(val)) {
+                next.password = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
+            } else {
+                delete next.password;
+            }
+
+            if (passwordConfirmation && val !== passwordConfirmation) {
+                next.password_confirmation = 'Las contraseñas no coinciden';
+            } else if (passwordConfirmation && val === passwordConfirmation) {
+                delete next.password_confirmation;
+            }
+            return next;
+        });
+    };
+
+    const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPasswordConfirmation(val);
+
+        setValidationErrors(prev => {
+            const next = { ...prev };
+            if (val !== password) {
+                next.password_confirmation = 'Las contraseñas no coinciden';
+            } else {
+                delete next.password_confirmation;
+            }
+            return next;
+        });
+    };
 
     /**
      * Extrae el código y email de los parámetros de la URL al montar el componente
@@ -52,6 +93,18 @@ const ResetPassword = () => {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        // Validar antes de enviar
+        if (!REGEX_PASSWORD.test(password) || password !== passwordConfirmation) {
+            setValidationErrors(prev => {
+                const next = { ...prev };
+                if (!REGEX_PASSWORD.test(password)) next.password = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
+                if (password !== passwordConfirmation) next.password_confirmation = 'Las contraseñas no coinciden';
+                return next;
+            });
+            setErrorMessage('Por favor corrige los errores en el formulario.');
+            return;
+        }
+
         // Limpiar mensajes de error previos
         setErrorMessage('');
         setValidationErrors({});
@@ -64,12 +117,12 @@ const ResetPassword = () => {
                 code,
                 password,
                 password_confirmation: passwordConfirmation,
-                type: 'usuario' // Cambiar a 'superadmin' si es para super admin
+                type: typeParam
             });
 
             // Si la petición es exitosa, redirigir al login
             alert('Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.');
-            navigate('/login');
+            navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login');
         } catch (error: any) {
             // Manejo de errores con ApiError
             if (error.status === 422 && error.errors) {
@@ -126,11 +179,11 @@ const ResetPassword = () => {
                             id="password"
                             name="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={handlePasswordChange}
+                            className={validationErrors.password ? styles.inputError : ''}
                             placeholder="Mínimo 8 caracteres"
                             required
                             disabled={loading}
-                            minLength={8}
                         />
                         {validationErrors.password && <span className={styles.fieldError}>{validationErrors.password}</span>}
                     </div>
@@ -143,17 +196,14 @@ const ResetPassword = () => {
                             id="password_confirmation"
                             name="password_confirmation"
                             value={passwordConfirmation}
-                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            onChange={handleConfirmChange}
+                            className={validationErrors.password_confirmation ? styles.inputError : ''}
                             placeholder="Repite tu contraseña"
                             required
                             disabled={loading}
-                            minLength={8}
                         />
                         {validationErrors.password_confirmation && (
                             <span className={styles.fieldError}>{validationErrors.password_confirmation}</span>
-                        )}
-                        {password && passwordConfirmation && password !== passwordConfirmation && (
-                            <span className={styles.fieldError}>Las contraseñas no coinciden.</span>
                         )}
                     </div>
 
@@ -163,9 +213,9 @@ const ResetPassword = () => {
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                         <a
-                            href="/login"
+                            href={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
                             style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
-                            onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+                            onClick={(e) => { e.preventDefault(); navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login'); }}
                         >
                             Cancelar y volver al login
                         </a>

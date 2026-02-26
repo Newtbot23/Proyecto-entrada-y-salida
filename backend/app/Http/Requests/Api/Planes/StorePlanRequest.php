@@ -21,7 +21,7 @@ class StorePlanRequest extends FormRequest
     {
         return [
             'nombre_plan' => 'required|string|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$/',
-            'periodo_facturacion' => 'required|string|in:monthly,yearly',
+            'periodo_facturacion' => 'required|string|in:mensual,anual',
             'caracteristicas' => 'required|array',
             'descripcion' => 'required|string',
             'duracion_plan' => 'required|integer|min:1',

@@ -11,7 +11,7 @@ const mapToFrontend = (plan: any): LicensePlan => ({
     id: plan.id.toString(),
     name: plan.nombre_plan,
     price: parseFloat(plan.precio_plan),
-    billingPeriod: plan.periodo_facturacion || 'monthly',
+    billingPeriod: plan.periodo_facturacion || 'mensual',
     duration: plan.duracion_plan,
     description: plan.descripcion || '',
     // El backend puede devolver strings simples o objetos {text, included} (seeder)

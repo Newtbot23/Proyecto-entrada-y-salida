@@ -24,7 +24,7 @@ class UpdateEntidadRequest extends FormRequest
         return [
             'nombre_entidad' => 'sometimes|required|string|min:8|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'correo' => 'sometimes|required|email|min:8|max:200|unique:entidades,correo,' . $id,
-            'direccion' => 'sometimes|required|string|min:8|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.-]+$/',
+            'direccion' => 'sometimes|required|string|min:8|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-\#]+$/',
             'nombre_titular' => 'sometimes|required|string|min:8|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'telefono' => 'sometimes|required|string|min:8|max:15|regex:/^[0-9+\-\s()]+$/',
             'nit' => 'sometimes|required|string|min:6|max:15|unique:entidades,nit,' . $id . '|regex:/^[0-9\-]+$/',

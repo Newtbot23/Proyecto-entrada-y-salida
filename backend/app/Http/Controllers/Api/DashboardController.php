@@ -18,14 +18,14 @@ class DashboardController extends Controller
     public function stats(): JsonResponse
     {
         try {
-            // 1. Instituciones Activas (Licencias con estado 'activa')
-            $activeCount = LicenciasSistema::where('estado', 'activa')->count();
+            // 1. Instituciones Activas (Licencias con estado 'activo')
+            $activeCount = LicenciasSistema::where('estado', 'activo')->count();
 
             // 2. Licencias por vencer (en los próximos 30 días)
             $now = Carbon::now();
             $next30Days = Carbon::now()->addDays(30);
             $expiringCount = LicenciasSistema::whereBetween('fecha_vencimiento', [$now, $next30Days])
-                ->where('estado', 'activa')
+                ->where('estado', 'activo')
                 ->count();
 
             // 3. Ingresos totales (Suma de precios de planes asociados a licencias pagadas)

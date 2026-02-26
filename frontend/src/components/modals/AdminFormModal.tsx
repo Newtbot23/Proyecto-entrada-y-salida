@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import styles from './AdminFormModal.module.css';
 import type { Admin, AdminFormData } from '../../types/admin';
@@ -32,6 +32,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
     const [serverError, setServerError] = useState<string | null>(null);
     const [loadingState, setLoadingState] = useState<LoadingState>('idle');
 
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         if (isOpen && initialData && mode === 'edit') {
             setFormData({
@@ -39,7 +41,7 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 nombre: initialData.nombre,
                 telefono: initialData.telefono,
                 correo: initialData.correo,
-                contrasena: '' // Empty for edit
+                contrasena: ''
             });
         } else if (isOpen && mode === 'create') {
             setFormData({
@@ -59,9 +61,75 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
     const REGEX = {
         NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
         DOC: /^[0-9]+$/,
-        PHONE: /^[0-9]{7,15}$/,
-        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/
     };
+
+    // ✅ VALIDACIÓN EN TIEMPO REAL POR CAMPO
+    const validateField = (field: keyof AdminFormData, value: string) => {
+        let error: string | undefined;
+
+        switch (field) {
+            case 'doc':
+                if (!value.trim())
+                    error = 'El número de documento es obligatorio';
+                else if (!REGEX.DOC.test(value))
+                    error = 'El documento solo debe contener números';
+                else if (value.length < 7 || value.length > 10)
+                    error = 'El número de documento debe tener entre 7 y 10 dígitos';
+                break;
+
+            case 'nombre':
+                if (!value.trim())
+                    error = 'El nombre es obligatorio';
+                else if (!REGEX.NAME.test(value))
+                    error = 'El nombre solo debe contener letras y espacios';
+                else if (value.length > 100)
+                    error = 'El nombre no debe exceder los 100 caracteres';
+                break;
+
+            case 'correo':
+                if (!value.trim())
+                    error = 'El correo es obligatorio';
+                else if (!REGEX.EMAIL.test(value))
+                    error = 'Formato de correo inválido';
+                else if (value.length > 100)
+                    error = 'El correo no debe exceder los 100 caracteres';
+                break;
+
+            case 'telefono':
+                if (!value.trim())
+                    error = 'El teléfono es obligatorio';
+                else if (value.startsWith('+'))
+                    error = 'No incluya prefijos internacionales como +57';
+                else if (!/^(3[0-9]{9}|60[0-9]{8})$/.test(value))
+                    error = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                break;
+
+            case 'contrasena':
+                if (mode === 'create' && !value.trim())
+                    error = 'La contraseña es obligatoria para nuevos administradores';
+                else if (value && !REGEX.PASSWORD.test(value))
+                    error = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
+                break;
+        }
+
+        setErrors(prev => ({ ...prev, [field]: error }));
+    };
+
+    // ✅ HANDLE CHANGE CON DEBOUNCE 500ms
+    const handleChange = (field: keyof AdminFormData, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            validateField(field, value);
+        }, 500);
+    };
+
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof AdminFormData, string>> = {};
@@ -70,8 +138,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
             newErrors.doc = 'El número de documento es obligatorio';
         } else if (!REGEX.DOC.test(formData.doc)) {
             newErrors.doc = 'El documento solo debe contener números';
-        } else if (formData.doc.length > 20) {
-            newErrors.doc = 'El número de documento no debe exceder los 20 dígitos';
+        } else if (formData.doc.length < 7 || formData.doc.length > 10) {
+            newErrors.doc = 'El número de documento debe tener entre 7 y 10 dígitos';
         }
 
         if (!formData.nombre.trim()) {
@@ -92,14 +160,16 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
 
         if (!formData.telefono.trim()) {
             newErrors.telefono = 'El teléfono es obligatorio';
-        } else if (!REGEX.PHONE.test(formData.telefono)) {
-            newErrors.telefono = 'El teléfono debe tener entre 7 y 15 dígitos';
+        } else if (formData.telefono.startsWith('+')) {
+            newErrors.telefono = 'No incluya prefijos internacionales como +57';
+        } else if (!/^(3[0-9]{9}|60[0-9]{8})$/.test(formData.telefono)) {
+            newErrors.telefono = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
         }
 
         if (mode === 'create' && !formData.contrasena?.trim()) {
             newErrors.contrasena = 'La contraseña es obligatoria para nuevos administradores';
-        } else if (formData.contrasena && formData.contrasena.length < 8) {
-            newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres';
+        } else if (formData.contrasena && !REGEX.PASSWORD.test(formData.contrasena)) {
+            newErrors.contrasena = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
         }
 
         setErrors(newErrors);
@@ -110,116 +180,186 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
         e.preventDefault();
         setServerError(null);
 
-        if (!validate()) {
-            return;
-        }
+        if (!validate()) return;
 
         try {
             setLoadingState('saving');
             await onSave(formData);
             setLoadingState('success');
-
-            setTimeout(() => {
-                onClose();
-            }, 500);
-
+            setTimeout(onClose, 500);
         } catch (error) {
             setLoadingState('error');
-            if (error instanceof Error) {
-                setServerError(error.message);
-            } else {
-                setServerError('Ocurrió un error inesperado.');
-            }
+            setServerError(
+                error instanceof Error
+                    ? error.message
+                    : 'Ocurrió un error inesperado.'
+            );
         }
     };
 
-    const handleChange = (field: keyof AdminFormData, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: undefined }));
-        }
-    };
-
-    const isSaveDisabled = loadingState === 'saving' || loadingState === 'success';
+    const isSaveDisabled =
+        loadingState === 'saving' || loadingState === 'success';
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={mode === 'create' ? 'Crear Nuevo Administrador' : 'Editar Administrador'}>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={
+                mode === 'create'
+                    ? 'Crear Nuevo Administrador'
+                    : 'Editar Administrador'
+            }
+        >
             <form onSubmit={handleSubmit} className={styles.form}>
-
                 {serverError && (
-                    <div style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                    <div
+                        style={{
+                            color: '#ef4444',
+                            marginBottom: '1rem',
+                            fontSize: '0.875rem'
+                        }}
+                    >
                         <strong>Error:</strong> {serverError}
                     </div>
                 )}
 
                 <div className={styles.formGroup}>
-                    <label className={styles.label}>Número de Documento <span className={styles.required}>*</span></label>
+                    <label className={styles.label}>
+                        Número de Documento{' '}
+                        <span className={styles.required}>*</span>
+                    </label>
                     <input
                         type="number"
-                        className={`${styles.input} ${errors.doc ? styles.inputError : ''} ${mode === 'edit' ? styles.readOnly : ''}`}
+                        className={`${styles.input} ${errors.doc ? styles.inputError : ''
+                            } ${mode === 'edit' ? styles.readOnly : ''}`}
                         value={formData.doc}
-                        onChange={(e) => mode === 'create' && handleChange('doc', e.target.value)}
+                        onChange={e =>
+                            mode === 'create' &&
+                            handleChange('doc', e.target.value)
+                        }
                         disabled={mode === 'edit' || isSaveDisabled}
                     />
-                    {errors.doc && <span className={styles.errorText}>{errors.doc}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Nombre Completo <span className={styles.required}>*</span></label>
-                    <input
-                        type="text"
-                        className={`${styles.input} ${errors.nombre ? styles.inputError : ''}`}
-                        value={formData.nombre}
-                        onChange={(e) => handleChange('nombre', e.target.value)}
-                        disabled={isSaveDisabled}
-                    />
-                    {errors.nombre && <span className={styles.errorText}>{errors.nombre}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Correo Electrónico <span className={styles.required}>*</span></label>
-                    <input
-                        type="email"
-                        className={`${styles.input} ${errors.correo ? styles.inputError : ''}`}
-                        value={formData.correo}
-                        onChange={(e) => handleChange('correo', e.target.value)}
-                        disabled={isSaveDisabled}
-                    />
-                    {errors.correo && <span className={styles.errorText}>{errors.correo}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Teléfono <span className={styles.required}>*</span></label>
-                    <input
-                        type="text"
-                        className={`${styles.input} ${errors.telefono ? styles.inputError : ''}`}
-                        value={formData.telefono}
-                        onChange={(e) => handleChange('telefono', e.target.value)}
-                        disabled={isSaveDisabled}
-                    />
-                    {errors.telefono && <span className={styles.errorText}>{errors.telefono}</span>}
+                    {errors.doc && (
+                        <span className={styles.errorText}>
+                            {errors.doc}
+                        </span>
+                    )}
                 </div>
 
                 <div className={styles.formGroup}>
                     <label className={styles.label}>
-                        Contraseña {mode === 'edit' && '(Dejar en blanco para mantener la actual)'} {mode === 'create' && <span className={styles.required}>*</span>}
+                        Nombre Completo{' '}
+                        <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                        type="text"
+                        className={`${styles.input} ${errors.nombre ? styles.inputError : ''
+                            }`}
+                        value={formData.nombre}
+                        onChange={e =>
+                            handleChange('nombre', e.target.value)
+                        }
+                        disabled={isSaveDisabled}
+                    />
+                    {errors.nombre && (
+                        <span className={styles.errorText}>
+                            {errors.nombre}
+                        </span>
+                    )}
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                        Correo Electrónico{' '}
+                        <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                        type="email"
+                        className={`${styles.input} ${errors.correo ? styles.inputError : ''
+                            }`}
+                        value={formData.correo}
+                        onChange={e =>
+                            handleChange('correo', e.target.value)
+                        }
+                        disabled={isSaveDisabled}
+                    />
+                    {errors.correo && (
+                        <span className={styles.errorText}>
+                            {errors.correo}
+                        </span>
+                    )}
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                        Teléfono{' '}
+                        <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                        type="text"
+                        className={`${styles.input} ${errors.telefono ? styles.inputError : ''
+                            }`}
+                        value={formData.telefono}
+                        onChange={e =>
+                            handleChange('telefono', e.target.value)
+                        }
+                        disabled={isSaveDisabled}
+                    />
+                    {errors.telefono && (
+                        <span className={styles.errorText}>
+                            {errors.telefono}
+                        </span>
+                    )}
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                        Contraseña{' '}
+                        {mode === 'edit' &&
+                            '(Dejar en blanco para mantener la actual)'}{' '}
+                        {mode === 'create' && (
+                            <span className={styles.required}>*</span>
+                        )}
                     </label>
                     <input
                         type="password"
-                        className={`${styles.input} ${errors.contrasena ? styles.inputError : ''}`}
+                        className={`${styles.input} ${errors.contrasena ? styles.inputError : ''
+                            }`}
                         value={formData.contrasena}
-                        onChange={(e) => handleChange('contrasena', e.target.value)}
+                        onChange={e =>
+                            handleChange(
+                                'contrasena',
+                                e.target.value
+                            )
+                        }
                         disabled={isSaveDisabled}
                     />
-                    {errors.contrasena && <span className={styles.errorText}>{errors.contrasena}</span>}
+                    {errors.contrasena && (
+                        <span className={styles.errorText}>
+                            {errors.contrasena}
+                        </span>
+                    )}
                 </div>
 
                 <div className={styles.actions}>
-                    <button type="button" onClick={onClose} className={styles.cancelButton} disabled={isSaveDisabled}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={styles.cancelButton}
+                        disabled={isSaveDisabled}
+                    >
                         Cancelar
                     </button>
-                    <button type="submit" className={styles.saveButton} disabled={isSaveDisabled}>
-                        {loadingState === 'saving' ? 'Guardando...' : mode === 'create' ? 'Crear Administrador' : 'Guardar Cambios'}
+                    <button
+                        type="submit"
+                        className={styles.saveButton}
+                        disabled={isSaveDisabled}
+                    >
+                        {loadingState === 'saving'
+                            ? 'Guardando...'
+                            : mode === 'create'
+                                ? 'Crear Administrador'
+                                : 'Guardar Cambios'}
                     </button>
                 </div>
             </form>

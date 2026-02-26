@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { registrationService } from '../../services/registrationService';
 import styles from './Registration.module.css';
@@ -20,7 +20,9 @@ const RegisterEntity: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+    const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
+
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (!planId) {
@@ -29,55 +31,125 @@ const RegisterEntity: React.FC = () => {
     }, [planId, navigate]);
 
     const REGEX = {
-        PHONE: /^[0-9]{7,15}$/,
-        NIT: /^[0-9]{6,15}$/,
+        PHONE: /^(3[0-9]{9}|60[0-9]{8})$/,
+        NIT: /^[0-9]{8,15}(-[0-9])?$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,  // Letters and spaces only
+        ENTITY_NAME: /^[^0-9]+$/, // No numbers
+        REP_LEGAL_NAME: /^[^0-9]{8,}$/, // No numbers, min 8 chars
+        DIRECCION: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-#]+$/,
+    };
+
+    const validateField = (field: keyof typeof formData, value: string) => {
+        let error: string | undefined;
+
+        switch (field) {
+            case 'nombre_entidad':
+                if (!value.trim())
+                    error = 'El nombre de la entidad es obligatorio';
+                else if (!REGEX.ENTITY_NAME.test(value))
+                    error = 'El nombre de la entidad no puede contener números';
+                break;
+            case 'correo':
+                if (!value.trim())
+                    error = 'El correo es obligatorio';
+                else if (!REGEX.EMAIL.test(value))
+                    error = 'Formato de correo inválido';
+                break;
+            case 'direccion':
+                if (!value.trim())
+                    error = 'La dirección es obligatoria';
+                else if (!REGEX.DIRECCION.test(value))
+                    error = 'La dirección contiene caracteres no permitidos';
+                break;
+            case 'nombre_titular':
+                if (!value.trim())
+                    error = 'El nombre del representante legal es obligatorio';
+                else if (/\d/.test(value))
+                    error = 'El nombre no puede contener números';
+                else if (value.trim().length < 8)
+                    error = 'El nombre debe tener al menos 8 caracteres';
+                break;
+            case 'telefono':
+                if (!value.trim())
+                    error = 'El teléfono es obligatorio';
+                else if (!REGEX.PHONE.test(value))
+                    error = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                break;
+            case 'nit':
+                if (!value.trim())
+                    error = 'El NIT es obligatorio';
+                else if (!REGEX.NIT.test(value))
+                    error = 'El NIT debe tener entre 8 y 15 números, y puede incluir un dígito de verificación opcional (Ej: 12345678-9)';
+                break;
+        }
+
+        setFieldErrors(prev => ({ ...prev, [field]: error }));
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const field = name as keyof typeof formData;
 
-        // Validate Validation
-        if (name === 'telefono' && !REGEX.PHONE.test(value)) {
-            setFieldErrors(prev => ({ ...prev, telefono: ['El teléfono debe tener entre 7 y 15 dígitos'] }));
-        } else if (name === 'nit' && !REGEX.NIT.test(value)) {
-            setFieldErrors(prev => ({ ...prev, nit: ['El NIT debe tener entre 6 y 15 dígitos'] }));
-        } else if (name === 'correo' && !REGEX.EMAIL.test(value)) {
-            setFieldErrors(prev => ({ ...prev, correo: ['Formato de correo inválido'] }));
-        } else if (name === 'nombre_titular' && !REGEX.NAME.test(value)) {
-            setFieldErrors(prev => ({ ...prev, nombre_titular: ['Solo se permiten letras y espacios'] }));
-        } else if (name === 'nombre_entidad' && value.length > 200) {
-            setFieldErrors(prev => ({ ...prev, nombre_entidad: ['Nombre demasiado largo (máx 200)'] }));
-        } else if (name === 'direccion' && value.length > 200) {
-            setFieldErrors(prev => ({ ...prev, direccion: ['Dirección demasiado larga (máx 200)'] }));
-        } else {
-            // Clear error for this field
-            if (fieldErrors[name]) {
-                setFieldErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors[name];
-                    return newErrors;
-                });
-            }
+        setFormData(prev => ({ ...prev, [field]: value }));
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
         }
+
+        debounceRef.current = setTimeout(() => {
+            validateField(field, value);
+        }, 500);
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors: Partial<Record<keyof typeof formData, string>> = {};
+
+        if (!formData.nombre_entidad.trim()) {
+            newErrors.nombre_entidad = 'El nombre de la entidad es obligatorio';
+        } else if (!REGEX.ENTITY_NAME.test(formData.nombre_entidad)) {
+            newErrors.nombre_entidad = 'El nombre de la entidad no puede contener números';
+        }
+
+        if (!formData.correo.trim()) {
+            newErrors.correo = 'El correo es obligatorio';
+        } else if (!REGEX.EMAIL.test(formData.correo)) {
+            newErrors.correo = 'Formato de correo inválido';
+        }
+
+        if (!formData.direccion.trim()) {
+            newErrors.direccion = 'La dirección es obligatoria';
+        } else if (!REGEX.DIRECCION.test(formData.direccion)) {
+            newErrors.direccion = 'La dirección contiene caracteres no permitidos';
+        }
+
+        if (!formData.nombre_titular.trim()) {
+            newErrors.nombre_titular = 'El nombre del representante legal es obligatorio';
+        } else if (/\d/.test(formData.nombre_titular)) {
+            newErrors.nombre_titular = 'El nombre no puede contener números';
+        } else if (formData.nombre_titular.trim().length < 8) {
+            newErrors.nombre_titular = 'El nombre debe tener al menos 8 caracteres';
+        }
+
+        if (!formData.telefono.trim()) {
+            newErrors.telefono = 'El teléfono es obligatorio';
+        } else if (!REGEX.PHONE.test(formData.telefono)) {
+            newErrors.telefono = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+        }
+
+        if (!formData.nit.trim()) {
+            newErrors.nit = 'El NIT es obligatorio';
+        } else if (!REGEX.NIT.test(formData.nit)) {
+            newErrors.nit = 'El NIT debe tener entre 8 y 15 números, y puede incluir un dígito de verificación opcional (Ej: 12345678-9)';
+        }
+
+        setFieldErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Final regex check before submit
-        const errors: Record<string, string[]> = {};
-        if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = ['El teléfono debe tener entre 7 y 15 dígitos'];
-        if (!REGEX.NIT.test(formData.nit)) errors.nit = ['El NIT debe tener entre 6 y 15 dígitos'];
-        if (!REGEX.EMAIL.test(formData.correo)) errors.correo = ['Formato de correo inválido'];
-        if (!REGEX.NAME.test(formData.nombre_titular)) errors.nombre_titular = ['Solo se permiten letras y espacios'];
-        if (!formData.nombre_entidad.trim()) errors.nombre_entidad = ['El nombre de la entidad es obligatorio'];
-        if (!formData.direccion.trim()) errors.direccion = ['La dirección es obligatoria'];
-
-        if (Object.keys(errors).length > 0) {
-            setFieldErrors(errors);
+        if (!validateForm()) {
             return;
         }
 
@@ -90,7 +162,6 @@ const RegisterEntity: React.FC = () => {
 
             if (response.success) {
                 setSuccess('¡Entidad creada exitosamente! Redirigiendo al registro de administrador...');
-                // Wait 2 seconds so the user sees the success message
                 setTimeout(() => {
                     navigate('/register-admin', {
                         state: {
@@ -103,9 +174,13 @@ const RegisterEntity: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Registration error:', err);
-            // Handle ApiError with structured validation errors
             if (err.status === 422 && err.errors) {
-                setFieldErrors(err.errors);
+                // Map backend array errors to single string like the frontend ones
+                const mappedErrors: Partial<Record<keyof typeof formData, string>> = {};
+                for (const key in err.errors) {
+                    mappedErrors[key as keyof typeof formData] = err.errors[key][0];
+                }
+                setFieldErrors(mappedErrors);
                 setError('Por favor corrija los errores resaltados.');
             } else {
                 setError(err.message || 'Error al crear la entidad. Por favor verifique el formulario.');
@@ -132,64 +207,66 @@ const RegisterEntity: React.FC = () => {
                             name="nombre_entidad"
                             value={formData.nombre_entidad}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.nombre_entidad ? styles.inputError : ''}
                         />
-                        {fieldErrors.nombre_entidad && <span className={styles.fieldError}>{fieldErrors.nombre_entidad[0]}</span>}
+                        {fieldErrors.nombre_entidad && <span className={styles.fieldError}>{fieldErrors.nombre_entidad}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Correo Electrónico</label>
+                        <label>Correo Electrónico <span className={styles.required}>*</span></label>
                         <input
                             type="email"
                             name="correo"
                             value={formData.correo}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.correo ? styles.inputError : ''}
                         />
-                        {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo[0]}</span>}
+                        {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Dirección</label>
+                        <label>Dirección <span className={styles.required}>*</span></label>
                         <input
                             type="text"
                             name="direccion"
                             value={formData.direccion}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.direccion ? styles.inputError : ''}
                         />
-                        {fieldErrors.direccion && <span className={styles.fieldError}>{fieldErrors.direccion[0]}</span>}
+                        {fieldErrors.direccion && <span className={styles.fieldError}>{fieldErrors.direccion}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Nombre del Representante Legal</label>
+                        <label>Nombre del Representante Legal <span className={styles.required}>*</span></label>
                         <input
                             type="text"
                             name="nombre_titular"
                             value={formData.nombre_titular}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.nombre_titular ? styles.inputError : ''}
                         />
-                        {fieldErrors.nombre_titular && <span className={styles.fieldError}>{fieldErrors.nombre_titular[0]}</span>}
+                        {fieldErrors.nombre_titular && <span className={styles.fieldError}>{fieldErrors.nombre_titular}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Teléfono</label>
+                        <label>Teléfono <span className={styles.required}>*</span></label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             name="telefono"
                             value={formData.telefono}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.telefono ? styles.inputError : ''}
                         />
-                        {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono[0]}</span>}
+                        {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono}</span>}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>NIT</label>
+                        <label>NIT <span className={styles.required}>*</span></label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             name="nit"
                             value={formData.nit}
                             onChange={handleChange}
-                            required
+                            className={fieldErrors.nit ? styles.inputError : ''}
                         />
-                        {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit[0]}</span>}
+                        {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit}</span>}
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading || !!success}>

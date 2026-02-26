@@ -67,6 +67,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     });
 
     const [errors, setErrors] = useState<Partial<Record<keyof InstitutionFormData, string>>>({});
+    const [touched, setTouched] = useState<Partial<Record<keyof InstitutionFormData, boolean>>>({});
     const [serverError, setServerError] = useState<string | null>(null);
     const [loadingState, setLoadingState] = useState<LoadingState>('idle');
 
@@ -96,6 +97,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
         }
 
         setErrors({});
+        setTouched({});
         setServerError(null);
         setLoadingState('idle');
     }, [isOpen, initialData, mode]);
@@ -105,58 +107,93 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
     // ------------------------------------------------------------------------
 
     const REGEX = {
-        PHONE: /^[0-9]{7,15}$/,
+        PHONE: /^[0-9]{10}$/,
         NIT: /^[0-9]{6,15}$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        DIRECCION: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-#]+$/,
     };
 
-    const validate = (): boolean => {
+    const runValidation = (data: InstitutionFormData): Partial<Record<keyof InstitutionFormData, string>> => {
         const newErrors: Partial<Record<keyof InstitutionFormData, string>> = {};
 
-        if (!formData.nombre_entidad.trim()) {
+        if (!data.nombre_entidad.trim()) {
             newErrors.nombre_entidad = 'El nombre de la institución es obligatorio';
-        } else if (formData.nombre_entidad.length > 200) {
+        } else if (data.nombre_entidad.length > 200) {
             newErrors.nombre_entidad = 'El nombre de la institución no debe exceder los 200 caracteres';
         }
 
-        if (!formData.correo.trim()) {
+        if (!data.correo.trim()) {
             newErrors.correo = 'El correo es obligatorio';
-        } else if (!REGEX.EMAIL.test(formData.correo)) {
+        } else if (!REGEX.EMAIL.test(data.correo)) {
             newErrors.correo = 'Formato de correo inválido';
-        } else if (formData.correo.length > 200) {
+        } else if (data.correo.length > 200) {
             newErrors.correo = 'El correo no debe exceder los 200 caracteres';
         }
 
-        if (!formData.direccion.trim()) {
+        if (!data.direccion.trim()) {
             newErrors.direccion = 'La dirección es obligatoria';
-        } else if (formData.direccion.length > 200) {
+        } else if (!REGEX.DIRECCION.test(data.direccion)) {
+            newErrors.direccion = 'La dirección contiene caracteres no permitidos';
+        } else if (data.direccion.length > 200) {
             newErrors.direccion = 'La dirección no debe exceder los 200 caracteres';
         }
 
-        if (!formData.nombre_titular.trim()) {
+        if (!data.nombre_titular.trim()) {
             newErrors.nombre_titular = 'El nombre del representante legal es obligatorio';
-        } else if (!REGEX.NAME.test(formData.nombre_titular)) {
+        } else if (!REGEX.NAME.test(data.nombre_titular)) {
             newErrors.nombre_titular = 'Solo se permiten letras y espacios';
-        } else if (formData.nombre_titular.length > 100) {
+        } else if (data.nombre_titular.length > 100) {
             newErrors.nombre_titular = 'El nombre no debe exceder los 100 caracteres';
         }
 
-        if (!formData.telefono.trim()) {
+        if (!data.telefono.trim()) {
             newErrors.telefono = 'El teléfono es obligatorio';
-        } else if (!REGEX.PHONE.test(formData.telefono)) {
-            newErrors.telefono = 'El teléfono debe tener entre 7 y 15 dígitos';
+        } else if (!REGEX.PHONE.test(data.telefono)) {
+            newErrors.telefono = 'El teléfono debe tener exactamente 10 dígitos (sin +57)';
         }
 
-        if (!formData.nit.trim()) {
+        if (!data.nit.trim()) {
             newErrors.nit = 'El NIT es obligatorio';
-        } else if (!REGEX.NIT.test(formData.nit)) {
+        } else if (!REGEX.NIT.test(data.nit)) {
             newErrors.nit = 'El NIT debe tener entre 6 y 15 dígitos';
         }
 
+        return newErrors;
+    };
+
+    const validate = (): boolean => {
+        const newErrors = runValidation(formData);
         setErrors(newErrors);
+
+        // Al enviar el formulario, marcamos todos los campos como tocados para mostrar cualquier error
+        const allTouched = Object.keys(formData).reduce((acc, key) => {
+            acc[key as keyof InstitutionFormData] = true;
+            return acc;
+        }, {} as Record<keyof InstitutionFormData, boolean>);
+        setTouched(allTouched);
+
         return Object.keys(newErrors).length === 0;
     };
+
+    useEffect(() => {
+        // Validaciones in-line con debounce de 300ms
+        const timer = setTimeout(() => {
+            const currentErrors = runValidation(formData);
+
+            // Solo mostrar errores de campos que hayan sido tocados (modificados/desenfocados)
+            const visibleErrors: Partial<Record<keyof InstitutionFormData, string>> = {};
+            (Object.keys(currentErrors) as Array<keyof InstitutionFormData>).forEach((field) => {
+                if (touched[field]) {
+                    visibleErrors[field] = currentErrors[field];
+                }
+            });
+
+            setErrors(visibleErrors);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [formData, touched]);
 
     // ------------------------------------------------------------------------
     // MANEJADORES DE EVENTOS
@@ -205,14 +242,17 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
     const handleChange = (field: keyof InstitutionFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: undefined }));
-        }
+        // Marcar el campo como tocado para activar la validación inline
+        setTouched(prev => ({ ...prev, [field]: true }));
 
         if (serverError) {
             setServerError(null);
         }
+    };
+
+    const handleBlur = (field: keyof InstitutionFormData) => {
+        // Asegurar que el campo se muestre validado al quitar el foco
+        setTouched(prev => ({ ...prev, [field]: true }));
     };
 
     const getTitle = () => {
@@ -269,6 +309,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.nombre_entidad ? styles.inputError : ''}`}
                         value={formData.nombre_entidad}
                         onChange={(e) => handleChange('nombre_entidad', e.target.value)}
+                        onBlur={() => handleBlur('nombre_entidad')}
                         placeholder="Ingrese el nombre de la institución"
                         maxLength={200}
                         disabled={isSaveDisabled}
@@ -288,6 +329,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.correo ? styles.inputError : ''}`}
                         value={formData.correo}
                         onChange={(e) => handleChange('correo', e.target.value)}
+                        onBlur={() => handleBlur('correo')}
                         placeholder="contact@example.com"
                         maxLength={200}
                         disabled={isSaveDisabled}
@@ -304,6 +346,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.textarea} ${errors.direccion ? styles.inputError : ''}`}
                         value={formData.direccion}
                         onChange={(e) => handleChange('direccion', e.target.value)}
+                        onBlur={() => handleBlur('direccion')}
                         placeholder="Ingrese la dirección de la institución"
                         rows={3}
                         maxLength={200}
@@ -322,6 +365,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.nombre_titular ? styles.inputError : ''}`}
                         value={formData.nombre_titular}
                         onChange={(e) => handleChange('nombre_titular', e.target.value)}
+                        onBlur={() => handleBlur('nombre_titular')}
                         placeholder="Ingrese el nombre del representante legal"
                         maxLength={100}
                         disabled={isSaveDisabled}
@@ -337,12 +381,20 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                     </label>
                     <input
                         id="telefono"
-                        type="tel"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className={`${styles.input} ${errors.telefono ? styles.inputError : ''}`}
                         value={formData.telefono}
-                        onChange={(e) => handleChange('telefono', e.target.value)}
-                        placeholder="+57 1 234-5678"
-                        maxLength={15}
+                        onChange={(e) => {
+                            // Remover cualquier caracter que no sea número e imponer el valor al DOM para vaciar 'wqe'
+                            let numericValue = e.target.value.replace(/\D/g, '');
+                            e.target.value = numericValue;
+                            handleChange('telefono', numericValue);
+                        }}
+                        onBlur={() => handleBlur('telefono')}
+                        placeholder="Ej: 3001234567"
+                        maxLength={10}
                         disabled={isSaveDisabled}
                     />
                     {errors.telefono && <span className={styles.errorText}>{errors.telefono}</span>}
@@ -361,8 +413,15 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
                         className={`${styles.input} ${errors.nit ? styles.inputError : ''} ${mode === 'edit' ? styles.readOnly : ''
                             }`}
                         value={formData.nit}
-                        onChange={(e) => mode === 'create' && handleChange('nit', e.target.value)}
-                        placeholder="123456789-0"
+                        onChange={(e) => {
+                            if (mode === 'create') {
+                                let numericValue = e.target.value.replace(/\D/g, '');
+                                e.target.value = numericValue;
+                                handleChange('nit', numericValue);
+                            }
+                        }}
+                        onBlur={() => handleBlur('nit')}
+                        placeholder="123456789"
                         maxLength={15}
                         disabled={mode === 'edit' || isSaveDisabled}
                         readOnly={mode === 'edit'}

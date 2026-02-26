@@ -16,8 +16,19 @@ class LicenciasSistema extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = uniqid('LIC');
+                $parts = [];
+                for ($i = 0; $i < 4; $i++) {
+                    // Generate 5 random alphanumeric characters and convert to uppercase
+                    $parts[] = strtoupper(\Illuminate\Support\Str::random(5));
+                }
+                $model->id = implode('-', $parts);
             }
+        });
+
+        static::deleting(function ($licencia) {
+            \Illuminate\Support\Facades\DB::table('pagos_licencias')
+                ->where('id_licencia', $licencia->id)
+                ->delete();
         });
     }
 

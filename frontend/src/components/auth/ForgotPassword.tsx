@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../config/api';
 import styles from '../../pages/user/Registration.module.css';
 
@@ -12,13 +12,14 @@ import styles from '../../pages/user/Registration.module.css';
  */
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const typeParam = searchParams.get('type') || 'usuario';
 
   // Estados del componente
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   /**
    * Maneja el envío del formulario de recuperación de contraseña
@@ -29,14 +30,13 @@ const ForgotPassword = () => {
     // Limpiar mensajes previos
     setSuccessMessage('');
     setErrorMessage('');
-    setFieldErrors({});
     setLoading(true);
 
     try {
       // Petición POST a Laravel
       await apiClient.post('/forgot-password', {
         email,
-        type: 'usuario' // Cambiar a 'superadmin' si es para super admin
+        type: typeParam
       });
 
       // Si la petición es exitosa, redirigir a la página de verificación de código
@@ -44,13 +44,13 @@ const ForgotPassword = () => {
 
       // Redirigir al componente de verificación de código después de 2 segundos
       setTimeout(() => {
-        navigate(`/verify-code?email=${encodeURIComponent(email)}`);
+        navigate(`/verify-code?email=${encodeURIComponent(email)}&type=${typeParam}`);
       }, 2000);
 
     } catch (error: any) {
       // Manejo de errores
       if (error.status === 422 && error.errors) {
-        setFieldErrors(error.errors);
+        setErrorMessage('Formato de correo inválido o el usuario no existe.');
       } else {
         setErrorMessage(error.message || 'Error al enviar la solicitud. Por favor, intenta nuevamente.');
       }
@@ -102,9 +102,9 @@ const ForgotPassword = () => {
 
           <div style={{ textAlign: 'center', marginTop: '1rem' }}>
             <a
-              href="/login"
+              href={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
               style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
-              onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+              onClick={(e) => { e.preventDefault(); navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login'); }}
             >
               Volver al Inicio de Sesión
             </a>

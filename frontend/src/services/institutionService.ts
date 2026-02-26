@@ -292,7 +292,7 @@ export const disableInstitution = async (
         // Actualizar solo el campo status a 'inactive'
         // Usando PUT ya que Laravel maneja PUT y PATCH de forma similar
         await apiClient.put(`/entidades/${id}`, {
-            status: 'inactive'
+            estado: 'inactivo'
         });
 
         console.log('Institution disabled successfully:', id);
@@ -320,7 +320,7 @@ export const enableInstitution = async (
 ): Promise<void> => {
     try {
         await apiClient.put(`/entidades/${id}`, {
-            status: 'active'
+            estado: 'activo'
         });
 
         console.log('Institution enabled successfully:', id);

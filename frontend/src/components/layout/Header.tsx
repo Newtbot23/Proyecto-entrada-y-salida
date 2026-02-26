@@ -1,30 +1,42 @@
 import React from 'react';
 import styles from './Header.module.css';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // ajusta ruta
 
-interface HeaderProps {
-    title?: string;
-    userName?: string;
-    role?: string;
-    onLogout?: () => void;
-}
+const routeTitles: Record<string, string> = {
+    dashboard: 'Panel',
+    admins: 'Administradores',
+    'license-plans': 'Planes de Licencia',
+    institutions: 'Instituciones',
+    reports: 'Reportes',
+};
 
-const Header: React.FC<HeaderProps> = ({
-    title = 'Panel',
-    userName = 'Super Admin',
-    role = 'Administrador',
-    onLogout
-}) => {
+const Header: React.FC = () => {
+    const location = useLocation();
+    const { user, logout } = useAuth();
+
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const view = pathParts[1]; // /superadmin/<view>
+
+    const title = routeTitles[view] ?? 'Panel';
+
     return (
         <header className={styles.header}>
             <div className={styles.leftSection}>
                 <h1 className={styles.pageTitle}>{title}</h1>
             </div>
+
             <div className={styles.rightSection}>
                 <div className={styles.userInfo}>
-                    <span className={styles.userName}>{userName}</span>
-                    <span className={styles.userRole}>{role}</span>
+                    <span className={styles.userRole}>
+                        {user?.rol ?? 'Super Administrador'}
+                    </span>
+                    <span className={styles.userName}>
+                        {user?.nombre ?? '—'}
+                    </span>
                 </div>
-                <button className={styles.logoutBtn} onClick={onLogout}>
+
+                <button className={styles.logoutBtn} onClick={logout}>
                     Cerrar Sesión
                 </button>
             </div>

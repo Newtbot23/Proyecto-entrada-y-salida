@@ -20,7 +20,7 @@ class StoreUsuarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'doc' => 'required|string|max:20|unique:usuarios,doc|regex:/^[0-9]+$/',
+            'doc' => 'required|string|unique:usuarios,doc|regex:/^[0-9]{7,10}$/',
             'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
             'primer_nombre' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'segundo_nombre' => 'nullable|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
@@ -30,6 +30,8 @@ class StoreUsuarioRequest extends FormRequest
             'correo' => 'required|email|max:100|unique:usuarios,correo',
             'contrasena' => 'required|string|min:6',
             'id_licencia_sistema' => 'required|exists:licencias_sistema,id',
+            'id_rol' => 'required|integer|exists:roles,id',
+            'nit_entidad' => 'required|string|exists:entidades,nit',
         ];
     }
 }

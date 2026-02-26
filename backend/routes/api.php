@@ -51,6 +51,10 @@ Route::post('/entidades', [EntidadesController::class, 'store']);
 Route::get('/entidades/{id}', [EntidadesController::class, 'show']);
 Route::put('/entidades/{id}', [EntidadesController::class, 'update']);
 Route::delete('/entidades/{id}', [EntidadesController::class, 'destroy']);
+Route::get('/entidades/{nit}/admins', [EntidadesController::class, 'getAdmins']);
+
+// User status toggle
+Route::patch('/usuarios/{doc}/estado', [UsuariosController::class, 'toggleEstado']);
 
 // Registration Flow
 Route::post('/registration/entidades', [EntidadController::class, 'store']);
