@@ -20,7 +20,7 @@ class StoreAdminRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'doc' => 'required|integer|unique:admins,doc|regex:/^[0-9]+$/',
+            'doc' => 'required|string|unique:admins,doc|regex:/^[0-9]{7,10}$/',
             'nombre' => 'required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'telefono' => 'required|string|max:200|regex:/^[0-9+\-\s()]+$/',
             'correo' => 'required|email|max:200|unique:admins,correo',

@@ -24,7 +24,7 @@ class FinishRegistrationRequest extends FormRequest
             'id_plan_lic' => 'required|exists:planes_licencia,id',
             
             // Admin User Data
-            'doc' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:usuarios,doc'],
+            'doc' => ['required', 'string', 'regex:/^[0-9]{7,10}$/', 'unique:usuarios,doc'],
             'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
             'primer_nombre' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
             'primer_apellido' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',

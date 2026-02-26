@@ -101,6 +101,12 @@ const LoginSuperAdmin: React.FC = () => {
                     <button type="submit" className={styles.button} disabled={loading}>
                         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </button>
+
+                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                        <a href="/forgot-password?type=superadmin" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block' }}>
+                            ¿Olvidaste tu contraseña?
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>

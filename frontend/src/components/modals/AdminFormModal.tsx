@@ -61,7 +61,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
     const REGEX = {
         NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
         DOC: /^[0-9]+$/,
-        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/
     };
 
     // ✅ VALIDACIÓN EN TIEMPO REAL POR CAMPO
@@ -74,8 +75,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
                     error = 'El número de documento es obligatorio';
                 else if (!REGEX.DOC.test(value))
                     error = 'El documento solo debe contener números';
-                else if (value.length > 20)
-                    error = 'El número de documento no debe exceder los 20 dígitos';
+                else if (value.length < 7 || value.length > 10)
+                    error = 'El número de documento debe tener entre 7 y 10 dígitos';
                 break;
 
             case 'nombre':
@@ -108,8 +109,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
             case 'contrasena':
                 if (mode === 'create' && !value.trim())
                     error = 'La contraseña es obligatoria para nuevos administradores';
-                else if (value && value.length < 8)
-                    error = 'La contraseña debe tener al menos 8 caracteres';
+                else if (value && !REGEX.PASSWORD.test(value))
+                    error = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
                 break;
         }
 
@@ -137,8 +138,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
             newErrors.doc = 'El número de documento es obligatorio';
         } else if (!REGEX.DOC.test(formData.doc)) {
             newErrors.doc = 'El documento solo debe contener números';
-        } else if (formData.doc.length > 10) {
-            newErrors.doc = 'El número de documento no debe exceder los 10 dígitos';
+        } else if (formData.doc.length < 7 || formData.doc.length > 10) {
+            newErrors.doc = 'El número de documento debe tener entre 7 y 10 dígitos';
         }
 
         if (!formData.nombre.trim()) {
@@ -167,8 +168,8 @@ export const AdminFormModal: React.FC<AdminFormModalProps> = ({
 
         if (mode === 'create' && !formData.contrasena?.trim()) {
             newErrors.contrasena = 'La contraseña es obligatoria para nuevos administradores';
-        } else if (formData.contrasena && formData.contrasena.length < 8) {
-            newErrors.contrasena = 'La contraseña debe tener al menos 8 caracteres';
+        } else if (formData.contrasena && !REGEX.PASSWORD.test(formData.contrasena)) {
+            newErrors.contrasena = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
         }
 
         setErrors(newErrors);

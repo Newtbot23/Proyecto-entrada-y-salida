@@ -111,6 +111,7 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
         NIT: /^[0-9]{6,15}$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        DIRECCION: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-#]+$/,
     };
 
     const runValidation = (data: InstitutionFormData): Partial<Record<keyof InstitutionFormData, string>> => {
@@ -132,6 +133,8 @@ export const InstitutionFormModal: React.FC<InstitutionFormModalProps> = ({
 
         if (!data.direccion.trim()) {
             newErrors.direccion = 'La dirección es obligatoria';
+        } else if (!REGEX.DIRECCION.test(data.direccion)) {
+            newErrors.direccion = 'La dirección contiene caracteres no permitidos';
         } else if (data.direccion.length > 200) {
             newErrors.direccion = 'La dirección no debe exceder los 200 caracteres';
         }

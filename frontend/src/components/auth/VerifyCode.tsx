@@ -13,6 +13,7 @@ import styles from '../../pages/user/Registration.module.css';
 const VerifyCode = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const typeParam = searchParams.get('type') || 'usuario';
 
     // Estados del formulario
     const [email, setEmail] = useState('');
@@ -47,11 +48,11 @@ const VerifyCode = () => {
             await apiClient.post('/verify-code', {
                 email,
                 code,
-                type: 'usuario' // Cambiar a 'superadmin' si es para super admin
+                type: typeParam
             });
 
             // Si el código es válido, redirigir al formulario de reset
-            navigate(`/reset-password?email=${encodeURIComponent(email)}&code=${code}`);
+            navigate(`/reset-password?email=${encodeURIComponent(email)}&code=${code}&type=${typeParam}`);
 
         } catch (error) {
             // Manejo de errores
@@ -119,9 +120,9 @@ const VerifyCode = () => {
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                         <a
-                            href="/forgot-password"
+                            href={`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`}
                             style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
-                            onClick={(e) => { e.preventDefault(); navigate(`/forgot-password?email=${encodeURIComponent(email)}`); }}
+                            onClick={(e) => { e.preventDefault(); navigate(`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`); }}
                         >
                             ¿No recibiste el código? Volver a intentar
                         </a>

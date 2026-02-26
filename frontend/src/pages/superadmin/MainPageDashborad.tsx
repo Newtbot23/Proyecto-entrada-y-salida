@@ -5,6 +5,7 @@ import Header from '../../components/layout/Header';
 import StatCard from '../../components/dashboard/StatCard';
 import LicenseTable from '../../components/dashboard/LicenseTable';
 import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
+import type { PaginationMeta } from '../../types/institution';
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
@@ -17,6 +18,8 @@ const MainPageDashborad: React.FC = () => {
     const [licenses, setLicenses] = useState<LicenseData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
     // Dynamic Admin Info
     const [adminName, setAdminName] = useState('Super Admin');
@@ -40,10 +43,16 @@ const MainPageDashborad: React.FC = () => {
             setLoading(true);
             const [statsData, licensesData] = await Promise.all([
                 getDashboardStats(),
-                getLicensesList(1, 10)
+                getLicensesList(currentPage, 10)
             ]);
             setStats(statsData);
             setLicenses(licensesData.data);
+            setPaginationMeta({
+                currentPage: licensesData.current_page,
+                totalPages: licensesData.last_page,
+                totalItems: licensesData.total,
+                itemsPerPage: licensesData.per_page,
+            });
             setError(null);
         } catch (err) {
             console.error('Error loading dashboard data:', err);
@@ -56,6 +65,25 @@ const MainPageDashborad: React.FC = () => {
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+
+    const handlePageChange = async (page: number) => {
+        setCurrentPage(page);
+        try {
+            setLoading(true);
+            const licensesData = await getLicensesList(page, 10);
+            setLicenses(licensesData.data);
+            setPaginationMeta({
+                currentPage: licensesData.current_page,
+                totalPages: licensesData.last_page,
+                totalItems: licensesData.total,
+                itemsPerPage: licensesData.per_page,
+            });
+        } catch (err) {
+            console.error('Error loading licenses data:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleLogout = () => {
@@ -113,7 +141,7 @@ const MainPageDashborad: React.FC = () => {
             />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Panel" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     {/* Stats Row */}
@@ -133,11 +161,13 @@ const MainPageDashborad: React.FC = () => {
                     </div>
 
                     {/* Recent Activity Table */}
-                    {loading ? (
+                    {loading && licenses.length === 0 ? (
                         <p>Cargando licencias...</p>
                     ) : (
                         <LicenseTable
                             data={licenses}
+                            paginationMeta={paginationMeta}
+                            onPageChange={handlePageChange}
                             onUpdateStatus={handleUpdateStatus}
                         />
                     )}

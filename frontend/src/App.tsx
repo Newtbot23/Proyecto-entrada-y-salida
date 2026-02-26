@@ -5,6 +5,8 @@ import PublicDashboardPage from './pages/PublicDashboardPage';
 import MainPageDashborad from './pages/superadmin/MainPageDashborad';
 import LicensePlansPage from './pages/superadmin/LicensePlansPage';
 import InstitutionsPage from './pages/superadmin/InstitutionsPage';
+import AdminEntitiesPage from './pages/superadmin/AdminEntitiesPage';
+import EntityAdminsPage from './pages/superadmin/EntityAdminsPage';
 
 import ReportsPage from './pages/superadmin/ReportsPage';
 import SuperAdmin from './pages/superadmin/SuperAdmin';
@@ -52,6 +54,8 @@ function App() {
             <Route path="/superadmin/admins" element={<SuperAdmin />} />
             <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
             <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
+            <Route path="/superadmin/entities-admins" element={<AdminEntitiesPage />} />
+            <Route path="/superadmin/entities-admins/:nit" element={<EntityAdminsPage />} />
 
             <Route path="/superadmin/reports" element={<ReportsPage />} />
           </Route>

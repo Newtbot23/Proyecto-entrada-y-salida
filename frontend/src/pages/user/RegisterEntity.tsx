@@ -36,6 +36,7 @@ const RegisterEntity: React.FC = () => {
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         ENTITY_NAME: /^[^0-9]+$/, // No numbers
         REP_LEGAL_NAME: /^[^0-9]{8,}$/, // No numbers, min 8 chars
+        DIRECCION: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-#]+$/,
     };
 
     const validateField = (field: keyof typeof formData, value: string) => {
@@ -57,6 +58,8 @@ const RegisterEntity: React.FC = () => {
             case 'direccion':
                 if (!value.trim())
                     error = 'La dirección es obligatoria';
+                else if (!REGEX.DIRECCION.test(value))
+                    error = 'La dirección contiene caracteres no permitidos';
                 break;
             case 'nombre_titular':
                 if (!value.trim())
@@ -115,6 +118,8 @@ const RegisterEntity: React.FC = () => {
 
         if (!formData.direccion.trim()) {
             newErrors.direccion = 'La dirección es obligatoria';
+        } else if (!REGEX.DIRECCION.test(formData.direccion)) {
+            newErrors.direccion = 'La dirección contiene caracteres no permitidos';
         }
 
         if (!formData.nombre_titular.trim()) {

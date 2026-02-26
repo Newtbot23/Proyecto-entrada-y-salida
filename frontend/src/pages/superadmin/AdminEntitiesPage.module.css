@@ -1,0 +1,230 @@
+.dashboardLayout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-bg-page);
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+.mainContent {
+    flex: 1;
+    margin-left: 250px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: margin-left 0.3s ease-in-out;
+    width: 100%;
+    /* Fix for overflowing content by capping the max width to the viewport minus the sidebar */
+    max-width: calc(100vw - 250px);
+}
+
+.mainContentCollapsed {
+    margin-left: 80px;
+    max-width: calc(100vw - 80px);
+}
+
+.contentWrapper {
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pageHeader {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.pageTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.pageSubtitle {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.errorAlert {
+    padding: var(--spacing-md);
+    background-color: #fee2e2;
+    color: #ef4444;
+    border-radius: 8px;
+    border: 1px solid #f87171;
+}
+
+.card {
+    background-color: var(--color-bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-xl);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.loadingState,
+.emptyState {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: var(--spacing-xl) 0;
+}
+
+/* Accordion Styles */
+.accordionContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.accordionItem {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    background-color: #ffffff;
+    transition: box-shadow 0.2s;
+}
+
+.accordionItem:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.accordionHeader {
+    padding: 15px 20px;
+    background-color: #f9fafb;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.accordionHeader:hover {
+    background-color: #f3f4f6;
+}
+
+.accordionTitleWrapper {
+    flex: 1;
+    min-width: 0;
+    padding-right: 15px;
+}
+
+.accordionTitle {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accordionSubtitle {
+    margin: 5px 0 0 0;
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accordionIconWrapper {
+    flex-shrink: 0;
+}
+
+.accordionIcon {
+    transition: transform 0.3s ease;
+    display: block;
+}
+
+.accordionIconExpanded {
+    transform: rotate(180deg);
+}
+
+.accordionContent {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background-color: #ffffff;
+}
+
+.accordionGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.infoBlock p:first-child {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.infoBlock p:last-child {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.viewBtn {
+    padding: 8px 16px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.viewBtn:hover {
+    background-color: #2563eb;
+}
+
+.addBtn {
+    padding: 8px 16px;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.addBtn:hover {
+    background-color: #059669;
+}
+
+@media (max-width: 768px) {
+    .mainContent {
+        margin-left: 0;
+        max-width: 100vw;
+    }
+
+    .accordionGrid {
+        grid-template-columns: 1fr;
+    }
+}

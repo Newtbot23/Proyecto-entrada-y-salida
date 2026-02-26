@@ -6,14 +6,13 @@ import { PlusIcon, EditIcon, TrashIcon, ExternalLinkIcon, SearchIcon, ChevronLef
 import { Modal } from '../../components/common/Modal';
 import { useDebounce } from '../../hooks/useDebounce';
 import { getInstitutions, disableInstitution, enableInstitution } from '../../services/institutionService';
-
 import { API_BASE_URL } from '../../config/api';
+import { formatDateSafe } from '../../utils/dateUtils';
 
 const InstitutionsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [institutions, setInstitutions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [adminName, setAdminName] = useState('Super Admin');
 
     // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,17 +44,7 @@ const InstitutionsPage: React.FC = () => {
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     };
 
-    useEffect(() => {
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
-            }
-        }
-    }, []);
+
 
     useEffect(() => {
         fetchInstitutions();
@@ -511,7 +500,7 @@ const InstitutionsPage: React.FC = () => {
                                     </div>
                                     <div className={styles.detailItem}>
                                         <label>Expira el:</label>
-                                        <span>{selectedInstitution.licencia.fecha_vencimiento ? new Date(selectedInstitution.licencia.fecha_vencimiento).toLocaleDateString() : 'N/A'}</span>
+                                        <span>{selectedInstitution.licencia?.fecha_vencimiento ? formatDateSafe(selectedInstitution.licencia.fecha_vencimiento) : 'N/A'}</span>
                                     </div>
                                     <div className={styles.detailItem}>
                                         <label>Ref. de Pago:</label>

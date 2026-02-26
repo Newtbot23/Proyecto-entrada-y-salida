@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from './InstitutionDetailsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
+import { formatDateSafe } from '../../utils/dateUtils';
 import { EditIcon, TrashIcon, ArrowLeftIcon } from '../../components/common/Icons';
 
 const InstitutionDetailsPage: React.FC = () => {
@@ -10,19 +11,8 @@ const InstitutionDetailsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [institution, setInstitution] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [adminName, setAdminName] = useState('Super Admin');
-
     useEffect(() => {
         console.log('InstitutionDetailsPage mounted with nit parameter:', nit);
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
-            }
-        }
 
         if (nit && nit !== 'undefined') {
             fetchInstitutionDetails();
@@ -65,11 +55,6 @@ const InstitutionDetailsPage: React.FC = () => {
         }
     };
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/superadmin/login');
-    };
-
     if (loading) return <div className={styles.loading}>Loading details...</div>;
     if (!institution) return <div className={styles.error}>Institution not found</div>;
 
@@ -78,7 +63,7 @@ const InstitutionDetailsPage: React.FC = () => {
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Institution Details" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     <button className={styles.backBtn} onClick={() => window.history.back()}>
@@ -134,7 +119,7 @@ const InstitutionDetailsPage: React.FC = () => {
                                     </div>
                                     <div className={styles.infoRow}>
                                         <label>Valid Until:</label>
-                                        <span>{new Date(institution.licencia.fecha_vencimiento).toLocaleDateString()}</span>
+                                        <span>{institution.licencia.fecha_vencimiento ? formatDateSafe(institution.licencia.fecha_vencimiento) : 'N/A'}</span>
                                     </div>
                                 </>
                             ) : (

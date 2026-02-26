@@ -22,7 +22,7 @@ class StoreEntidadRequest extends FormRequest
         return [
             'nombre_entidad' => 'required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'correo' => 'required|email|max:200|unique:entidades,correo',
-            'direccion' => 'required|string|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.-]+$/',
+            'direccion' => 'required|string|max:200|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-\#]+$/',
             'nombre_titular' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
             'telefono' => 'required|string|max:15|regex:/^[0-9+\-\s()]+$/',
             'nit' => 'required|string|max:15|unique:entidades,nit|regex:/^[0-9\-]+$/',

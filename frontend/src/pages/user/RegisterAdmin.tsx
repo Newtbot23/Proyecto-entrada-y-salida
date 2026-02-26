@@ -59,7 +59,7 @@ const RegisterAdmin: React.FC = () => {
 
     const REGEX = {
         NAME: /^[^0-9]+$/, // No numbers
-        DOC: /^[0-9]{10}$/, // Exact 10 digits
+        DOC: /^[0-9]{7,10}$/, // 7 to 10 digits
         PHONE: /^(3[0-9]{9}|60[0-9]{8})$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/ // Min 8, 1 uppercase, 1 lowercase, 1 special char
@@ -71,7 +71,7 @@ const RegisterAdmin: React.FC = () => {
         switch (field) {
             case 'doc':
                 if (!value.trim()) errorMsg = 'El documento es obligatorio';
-                else if (!REGEX.DOC.test(value)) errorMsg = 'El documento debe tener exactamente 10 dígitos numéricos';
+                else if (!REGEX.DOC.test(value)) errorMsg = 'El documento debe tener entre 7 y 10 dígitos numéricos';
                 break;
             case 'primer_nombre':
             case 'primer_apellido':
@@ -125,7 +125,7 @@ const RegisterAdmin: React.FC = () => {
     const validateForm = (): boolean => {
         const errors: Record<string, string> = {};
 
-        if (!REGEX.DOC.test(formData.doc)) errors.doc = 'El documento debe tener exactamente 10 dígitos numéricos';
+        if (!REGEX.DOC.test(formData.doc)) errors.doc = 'El documento debe tener entre 7 y 10 dígitos numéricos';
         if (!formData.id_tip_doc) errors.id_tip_doc = 'Seleccione un tipo de documento';
         if (!formData.primer_nombre.trim() || !REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = 'Nombre inválido';
         if (!formData.primer_apellido.trim() || !REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = 'Apellido inválido';

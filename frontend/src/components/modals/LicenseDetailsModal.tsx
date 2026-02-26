@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal } from '../common/Modal';
 import styles from './LicenseDetailsModal.module.css';
 import { type LicenseData } from '../../services/licenseDashboardService';
+import { formatDateSafe } from '../../utils/dateUtils';
 
 interface LicenseDetailsModalProps {
     isOpen: boolean;
@@ -62,12 +63,12 @@ export const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
                     <div className={styles.grid}>
                         <div className={styles.detailRow}>
                             <span className={styles.label}>FECHA DE INICIO:</span>
-                            <span className={styles.value}>{new Date(license.fecha_inicio).toLocaleDateString()}</span>
+                            <span className={styles.value}>{formatDateSafe(license.fecha_inicio)}</span>
                         </div>
 
                         <div className={styles.detailRow}>
                             <span className={styles.label}>FECHA DE VENCIMIENTO:</span>
-                            <span className={styles.value}>{new Date(license.fecha_vencimiento).toLocaleDateString()}</span>
+                            <span className={styles.value}>{formatDateSafe(license.fecha_vencimiento)}</span>
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }} className={styles.detailRow}>

@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import styles from './LicenseTable.module.css';
 import { type LicenseData } from '../../services/licenseDashboardService';
 import { LicenseDetailsModal } from '../modals/LicenseDetailsModal';
+import { Pagination } from '../common/Pagination';
+import type { PaginationMeta } from '../../types/institution';
 
 interface LicenseTableProps {
     data: LicenseData[];
+    paginationMeta?: PaginationMeta | null;
+    onPageChange?: (page: number) => void;
     onUpdateStatus?: (id: number, status: string) => void;
 }
 
-const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => {
+const LicenseTable: React.FC<LicenseTableProps> = ({ data, paginationMeta, onPageChange, onUpdateStatus }) => {
 
     const [selectedLicense, setSelectedLicense] = useState<LicenseData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,6 +101,12 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, onUpdateStatus }) => 
                     </tbody>
                 </table>
             </div>
+
+            {paginationMeta && onPageChange && (
+                <div className={styles.pagination}>
+                    <Pagination meta={paginationMeta} onPageChange={onPageChange} />
+                </div>
+            )}
 
             <LicenseDetailsModal
                 isOpen={isModalOpen}

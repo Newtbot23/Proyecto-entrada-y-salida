@@ -278,8 +278,39 @@ class EntidadesController extends Controller
             ], 500);
         }
     }
-}
 
+    /**
+     * Get admins for a specific entity
+     * GET /api/entidades/{nit}/admins
+     */
+    public function getAdmins(string $nit)
+    {
+        try {
+            // Check if entity exists
+            $entidad = Entidades::find($nit);
+            if (!$entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Entidad no encontrada'
+                ], 404);
+            }
 
+            // Get users with role 1 (Admin) for this entity
+            $admins = \App\Models\Usuarios::where('nit_entidad', $nit)
+                ->where('id_rol', 1)
+                ->get();
 
-[] 
+            return response()->json([
+                'success' => true,
+                'data' => $admins
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching admins for entity ' . $nit . ': ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los administradores',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+} 

@@ -16,7 +16,7 @@ class UpdateAdminRequest extends FormRequest
         $doc = $this->route('admin');
 
         return [
-            'doc' => 'sometimes|required|integer|regex:/^[0-9]+$/',
+            'doc' => 'sometimes|required|string|regex:/^[0-9]{7,10}$/',
 
             'nombre' => 'sometimes|required|string|max:200|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
 
