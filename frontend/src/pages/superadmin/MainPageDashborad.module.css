@@ -1,0 +1,57 @@
+.dashboardLayout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-bg-page);
+}
+
+.mainContent {
+    flex: 1;
+    margin-left: 250px;
+    /* Sidebar width */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Prevents flex items from overflowing */
+    transition: margin-left 0.3s ease-in-out;
+    width: 100%;
+    /* Ensure it takes full width */
+}
+
+.mainContentCollapsed {
+    margin-left: 80px;
+    /* Collapsed sidebar width */
+}
+
+.contentWrapper {
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .mainContent {
+        margin-left: 0;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .contentWrapper {
+        padding: var(--spacing-md);
+    }
+}

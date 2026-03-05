@@ -56,4 +56,47 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## API Documentation
+
+### Planes (License Plans) API
+Endpoints for managing subscription plans.
+
+- `GET /api/planes`: List all license plans.
+- `GET /api/planes/{id}`: Get details of a specific plan.
+- `POST /api/planes`: Create a new license plan.
+- `PUT /api/planes/{id}`: Update an existing license plan.
+- `DELETE /api/planes/{id}`: Delete a license plan.
+
+### Admins (SuperAdmin) API
+Endpoints for managing system administrators and authentication.
+
+- `POST /api/admins/login`: Authenticate an admin and receive a Sanctum token.
+- `GET /api/admins`: List all administrators (Paginated).
+- `POST /api/admins`: Create a new administrator.
+- `GET /api/admins/{id}`: Get details of a specific administrator.
+- `PUT /api/admins/{id}`: Update an administrator's details.
+- `DELETE /api/admins/{id}`: Remove an administrator.
+
+### UI Customization: Green Theme
+The administration interface now uses a brand-consistent green theme.
+- **Primary Color**: `#008f39`
+- **Active States**: High-contrast green overlays.
+- **Action Buttons**: Updated to follow the primary color scheme.
+
+### Custom Fields Mapping
+The backend uses Spanish names for database compatibility, while the frontend uses English names.
+#### License Plans:
+- `name` -> `nombre_plan`
+- `price` -> `precio_plan`
+- `billingPeriod` -> `periodo_facturacion`
+- `duration` -> `duracion_plan`
+- `description` -> `descripcion`
+- `status` -> `estado`
+
+#### Admins (SuperAdmin):
+- `name` -> `nombre`
+- `document` -> `doc`
+- `email` -> `correo`
+- `phone` -> `telefono`
+- `password` -> `contrasena`

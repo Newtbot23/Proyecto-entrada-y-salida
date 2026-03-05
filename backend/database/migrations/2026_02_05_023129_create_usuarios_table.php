@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('usuarios', function (Blueprint $table) {
-            $table->id();
-            $table->integer('doc')->unique();
+            $table->integer('doc')->primary();
             $table->string('primer_nombre', 50);
             $table->string('segundo_nombre', 50)->nullable();
             $table->string('primer_apellido', 50);
@@ -21,10 +20,12 @@ return new class extends Migration
             $table->string('telefono', 13);
             $table->string('correo', 100);
             $table->string('imagen', 300)->nullable();
-            $table->string('codigo_qr', 300);
+            $table->string('codigo_qr', 300)->nullable();
             $table->string('contrasena', 300);
             $table->foreignId('id_rol')->constrained('roles');
-            $table->foreignId('id_entidad')->constrained('entidades');
+            $table->string('nit_entidad', 15);
+            $table->foreign('nit_entidad')->references('nit')->on('entidades');
+            $table->foreignId('id_tip_doc')->constrained('tipo_doc', 'id_tip_doc');
             $table->timestamps();
         });
     }
