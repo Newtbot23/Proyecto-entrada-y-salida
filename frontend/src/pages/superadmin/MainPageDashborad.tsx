@@ -5,6 +5,7 @@ import Header from '../../components/layout/Header';
 import StatCard from '../../components/dashboard/StatCard';
 import LicenseTable from '../../components/dashboard/LicenseTable';
 import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
+import { getPricingPlans, type PricingPlan } from '../../services/planService';
 import type { PaginationMeta } from '../../types/institution';
 
 const MainPageDashborad: React.FC = () => {
@@ -21,29 +22,49 @@ const MainPageDashborad: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
-    // Dynamic Admin Info
-    const [adminName, setAdminName] = useState('Super Admin');
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [selectedPlanId, setSelectedPlanId] = useState('');
+    const [plansList, setPlansList] = useState<PricingPlan[]>([]);
+    const [filtersLoading, setFiltersLoading] = useState(false);
 
     useEffect(() => {
-        // Get admin user from sessionStorage
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
+        // Load plans for the filter
+        const loadPlans = async () => {
             try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
+                const plans = await getPricingPlans();
+                setPlansList(plans);
             } catch (e) {
-                console.error('Error parsing admin user:', e);
+                console.error('Error al las licencias:', e);
             }
-        }
+        };
+        loadPlans();
+
         fetchDashboardData();
     }, []);
 
-    const fetchDashboardData = async () => {
+    // Effect to trigger search/filter when states change
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setCurrentPage(1); // Reset to first page on new filter
+            fetchDashboardData(1);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm, selectedStatus, selectedPlanId]);
+
+    const fetchDashboardData = async (page = currentPage) => {
         try {
-            setLoading(true);
+            if (page === 1 && !searchTerm && !selectedStatus && !selectedPlanId) {
+                setLoading(true);
+            } else {
+                setFiltersLoading(true);
+            }
+
             const [statsData, licensesData] = await Promise.all([
                 getDashboardStats(),
-                getLicensesList(currentPage, 10)
+                getLicensesList(page, 10, searchTerm, selectedStatus, selectedPlanId)
             ]);
             setStats(statsData);
             setLicenses(licensesData.data);
@@ -70,8 +91,8 @@ const MainPageDashborad: React.FC = () => {
     const handlePageChange = async (page: number) => {
         setCurrentPage(page);
         try {
-            setLoading(true);
-            const licensesData = await getLicensesList(page, 10);
+            setFiltersLoading(true);
+            const licensesData = await getLicensesList(page, 10, searchTerm, selectedStatus, selectedPlanId);
             setLicenses(licensesData.data);
             setPaginationMeta({
                 currentPage: licensesData.current_page,
@@ -82,15 +103,8 @@ const MainPageDashborad: React.FC = () => {
         } catch (err) {
             console.error('Error loading licenses data:', err);
         } finally {
-            setLoading(false);
+            setFiltersLoading(false);
         }
-    };
-
-    const handleLogout = () => {
-        // Clear all admin-related items from sessionStorage
-        sessionStorage.clear();
-        // Force redirect to login
-        window.location.replace('/superadmin/login');
     };
 
     const statCards = [
@@ -115,7 +129,7 @@ const MainPageDashborad: React.FC = () => {
         return (
             <div className={styles.errorContainer}>
                 <p>{error}</p>
-                <button onClick={fetchDashboardData}>Retry</button>
+                <button onClick={() => fetchDashboardData()}>Retry</button>
             </div>
         );
     }
@@ -160,9 +174,104 @@ const MainPageDashborad: React.FC = () => {
                         )}
                     </div>
 
+                    {/* Filters Section */}
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        marginBottom: '1.5rem',
+                        backgroundColor: '#fff',
+                        padding: '1.5rem',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                        alignItems: 'flex-end'
+                    }}>
+                        <div style={{ flex: '1 1 300px' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
+                                Buscar Entidad o ID
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Escribe para buscar..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    outline: 'none',
+                                    fontSize: '0.95rem',
+                                    transition: 'border-color 0.2s'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
+                                Estado
+                            </label>
+                            <select
+                                value={selectedStatus}
+                                onChange={(e) => setSelectedStatus(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    outline: 'none',
+                                    fontSize: '0.95rem',
+                                    backgroundColor: '#fff',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="">Todos los Estados</option>
+                                <option value="activo">Activo</option>
+                                <option value="inactivo">Inactivo</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="expirado">Expirado</option>
+                            </select>
+                        </div>
+
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
+                                Plan
+                            </label>
+                            <select
+                                value={selectedPlanId}
+                                onChange={(e) => setSelectedPlanId(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    outline: 'none',
+                                    fontSize: '0.95rem',
+                                    backgroundColor: '#fff',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="">Todos los Planes</option>
+                                {plansList.map(plan => (
+                                    <option key={plan.id} value={plan.id}>
+                                        {plan.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     {/* Recent Activity Table */}
-                    {loading && licenses.length === 0 ? (
-                        <p>Cargando licencias...</p>
+                    {(loading && licenses.length === 0) || filtersLoading ? (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '3rem',
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+                        }}>
+                            <p style={{ color: '#666', fontSize: '1.1rem' }}>Cargando licencias...</p>
+                        </div>
                     ) : (
                         <LicenseTable
                             data={licenses}

@@ -44,11 +44,17 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 };
 
 /**
- * Get paginated licenses list
+ * Get paginated licenses list with optional filters
  */
-export const getLicensesList = async (page = 1, perPage = 10): Promise<PaginatedLicenses> => {
+export const getLicensesList = async (page = 1, perPage = 10, search?: string, estado?: string, planId?: string): Promise<PaginatedLicenses> => {
     try {
-        const response = await apiClient.get<any>(`/licencias?page=${page}&per_page=${perPage}`);
+        let url = `/licencias?page=${page}&per_page=${perPage}`;
+
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (estado) url += `&estado=${encodeURIComponent(estado)}`;
+        if (planId) url += `&plan_id=${encodeURIComponent(planId)}`;
+
+        const response = await apiClient.get<any>(url);
         return response;
     } catch (error) {
         console.error('Error fetching licenses list:', error);
