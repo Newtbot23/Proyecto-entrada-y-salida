@@ -16,3 +16,4 @@ el orden de las pestañas del navegador es
 como no hay usuario registrados en la base de datos ingresar con el boton de iniciar session (que esta en la landing del proyecto ) 
 no funcionara ya que este es para usuarios normales 
 
+

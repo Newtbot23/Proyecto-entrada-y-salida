@@ -22,10 +22,35 @@ class LicenciasController extends Controller
     {
         try {
             $perPage = $request->query('per_page', 10);
+            $search = $request->query('search');
+            $estado = $request->query('estado');
+            $planId = $request->query('plan_id');
             
-            // Cargamos relaciones para mostrar el nombre de la institución y el plan
-            $licencias = LicenciasSistema::with(['entidad', 'plan'])
-                ->paginate($perPage);
+            // Construimos la consulta base cargando relaciones
+            $query = LicenciasSistema::with(['entidad', 'plan']);
+
+            // Filtro de búsqueda general (ID de licencia o Nombre de entidad)
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('id', 'like', '%' . $search . '%')
+                      ->orWhereHas('entidad', function($qEntidad) use ($search) {
+                          $qEntidad->where('nombre_entidad', 'like', '%' . $search . '%');
+                      });
+                });
+            }
+
+            // Filtro por estado
+            if (!empty($estado)) {
+                $query->where('estado', $estado);
+            }
+
+            // Filtro por plan
+            if (!empty($planId)) {
+                $query->where('id_plan_lic', $planId);
+            }
+
+            // Ejecutamos la consulta con paginación
+            $licencias = $query->paginate($perPage);
 
             return response()->json([
                 'success' => true,
