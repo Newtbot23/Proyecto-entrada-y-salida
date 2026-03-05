@@ -23,6 +23,11 @@ const VerifyCode = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
+    // Estados de bloqueo
+    const [failedAttempts, setFailedAttempts] = useState(0);
+    const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+
     /**
      * Extrae el email de los parámetros de la URL al montar el componente
      */
@@ -33,11 +38,60 @@ const VerifyCode = () => {
         }
     }, [searchParams]);
 
+    // Cargar estado de bloqueo al montar y cuando el email se establece
+    useEffect(() => {
+        if (!email) return;
+        const storedLockout = localStorage.getItem(`lockout_${email}`);
+        if (storedLockout) {
+            const lockoutTime = parseInt(storedLockout, 10);
+            if (lockoutTime > Date.now()) {
+                setLockoutUntil(lockoutTime);
+                setFailedAttempts(5);
+            } else {
+                localStorage.removeItem(`lockout_${email}`);
+            }
+        }
+    }, [email]);
+
+    // Manejar el temporizador de bloqueo
+    useEffect(() => {
+        let timer: ReturnType<typeof setInterval>;
+
+        const updateTimer = () => {
+            if (lockoutUntil) {
+                const now = Date.now();
+                if (lockoutUntil > now) {
+                    setTimeLeft(Math.ceil((lockoutUntil - now) / 1000));
+                } else {
+                    setTimeLeft(0);
+                    setLockoutUntil(null);
+                    setFailedAttempts(0);
+                    localStorage.removeItem(`lockout_${email}`);
+                }
+            } else {
+                setTimeLeft(0);
+            }
+        };
+
+        if (lockoutUntil) {
+            updateTimer();
+            timer = setInterval(updateTimer, 1000);
+        }
+
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [lockoutUntil, email]);
+
     /**
      * Maneja el envío del formulario de verificación de código
      */
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (lockoutUntil && lockoutUntil > Date.now()) {
+            return; // Bloqueado
+        }
 
         // Limpiar mensajes de error previos
         setErrorMessage('');
@@ -51,23 +105,95 @@ const VerifyCode = () => {
                 type: typeParam
             });
 
-            // Si el código es válido, redirigir al formulario de reset
+            // Si el código es válido, limpiar intentos y redirigir
+            setFailedAttempts(0);
+            localStorage.removeItem(`lockout_${email}`);
             navigate(`/reset-password?email=${encodeURIComponent(email)}&code=${code}&type=${typeParam}`);
 
-        } catch (error) {
-            // Manejo de errores
-            if (error instanceof Error) {
-                setErrorMessage(error.message);
+        } catch (error: any) {
+            // Incrementamos intentos fallidos
+            const newAttempts = failedAttempts + 1;
+            setFailedAttempts(newAttempts);
+
+            if (newAttempts >= 5) {
+                const lockoutTime = Date.now() + 30000; // 30 segundos
+                setLockoutUntil(lockoutTime);
+                localStorage.setItem(`lockout_${email}`, lockoutTime.toString());
+                setErrorMessage('Demasiados intentos incorrectos.');
             } else {
-                setErrorMessage('Error al verificar el código. Por favor, intenta nuevamente.');
+                if (error.status === 422 || error.response?.status === 422) {
+                    setErrorMessage(`Código de verificación incorrecto. Intento ${newAttempts} de 5.`);
+                } else if (error instanceof Error) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage(`Error al verificar el código. Intento ${newAttempts} de 5.`);
+                }
             }
         } finally {
             setLoading(false);
         }
     };
 
+    const isLocked = timeLeft > 0;
+
     return (
         <div className={styles.container}>
+            {/* Modal inamovible de bloqueo */}
+            {isLocked && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    zIndex: 9999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: 'white',
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff',
+                        padding: '2.5rem',
+                        borderRadius: '16px',
+                        color: '#333',
+                        textAlign: 'center',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 4px 30px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ffebee',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            margin: '0 auto 1.5rem auto'
+                        }}>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d32f2f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <h2 style={{ color: '#d32f2f', marginBottom: '1rem', marginTop: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                            Acceso Bloqueado
+                        </h2>
+                        <span style={{ fontSize: '4.5rem', display: 'block', marginBottom: '1rem', fontWeight: '800', lineHeight: 1, color: '#d32f2f' }}>
+                            {timeLeft}<span style={{ fontSize: '1.5rem', marginLeft: '4px' }}>s</span>
+                        </span>
+                        <p style={{ margin: 0, color: '#555', fontSize: '1rem', lineHeight: 1.5 }}>
+                            Has superado el límite de intentos permitidos.
+                            Por seguridad, espera hasta que el contador llegue a cero para volver a intentarlo.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className={styles.card}>
                 <h2 className={styles.title}>Verificar Código</h2>
                 <p className={styles.subtitle}>
@@ -107,14 +233,14 @@ const VerifyCode = () => {
                             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             placeholder="123456"
                             required
-                            disabled={loading}
+                            disabled={loading || isLocked}
                             maxLength={6}
                             pattern="[0-9]{6}"
                             style={{ letterSpacing: '0.5em', textAlign: 'center', fontWeight: 'bold', fontSize: '1.25rem' }}
                         />
                     </div>
 
-                    <button type="submit" className={styles.button} disabled={loading || code.length !== 6}>
+                    <button type="submit" className={styles.button} disabled={loading || code.length !== 6 || isLocked}>
                         {loading ? 'Verificando...' : 'Verificar Código'}
                     </button>
 
