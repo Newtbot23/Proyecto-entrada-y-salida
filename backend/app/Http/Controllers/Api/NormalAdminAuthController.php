@@ -38,7 +38,7 @@ class NormalAdminAuthController extends Controller
             if (!in_array($user->id_rol, [1, 2, 3, 4])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Acceso denegado. Solo administradores pueden iniciar sesión aquí.'
+                    'message' => 'Acceso denegado. Usuario no autorizado para esta plataforma.'
                 ], 403);
             }
 
@@ -85,6 +85,7 @@ class NormalAdminAuthController extends Controller
                         'correo' => $user->correo,
                         'id_rol' => $user->id_rol,
                         'nit_entidad' => $user->nit_entidad,
+                        'id_rol' => $user->id_rol,
                         'license_id' => $licencia->id,
                         'license_status' => $licencia->estado,
                         'license_expired' => $licenseExpired

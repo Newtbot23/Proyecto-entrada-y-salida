@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('licencias_sistema', function (Blueprint $table) {
-            $table->id();
+            $table->string('id', 25)->primary();
             $table->date('fecha_inicio');
             $table->date('fecha_vencimiento');
             $table->enum('estado', ['activa', 'suspendida', 'vencida', 'pendiente'])->default('pendiente');

@@ -23,4 +23,9 @@ class Equipos extends Model
         'id_sistema_operativo',
         'doc'
     ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuarios::class, 'doc', 'doc');
+    }
 }
