@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('usuarios', function (Blueprint $table) {
             if (!Schema::hasColumn('usuarios', 'estado')) {
-                $table->string('estado', 20)->default('activo')->after('id_entidad');
+                $table->string('estado', 20)->default('activo')->after('nit_entidad');
             }
         });
     }

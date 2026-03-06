@@ -4,6 +4,7 @@ export interface User {
     doc: string;
     nombre: string;
     rol: string;
+    id_rol: number;
     correo: string;
 }
 
@@ -46,7 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const logout = () => {
         setUserState(null);
         sessionStorage.clear(); // Clears token and user data
-        window.location.replace('/superadmin/login');
+        window.location.replace('/login');
     };
 
     const isAuthenticated = !!sessionStorage.getItem('adminToken');

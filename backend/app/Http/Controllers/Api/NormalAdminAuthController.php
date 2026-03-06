@@ -33,12 +33,12 @@ class NormalAdminAuthController extends Controller
                 ], 401);
             }
 
-            // Verify if the user is an Admin (id_rol = 1)
-            // Roll map: 1 could be Admin based on user's setup
-            if ($user->id_rol != 1) {
+            // Verify if the user is an Admin (id_rol = 1), regular User (id_rol = 2),
+            // Puerta Personas (id_rol = 3), or Puerta Vehiculos (id_rol = 4)
+            if (!in_array($user->id_rol, [1, 2, 3, 4])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Acceso denegado. Solo administradores pueden iniciar sesión aquí.'
+                    'message' => 'Acceso denegado. Usuario no autorizado para esta plataforma.'
                 ], 403);
             }
 
@@ -83,7 +83,9 @@ class NormalAdminAuthController extends Controller
                         'id' => $user->doc,
                         'nombre' => $user->primer_nombre . ' ' . $user->primer_apellido,
                         'correo' => $user->correo,
+                        'id_rol' => $user->id_rol,
                         'nit_entidad' => $user->nit_entidad,
+                        'id_rol' => $user->id_rol,
                         'license_id' => $licencia->id,
                         'license_status' => $licencia->estado,
                         'license_expired' => $licenseExpired

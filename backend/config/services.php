@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    
+    // Dentro de config/services.php agrega esto al final del arreglo:
+'stripe' => [
+    'secret' => env('STRIPE_SECRET_KEY'),
+],
 
 ];

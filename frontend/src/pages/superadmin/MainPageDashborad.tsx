@@ -7,12 +7,14 @@ import LicenseTable from '../../components/dashboard/LicenseTable';
 import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
 import { getPricingPlans, type PricingPlan } from '../../services/planService';
 import type { PaginationMeta } from '../../types/institution';
+import { useNavigate } from 'react-router-dom';
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
     const [isMobileSidebarOpen] = useState(false);
     // Desktop sidebar collapsed state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const navigate = useNavigate();
 
     // Data state
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -42,7 +44,8 @@ const MainPageDashborad: React.FC = () => {
         loadPlans();
 
         fetchDashboardData();
-    }, []);
+        checkAuth();
+    }, [navigate]);
 
     // Effect to trigger search/filter when states change
     useEffect(() => {

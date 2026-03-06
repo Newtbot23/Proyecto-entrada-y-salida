@@ -1,0 +1,52 @@
+/* CSS variables should be defined in a global file like index.css or theme.css */
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.welcomeSection {
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.welcomeTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-text-primary, #111827);
+    margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.entityText {
+    color: var(--color-text-secondary, #4b5563);
+}
+
+.paymentBtn {
+    margin-top: var(--spacing-md, 1rem);
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    background-color: #d97706;
+    /* Amber-600 */
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md, 6px);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.paymentBtn:hover {
+    background-color: #b45309;
+    /* Amber-700 */
+}
+
+@media (max-width: 1024px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+}

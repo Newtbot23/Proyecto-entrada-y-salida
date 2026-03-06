@@ -1,0 +1,64 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-md) var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+    /* Standard header height */
+}
+
+.leftSection {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.pageTitle {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.rightSection {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.userLabel {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.userName {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.logoutBtn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--color-text-main);
+    font-size: var(--font-size-sm);
+    transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+    background-color: var(--color-bg-page);
+    border-color: var(--color-border-focus);
+}
