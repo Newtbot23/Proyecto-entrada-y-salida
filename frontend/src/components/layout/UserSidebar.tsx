@@ -1,53 +1,33 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import styles from './Sidebar.module.css';
+import styles from './NormalAdminSidebar.module.css'; // Reusing established styles
 import {
     DashboardIcon,
-    InstitutionIcon,
-    LicenseIcon,
-    ReportIcon,
     ChevronLeftIcon,
     ChevronRightIcon
 } from '../common/Icons';
 
 interface SidebarProps {
-    isOpen?: boolean; // For mobile toggle
-    isCollapsed?: boolean; // For desktop collapse
+    isCollapsed?: boolean;
     onToggle?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-    isOpen = true,
+const UserSidebar: React.FC<SidebarProps> = ({
     isCollapsed = false,
     onToggle
 }) => {
     const location = useLocation();
     const activePath = location.pathname;
 
-    const isSuperAdmin = activePath.startsWith('/superadmin');
-
-    const superAdminItems = [
-        { label: 'Panel', path: '/superadmin/dashboard', icon: DashboardIcon },
-        { label: 'Administradores', path: '/superadmin/admins', icon: InstitutionIcon }, // Using InstitutionIcon for now
-        { label: 'Instituciones', path: '/superadmin/institutions', icon: InstitutionIcon },
-        { label: 'Admin Entidades', path: '/superadmin/entities-admins', icon: InstitutionIcon },
-        { label: 'Planes de Licencia', path: '/superadmin/license-plans', icon: LicenseIcon },
-        { label: 'Reportes', path: '/superadmin/reports', icon: ReportIcon },
+    const menuItems = [
+        { label: 'Mi Panel', path: '/user/dashboard', icon: DashboardIcon },
     ];
-
-    const normalAdminItems = [
-        { label: 'Panel', path: '/dashboard', icon: DashboardIcon },
-        { label: 'Usuarios', path: '/user/normaladmin/tables/usuarios', icon: InstitutionIcon },
-        { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon },
-    ];
-
-    const menuItems = isSuperAdmin ? superAdminItems : normalAdminItems;
 
     return (
-        <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}>
+        <aside className={`${styles.sidebar} ${styles.open} ${isCollapsed ? styles.collapsed : ''}`}>
             <div className={styles.logoArea}>
-                <span className={styles.logoText}>SuperAdmin</span>
-                <span className={styles.logoIcon}>SA</span>
+                <span className={styles.logoText}>Usuario</span>
+                <span className={styles.logoIcon}>US</span>
             </div>
 
             <nav className={styles.nav}>
@@ -80,4 +60,4 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
 };
 
-export default Sidebar;
+export default UserSidebar;

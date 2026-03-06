@@ -6,12 +6,14 @@ import StatCard from '../../components/dashboard/StatCard';
 import LicenseTable from '../../components/dashboard/LicenseTable';
 import { getDashboardStats, getLicensesList, type DashboardStats, type LicenseData } from '../../services/licenseDashboardService';
 import type { PaginationMeta } from '../../types/institution';
+import { useNavigate } from 'react-router-dom';
 
 const MainPageDashborad: React.FC = () => {
     // Mobile sidebar state
     const [isMobileSidebarOpen] = useState(false);
     // Desktop sidebar collapsed state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const navigate = useNavigate();
 
     // Data state
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -21,22 +23,16 @@ const MainPageDashborad: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
-    // Dynamic Admin Info
-    const [adminName, setAdminName] = useState('Super Admin');
-
     useEffect(() => {
-        // Get admin user from sessionStorage
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
+        const checkAuth = () => {
+            const token = sessionStorage.getItem('adminToken');
+            if (!token) {
+                navigate('/superadmin/login');
             }
-        }
+        };
         fetchDashboardData();
-    }, []);
+        checkAuth();
+    }, [navigate]);
 
     const fetchDashboardData = async () => {
         try {
@@ -84,13 +80,6 @@ const MainPageDashborad: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleLogout = () => {
-        // Clear all admin-related items from sessionStorage
-        sessionStorage.clear();
-        // Force redirect to login
-        window.location.replace('/superadmin/login');
     };
 
     const statCards = [

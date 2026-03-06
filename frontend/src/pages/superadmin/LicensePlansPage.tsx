@@ -17,7 +17,6 @@ const LicensePlansPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [plans, setPlans] = useState<LicensePlan[]>([]);
     const [loading, setLoading] = useState(true);
-    const [adminName, setAdminName] = useState('Super Admin');
 
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -26,15 +25,6 @@ const LicensePlansPage: React.FC = () => {
     const [selectedPlan, setSelectedPlan] = useState<LicensePlan | null>(null);
 
     useEffect(() => {
-        const adminUserStr = sessionStorage.getItem('adminUser');
-        if (adminUserStr) {
-            try {
-                const adminUser = JSON.parse(adminUserStr);
-                setAdminName(adminUser.nombre || 'Super Admin');
-            } catch (e) {
-                console.error('Error parsing admin user:', e);
-            }
-        }
         fetchPlans();
     }, []);
 
@@ -91,17 +81,12 @@ const LicensePlansPage: React.FC = () => {
         setIsDeleteModalOpen(true);
     };
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/superadmin/login');
-    };
-
     return (
         <div className={styles.dashboardLayout}>
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header title="Planes de Licencia" userName={adminName} role="Administrador" onLogout={handleLogout} />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.pageHeader}>

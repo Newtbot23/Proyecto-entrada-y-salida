@@ -5,8 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LicenciasSistema;
 use App\Models\PagosLicencia;
+use App\Models\Usuarios;
+use App\Models\Entidades;
+use App\Models\Registros;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -52,6 +57,65 @@ class DashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener estadísticas del dashboard',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get statistics for a Normal Admin dashboard (entity-specific).
+     * GET /api/normal-admin/stats
+     */
+    public function normalAdminStats(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $nit = $user->nit_entidad;
+
+            // 1. Usuarios Activos (Total users for the entity with status 'activo')
+            $activeUsers = Usuarios::where('nit_entidad', $nit)
+                ->where('estado', 'activo')
+                ->count();
+
+            // 2. Accesos Diarios (Registers today for this entity's users)
+            $today = Carbon::today();
+            $dailyAccesses = DB::table('registros')
+                ->join('usuarios', 'registros.doc', '=', 'usuarios.doc')
+                ->where('usuarios.nit_entidad', $nit)
+                ->whereDate('registros.fecha', $today)
+                ->count();
+
+            // 3. Entity Information
+            $entidad = Entidades::where('nit', $nit)->first();
+            
+            // 4. License Information
+            $licencia = LicenciasSistema::where('nit_entidad', $nit)
+                ->with('plan')
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'active_users' => $activeUsers,
+                    'daily_accesses' => $dailyAccesses,
+                    'entity' => [
+                        'nombre' => $entidad->nombre_entidad ?? 'No disponible',
+                        'nit' => $entidad->nit ?? 'No disponible',
+                        'direccion' => $entidad->direccion ?? 'No disponible',
+                    ],
+                    'license' => [
+                        'estado' => $licencia->estado ?? 'Desconocido',
+                        'fecha_vencimiento' => $licencia->fecha_vencimiento ?? 'No disponible',
+                        'plan_nombre' => $licencia->plan->nombre_plan ?? 'No disponible',
+                    ]
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error en DashboardController@normalAdminStats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas del panel',
                 'error' => $e->getMessage()
             ], 500);
         }
