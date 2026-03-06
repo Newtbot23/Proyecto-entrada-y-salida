@@ -9,37 +9,11 @@ interface User {
     nombre: string;
     correo: string;
     id_entidad: number;
-    nit_entidad: string;
     license_status?: string;
     license_expired?: boolean;
 }
 
-interface EntityData {
-    nit: string;
-    nombre_entidad: string;
-    correo: string;
-    direccion: string;
-    nombre_titular: string;
-    telefono: string;
-}
-
-interface LicenseData {
-    id: number;
-    referencia_pago: string;
-    fecha_vencimiento: string;
-    estado: string;
-    plan?: {
-        nombre_plan: string;
-    };
-}
-
-interface DashboardStats {
-    vehiculos_ingresados: number;
-    equipos_propios: number;
-}
-
 const NormalAdminDashboard: React.FC = () => {
-    const { user } = useOutletContext<{ user: User }>();
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -120,6 +94,14 @@ const NormalAdminDashboard: React.FC = () => {
 
     if (!user) return null;
 
+    const contentStyle = {
+        padding: '2rem',
+        marginLeft: isSidebarCollapsed ? '80px' : '260px',
+        transition: 'margin-left 0.3s',
+        minHeight: '100vh',
+        backgroundColor: '#f3f4f6'
+    };
+
     return (
         <div>
             <ExpirationModal isOpen={isLicenseExpired} />
@@ -172,7 +154,6 @@ const NormalAdminDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Nueva Card: Información General de la Empresa */}
                     <div style={{ marginTop: '2rem', background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                         <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Información General de la Empresa</h3>
@@ -203,33 +184,8 @@ const NormalAdminDashboard: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <h3 style={{ fontWeight: '600', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>Licencia y Plan</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <p><strong style={{ color: '#4b5563' }}>Plan Actual:</strong> {licenseData?.plan?.nombre_plan || '--'}</p>
-                        <p><strong style={{ color: '#4b5563' }}>Expira el:</strong> {licenseData?.fecha_vencimiento ? new Date(licenseData.fecha_vencimiento).toLocaleDateString() : '--'}</p>
-                        <p><strong style={{ color: '#4b5563' }}>Estado de Licencia:</strong>
-                            <span style={{
-                                marginLeft: '0.5rem',
-                                color: licenseData?.estado === 'activo' || licenseData?.estado === 'activa' ? '#16a34a' : (licenseData?.estado === 'pendiente' ? '#d97706' : '#dc2626'),
-                                fontWeight: 'bold'
-                            }}>
-                                {licenseData?.estado ? licenseData.estado.charAt(0).toUpperCase() + licenseData.estado.slice(1) : '--'}
-                            </span>
-                        </p>
-                        <p><strong style={{ color: '#4b5563' }}>Ref de Pago:</strong> {licenseData?.referencia_pago || '--'}</p>
-                    </div>
-                    {licenseData?.estado === 'pendiente' && (
-                        <button
-                            onClick={() => navigate('/license-payment')}
-                            style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}
-                        >
-                            Cargar Pago
-                        </button>
-                    )}
-                </div>
+            </main>
         </div>
-        </div >
     );
 };
 

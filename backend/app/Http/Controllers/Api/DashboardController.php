@@ -13,7 +13,6 @@ use App\Models\Asignaciones;
 use Illuminate\Http\Request;
 use App\Models\Usuarios;
 use App\Models\Entidades;
-use App\Models\Registros;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
