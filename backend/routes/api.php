@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\AdminsController;
 use App\Http\Controllers\Api\PasswordRecoveryApiController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StripeCheckoutController;
+use App\Http\Controllers\Api\DynamicTableController;
+use App\Http\Controllers\Api\UserDashboardController;
 
 
 Route::get('/user', function (Request $request) {
@@ -56,6 +58,10 @@ Route::get('/entidades/{nit}/admins', [EntidadesController::class, 'getAdmins'])
 // User status toggle
 Route::patch('/usuarios/{doc}/estado', [UsuariosController::class, 'toggleEstado']);
 
+// QR Registration
+Route::middleware('auth:sanctum')->get('/usuarios/qr-registro', [UsuariosController::class, 'generateQr']);
+Route::post('/usuarios/qr-register', [UsuariosController::class, 'registerWithQr']);
+
 // Registration Flow
 Route::post('/registration/entidades', [EntidadController::class, 'store']);
 Route::post('/registration/licencias', [PlanesLicenciasController::class, 'store']);
@@ -68,6 +74,7 @@ Route::post('/normaladmin/login', [NormalAdminAuthController::class, 'login']);
 
 // Dashboard Stats
 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+Route::get('/normal-admin/stats', [DashboardController::class, 'normalAdminStats'])->middleware('auth:sanctum');
 
 // Licenses Management
 Route::get('/licencias', [LicenciasController::class, 'index']);
@@ -82,12 +89,33 @@ Route::get('/licencia-actual', [LicenciasController::class, 'getActualLicense'])
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/stripe/checkout-session', [StripeCheckoutController::class, 'createCheckoutSession']);
     Route::post('/stripe/payment-success', [StripeCheckoutController::class, 'confirmPayment']);
+
+    // User Dashboard Routes
+    Route::get('/user/catalogs', [UserDashboardController::class, 'getCatalogs']);
+    Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
+    Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
+    Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
+    Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
 });
 
 // Common Data
 Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 
+// Dynamic Tables
+Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
+Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
+Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
+Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
+Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
+
 // Reports
 Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
 Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
 Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
+
+// Puertas Access Control
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);
+    Route::get('/puertas/search-vehiculo', [App\Http\Controllers\Api\PuertasController::class, 'searchVehiculo']);
+    Route::post('/puertas/registrar-actividad', [App\Http\Controllers\Api\PuertasController::class, 'registrarActividad']);
+});

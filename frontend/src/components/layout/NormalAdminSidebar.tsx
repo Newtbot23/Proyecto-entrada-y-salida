@@ -1,0 +1,171 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { DynamicTableService } from '../../services/dynamicTableService';
+import styles from './NormalAdminSidebar.module.css';
+import {
+    DashboardIcon,
+    InstitutionIcon,
+    ReportIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon
+} from '../common/Icons';
+
+interface SidebarProps {
+    isOpen?: boolean; // For mobile toggle
+    isCollapsed?: boolean; // For desktop collapse
+    onToggle?: () => void;
+}
+
+const NormalAdminSidebar: React.FC<SidebarProps> = ({
+    isOpen = true,
+    isCollapsed = false,
+    onToggle
+}) => {
+    const location = useLocation();
+    const activePath = location.pathname;
+    const { user } = useAuth();
+
+    // Improved role detection
+    const getRole = () => {
+        if (user?.id_rol) return Number(user.id_rol);
+        const storedRole = sessionStorage.getItem('userRole');
+        if (storedRole) return Number(storedRole);
+        const userData = sessionStorage.getItem('userData');
+        if (userData) {
+            try {
+                return Number(JSON.parse(userData).id_rol);
+            } catch (e) {
+                return 0;
+            }
+        }
+        return 0;
+    };
+
+    const userRole = getRole();
+
+    const [shortTables, setShortTables] = useState<string[]>([]);
+    const [isOtrosOpen, setIsOtrosOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchShortTables = async () => {
+            try {
+                const response = await DynamicTableService.getShortTables();
+                const tables = (response as any).data || response;
+                if (Array.isArray(tables)) {
+                    setShortTables(tables);
+                }
+            } catch (error) {
+                console.error("Error fetching short tables for sidebar", error);
+            }
+        };
+
+        fetchShortTables();
+    }, []);
+
+    const menuItems = [];
+    if (userRole === 1) {
+        menuItems.push(
+            { label: 'Panel', path: '/dashboard', icon: DashboardIcon },
+            { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon }
+        );
+    } else if (userRole === 3) {
+        menuItems.push(
+            { label: 'Control Personas', path: '/puertas/personas', icon: DashboardIcon }
+        );
+    } else if (userRole === 4) {
+        menuItems.push(
+            { label: 'Control Vehículos', path: '/puertas/vehiculos', icon: DashboardIcon }
+        );
+    }
+
+    return (
+        <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}>
+            <div className={styles.logoArea}>
+                <span className={styles.logoText}>Administración</span>
+                <span className={styles.logoIcon}>AD</span>
+            </div>
+
+            <nav className={styles.nav}>
+                <ul className={styles.navList}>
+                    {menuItems.map((item) => (
+                        <li key={item.path} className={styles.navItem}>
+                            <Link
+                                to={item.path}
+                                className={`${styles.navLink} ${activePath === item.path ? styles.active : ''}`}
+                                title={isCollapsed ? item.label : ''}
+                            >
+                                <span className={styles.navIcon}>
+                                    <item.icon />
+                                </span>
+                                <span className={styles.navLabel}>{item.label}</span>
+                            </Link>
+                        </li>
+                    ))}
+
+                    {/* "Otros" Accordion Item - Only for Admin */}
+                    {userRole === 1 && (
+                        <li className={styles.navItem}>
+                            <button
+                                className={`${styles.accordionHeader} ${isOtrosOpen || activePath.includes('/tables/') ? styles.active : ''}`}
+                                onClick={() => setIsOtrosOpen(!isOtrosOpen)}
+                                title={isCollapsed ? "Otros" : ""}
+                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span className={styles.navIcon}>
+                                        <InstitutionIcon />
+                                    </span>
+                                    {!isCollapsed && <span className={styles.navLabel}>Otros</span>}
+                                </div>
+                                {!isCollapsed && (
+                                    <span className={`${styles.chevronIcon} ${isOtrosOpen ? styles.rotated : ''}`}>
+                                        <ChevronRightIcon width={16} height={16} />
+                                    </span>
+                                )}
+                            </button>
+
+                            {!isCollapsed && (
+                                <div className={`${styles.accordionContent} ${isOtrosOpen || activePath.includes('/tables/') ? styles.open : ''}`}>
+                                    <ul className={styles.accordionList}>
+                                        {shortTables.map(tableName => {
+                                            const tablePath = `/user/normaladmin/tables/${tableName}`;
+                                            const isActive = activePath === tablePath;
+                                            return (
+                                                <li key={tableName} className={styles.accordionItem}>
+                                                    <Link
+                                                        to={tablePath}
+                                                        className={`${styles.accordionLink} ${isActive ? styles.active : ''}`}
+                                                    >
+                                                        {tableName.replace(/_/g, ' ')}
+                                                    </Link>
+                                                </li>
+                                            );
+                                        })}
+                                        {shortTables.length === 0 && (
+                                            <li className={styles.accordionItem}>
+                                                <span style={{ display: 'block', padding: '0.5rem 1.5rem 0.5rem 3.5rem', color: '#9ca3af', fontSize: '0.85rem' }}>
+                                                    Sin tablas adicionales
+                                                </span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </li>
+                    )}
+                </ul>
+            </nav>
+
+            <button
+                className={styles.toggleBtn}
+                onClick={onToggle}
+                aria-label={isCollapsed ? "Abrir barra lateral" : "Cerrar barra lateral"}
+            >
+                {isCollapsed ? <ChevronRightIcon width={20} height={20} /> : <ChevronLeftIcon width={20} height={20} />}
+            </button>
+        </aside>
+    );
+};
+
+export default NormalAdminSidebar;

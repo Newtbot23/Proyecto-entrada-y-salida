@@ -1,0 +1,36 @@
+.dashboardLayout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-bg-page);
+}
+
+.mainContent {
+    flex: 1;
+    margin-left: 250px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: margin-left 0.3s ease-in-out;
+    width: 100%;
+}
+
+.mainContentCollapsed {
+    margin-left: 80px;
+}
+
+.contentWrapper {
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+    .mainContent {
+        margin-left: 0;
+    }
+
+    .contentWrapper {
+        padding: var(--spacing-md);
+    }
+}

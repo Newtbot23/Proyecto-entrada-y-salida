@@ -29,8 +29,7 @@ class StoreUsuarioRequest extends FormRequest
             'telefono' => 'required|string|max:13|regex:/^[0-9+\-\s()]+$/',
             'correo' => 'required|email|max:100|unique:usuarios,correo',
             'contrasena' => 'required|string|min:6',
-            'id_licencia_sistema' => 'required|exists:licencias_sistema,id',
-            'id_rol' => 'required|integer|exists:roles,id',
+            'id_rol' => 'nullable|integer|exists:roles,id',
             'nit_entidad' => 'required|string|exists:entidades,nit',
         ];
     }

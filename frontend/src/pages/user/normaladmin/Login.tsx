@@ -54,12 +54,26 @@ const NormalAdminLogin: React.FC = () => {
             sessionStorage.setItem('userToken', token);
             sessionStorage.setItem('userData', JSON.stringify(user));
 
+            // Add consistent keys for AuthContext and Sidebar
+            sessionStorage.setItem('adminToken', token);
+            sessionStorage.setItem('adminUser', JSON.stringify(user));
+            sessionStorage.setItem('userRole', user.id_rol.toString());
+
             // Phase 15 & 16: Redirect logic based on license
             if (user.license_status === 'pendiente') {
                 navigate('/license-payment');
             } else {
-                // Redirect to dashboard
-                navigate('/dashboard');
+                // Redirect to dashboard based on role
+                const userRole = Number(user.id_rol);
+                if (userRole === 2) {
+                    navigate('/user/dashboard');
+                } else if (user.id_rol === 3) {
+                    navigate('/puertas/personas');
+                } else if (user.id_rol === 4) {
+                    navigate('/puertas/vehiculos');
+                } else {
+                    navigate('/dashboard');
+                }
             }
 
         } catch (err: any) {
@@ -106,6 +120,9 @@ const NormalAdminLogin: React.FC = () => {
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                         <a href="/forgot-password?type=usuario" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
                             ¿Olvidaste tu contraseña?
+                        </a>
+                        <a href="/register-user" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
+                            Registrarse
                         </a>
                         <a href="/plans" style={{ color: '#008f39', fontSize: '0.875rem' }}>
                             Volver a Planes

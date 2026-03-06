@@ -114,7 +114,9 @@ class ApiClient {
      * @returns Headers combinados
      */
     private getHeaders(customHeaders?: Record<string, string>): Record<string, string> {
-        return { ...this.defaultHeaders, ...customHeaders };
+        const token = sessionStorage.getItem('userToken');
+        const authHeader: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+        return { ...this.defaultHeaders, ...authHeader, ...customHeaders };
     }
 
     /**
