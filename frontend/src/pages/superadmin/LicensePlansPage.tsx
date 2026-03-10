@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './LicensePlansPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
@@ -15,30 +16,19 @@ import type { LicensePlan, PlanFormMode, PlanFormData } from '../../types/licens
 
 const LicensePlansPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [plans, setPlans] = useState<LicensePlan[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+
+    // Context query for Plans
+    const { data: plans = [], isLoading: loading } = useQuery({
+        queryKey: ['licensePlans'],
+        queryFn: getLicensePlans,
+    });
 
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [formMode, setFormMode] = useState<PlanFormMode>('create');
     const [selectedPlan, setSelectedPlan] = useState<LicensePlan | null>(null);
-
-    useEffect(() => {
-        fetchPlans();
-    }, []);
-
-    const fetchPlans = async () => {
-        try {
-            setLoading(true);
-            const data = await getLicensePlans();
-            setPlans(data);
-        } catch (error) {
-            console.error('Failed to fetch plans:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSavePlan = async (formData: PlanFormData) => {
         try {
@@ -47,7 +37,8 @@ const LicensePlansPage: React.FC = () => {
             } else {
                 await createLicensePlan(formData);
             }
-            fetchPlans();
+            queryClient.invalidateQueries({ queryKey: ['licensePlans'] });
+            setIsFormModalOpen(false);
         } catch (error) {
             console.error('Error saving plan:', error);
         }
@@ -57,7 +48,7 @@ const LicensePlansPage: React.FC = () => {
         if (!selectedPlan) return;
         try {
             await disableLicensePlan(selectedPlan.id);
-            fetchPlans();
+            queryClient.invalidateQueries({ queryKey: ['licensePlans'] });
             setIsDeleteModalOpen(false);
         } catch (error) {
             console.error('Error disabling plan:', error);

@@ -18,7 +18,6 @@
  * Cambiar según el entorno (desarrollo, producción, etc.)
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-console.log('Mi URL de API es:', import.meta.env.VITE_API_URL);
 
 // ============================================================================
 // TIPOS Y INTERFACES
@@ -114,7 +113,8 @@ class ApiClient {
      * @returns Headers combinados
      */
     private getHeaders(customHeaders?: Record<string, string>): Record<string, string> {
-        const token = sessionStorage.getItem('userToken');
+        const token = sessionStorage.getItem('authToken');
+
         const authHeader: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
         return { ...this.defaultHeaders, ...authHeader, ...customHeaders };
     }
@@ -170,11 +170,15 @@ class ApiClient {
                 await this.handleErrorResponse(response);
             }
 
-            const data: ApiResponse<T> = await response.json();
+            const parsed = await response.json();
 
-            // Laravel devuelve { success: true, data: {...} }
-            // Extraemos solo la data
-            return data.data as T;
+            // Soporte para ambos formatos de respuesta:
+            // 1. Laravel wrapper: { success: true, data: {...} } → devolvemos parsed.data
+            // 2. Respuesta directa: [{...}] o {...} → devolvemos parsed tal cual
+            if (parsed !== null && typeof parsed === 'object' && 'data' in parsed && 'success' in parsed) {
+                return parsed.data as T;
+            }
+            return parsed as T;
         } catch (error) {
             if (error instanceof Error) {
                 console.error(`GET ${endpoint} failed:`, error.message);
@@ -230,8 +234,11 @@ class ApiClient {
                 await this.handleErrorResponse(response);
             }
 
-            const data: ApiResponse<T> = await response.json();
-            return data.data as T;
+            const parsed = await response.json();
+            if (parsed !== null && typeof parsed === 'object' && 'data' in parsed && 'success' in parsed) {
+                return parsed.data as T;
+            }
+            return parsed as T;
         } catch (error) {
             if (error instanceof Error) {
                 console.error(`POST ${endpoint} failed:`, error.message);
@@ -260,8 +267,11 @@ class ApiClient {
                 await this.handleErrorResponse(response);
             }
 
-            const data: ApiResponse<T> = await response.json();
-            return data.data as T;
+            const parsed = await response.json();
+            if (parsed !== null && typeof parsed === 'object' && 'data' in parsed && 'success' in parsed) {
+                return parsed.data as T;
+            }
+            return parsed as T;
         } catch (error) {
             if (error instanceof Error) {
                 console.error(`PUT ${endpoint} failed:`, error.message);
@@ -290,8 +300,11 @@ class ApiClient {
                 await this.handleErrorResponse(response);
             }
 
-            const data: ApiResponse<T> = await response.json();
-            return data.data as T;
+            const parsed = await response.json();
+            if (parsed !== null && typeof parsed === 'object' && 'data' in parsed && 'success' in parsed) {
+                return parsed.data as T;
+            }
+            return parsed as T;
         } catch (error) {
             if (error instanceof Error) {
                 console.error(`PATCH ${endpoint} failed:`, error.message);

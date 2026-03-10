@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCatalogs, getUserVehiculos, getUserEquipos, storeVehiculo, storeEquipo } from '../../../services/userDashboardService';
+import type { Vehiculo, Equipo } from '../../../services/userDashboardService';
 
 interface User {
     id: number;
@@ -7,37 +10,9 @@ interface User {
     correo: string;
 }
 
-interface Vehiculo {
-    id?: number;
-    placa: string;
-    tipo?: string; // from local/mock
-    tipo_vehiculo?: string; // from join
-    id_tipo_vehiculo?: string;
-    marca: string;
-    modelo: string;
-    color: string;
-    descripcion?: string;
-}
-
-interface Equipo {
-    id?: number;
-    serial: string;
-    marca?: string; // from join
-    id_marca?: string;
-    modelo: string;
-    tipo_equipo_desc?: string;
-    caracteristicas?: string;
-    so?: string; // from join
-    id_sistema_operativo?: string;
-}
-
-interface CatalogType {
-    id: number;
-    name: string;
-}
-
 const UserDashboard: React.FC = () => {
     const { user } = useOutletContext<{ user: User }>();
+    const queryClient = useQueryClient();
 
     // Estados modales
     const [showVehiculoModal, setShowVehiculoModal] = useState(false);
@@ -46,99 +21,47 @@ const UserDashboard: React.FC = () => {
     // Estado de Pestañas
     const [activeTab, setActiveTab] = useState<'vehiculos' | 'equipos'>('vehiculos');
 
-    // Datos
-    const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
-    const [equipos, setEquipos] = useState<Equipo[]>([]);
+    // Query para Catálogos
+    const { data: catalogs } = useQuery({
+        queryKey: ['catalogs'],
+        queryFn: getCatalogs,
+    });
 
-    // Catalogos
-    const [tiposVehiculo, setTiposVehiculo] = useState<CatalogType[]>([]);
-    const [marcasEquipo, setMarcasEquipo] = useState<CatalogType[]>([]);
-    const [sistemasOperativos, setSistemasOperativos] = useState<CatalogType[]>([]);
+    const tiposVehiculo = catalogs?.tipos_vehiculo.map((t: any) => ({ id: t.id, name: t.tipo_vehiculo })) || [];
+    const marcasEquipo = catalogs?.marcas_equipo.map((m: any) => ({ id: m.id, name: m.marca })) || [];
+    const sistemasOperativos = catalogs?.sistemas_operativos.map((s: any) => ({ id: s.id, name: s.sistema_operativo })) || [];
+
+    // Query para Vehículos
+    const { data: vehiculos = [], isLoading: loadingVehiculos } = useQuery({
+        queryKey: ['userVehiculos'],
+        queryFn: getUserVehiculos,
+    });
+
+    // Query para Equipos
+    const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
+        queryKey: ['userEquipos'],
+        queryFn: getUserEquipos,
+    });
 
     // Estados formularios
     const [formVehiculo, setFormVehiculo] = useState<Vehiculo>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
     const [formEquipo, setFormEquipo] = useState<Equipo>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
     const [loading, setLoading] = useState(false);
 
-    // Fetch initial data
-    const fetchData = async () => {
-        const token = sessionStorage.getItem('userToken');
-        if (!token) {
-            console.error("No token found in sessionStorage");
-            return;
-        }
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-        try {
-            // Catalogs
-            const catRes = await fetch(`${apiUrl}/user/catalogs`, { headers });
-            if (!catRes.ok) throw new Error(`HTTP error! status: ${catRes.status}`);
-            const catData = await catRes.json();
-            if (catData.success) {
-                setTiposVehiculo(catData.data.tipos_vehiculo.map((t: any) => ({ id: t.id, name: t.tipo_vehiculo })));
-                setMarcasEquipo(catData.data.marcas_equipo.map((m: any) => ({ id: m.id, name: m.marca })));
-                setSistemasOperativos(catData.data.sistemas_operativos.map((s: any) => ({ id: s.id, name: s.sistema_operativo })));
-            }
-
-            // Vehiculos & Equipos
-            fetchUserRecords(headers);
-        } catch (error) {
-            console.error("Error fetching data", error);
-        }
-    };
-
-    const fetchUserRecords = async (headers?: any) => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        if (!headers) {
-            const token = sessionStorage.getItem('userToken');
-            if (!token) return;
-            headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-        }
-
-        try {
-            const vehRes = await fetch(`${apiUrl}/user/vehiculos`, { headers });
-            const vehData = await vehRes.json();
-            if (vehData.success) setVehiculos(vehData.data);
-
-            const eqRes = await fetch(`${apiUrl}/user/equipos`, { headers });
-            const eqData = await eqRes.json();
-            if (eqData.success) setEquipos(eqData.data);
-        } catch (error) {
-            console.error("Error fetching user records", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
-
     // --- Manejadores Formularios ---
     const handleVehiculoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const token = sessionStorage.getItem('userToken');
-        if (!token) return;
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
-            const res = await fetch(`${apiUrl}/user/vehiculos`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formVehiculo)
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert('Vehículo registrado exitosamente');
-                setShowVehiculoModal(false);
-                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
-                fetchUserRecords();
-            } else {
-                alert(data.message || 'Error al registrar vehículo');
-            }
-        } catch (error) {
+            await storeVehiculo(formVehiculo);
+            alert('Vehículo registrado exitosamente');
+            setShowVehiculoModal(false);
+            setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
+            queryClient.invalidateQueries({ queryKey: ['userVehiculos'] });
+        } catch (error: any) {
             console.error(error);
-            alert('Error al conectar con el servidor');
+            alert(error.message || 'Error al registrar vehículo');
         }
         setLoading(false);
     };
@@ -146,28 +69,16 @@ const UserDashboard: React.FC = () => {
     const handleEquipoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const token = sessionStorage.getItem('userToken');
-        if (!token) return;
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
-            const res = await fetch(`${apiUrl}/user/equipos`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formEquipo)
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert('Equipo registrado exitosamente');
-                setShowEquipoModal(false);
-                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
-                fetchUserRecords();
-            } else {
-                alert(data.message || 'Error al registrar equipo');
-            }
-        } catch (error) {
+            await storeEquipo(formEquipo);
+            alert('Equipo registrado exitosamente');
+            setShowEquipoModal(false);
+            setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
+            queryClient.invalidateQueries({ queryKey: ['userEquipos'] });
+        } catch (error: any) {
             console.error(error);
-            alert('Error al conectar con el servidor');
+            alert(error.message || 'Error al registrar equipo');
         }
         setLoading(false);
     };
@@ -251,7 +162,9 @@ const UserDashboard: React.FC = () => {
                 {/* Tabla Vehiculos */}
                 {activeTab === 'vehiculos' && (
                     <div style={{ overflowX: 'auto' }}>
-                        {vehiculos.length === 0 ? (
+                        {loadingVehiculos ? (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando vehículos...</div>
+                        ) : vehiculos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
                                 <p style={{ fontSize: '3rem', margin: 0 }}>🚗</p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay vehículos registrados</p>
@@ -286,7 +199,9 @@ const UserDashboard: React.FC = () => {
                 {/* Tabla Equipos */}
                 {activeTab === 'equipos' && (
                     <div style={{ overflowX: 'auto' }}>
-                        {equipos.length === 0 ? (
+                        {loadingEquipos ? (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando equipos...</div>
+                        ) : equipos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
                                 <p style={{ fontSize: '3rem', margin: 0 }}>💻</p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay equipos registrados</p>

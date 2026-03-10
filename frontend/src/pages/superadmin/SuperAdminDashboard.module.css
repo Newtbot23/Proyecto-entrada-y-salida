@@ -1,0 +1,93 @@
+.dashboardLayout {
+    composes: dashboardLayout from '../../styles/SharedLayout.module.css';
+}
+
+.mainContent {
+    composes: mainContent from '../../styles/SharedLayout.module.css';
+}
+
+.mainContentCollapsed {
+    composes: mainContentCollapsed from '../../styles/SharedLayout.module.css';
+}
+
+.contentWrapper {
+    composes: contentWrapper from '../../styles/SharedLayout.module.css';
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Filters Section */
+.filtersContainer {
+    composes: card from '../../styles/SharedLayout.module.css';
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    align-items: flex-end;
+}
+
+.filterGroup {
+    flex: 1 1 200px;
+}
+
+.filterGroupLarge {
+    flex: 1 1 300px;
+}
+
+.filterLabel {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.filterInput,
+.filterSelect {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    outline: none;
+    font-size: var(--font-size-sm);
+    transition: border-color var(--transition-speed);
+    background-color: var(--color-bg-card);
+}
+
+.filterInput:focus,
+.filterSelect:focus {
+    border-color: var(--color-primary);
+}
+
+.loadingPlaceholder {
+    composes: card from '../../styles/SharedLayout.module.css';
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.loadingText {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-lg);
+}
+
+.errorContainer {
+    composes: errorBanner from '../../styles/SharedLayout.module.css';
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-xl);
+}
+
+.retryButton {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-danger);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+}

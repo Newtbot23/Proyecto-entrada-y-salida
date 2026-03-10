@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../config/api';
-import styles from '../../pages/user/Registration.module.css';
+import styles from './AuthFlows.module.css';
 
 /**
  * Componente de recuperación de contraseña (Forgot Password)
@@ -100,10 +100,10 @@ const ForgotPassword = () => {
             {loading ? 'Enviando...' : 'Enviar Código de Recuperación'}
           </button>
 
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <div className={styles.backLinkContainer}>
             <a
               href={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
-              style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
+              className={styles.backLink}
               onClick={(e) => { e.preventDefault(); navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login'); }}
             >
               Volver al Inicio de Sesión

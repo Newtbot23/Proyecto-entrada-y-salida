@@ -19,7 +19,8 @@ const RegisterEntity: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+    const [showModal, setShowModal] = useState(false);
+    const [navData, setNavData] = useState<{ planId?: string; entidadId?: number | string; entidadNombre?: string } | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
 
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -158,20 +159,16 @@ const RegisterEntity: React.FC = () => {
         setFieldErrors({});
 
         try {
-            const response = await registrationService.createEntity(formData);
+            // apiClient.post() returns the unwrapped data directly.
+            // If the call doesn't throw, the entity was created successfully.
+            const entityData = await registrationService.createEntity(formData);
 
-            if (response.success) {
-                setSuccess('¡Entidad creada exitosamente! Redirigiendo al registro de administrador...');
-                setTimeout(() => {
-                    navigate('/register-admin', {
-                        state: {
-                            planId,
-                            entidadId: response.data.id || response.data.entidad.nit,
-                            entidadNombre: formData.nombre_entidad
-                        }
-                    });
-                }, 2000);
-            }
+            setNavData({
+                planId,
+                entidadId: entityData.id || entityData.entidad?.nit || entityData.nit,
+                entidadNombre: formData.nombre_entidad
+            });
+            setShowModal(true);
         } catch (err: any) {
             console.error('Registration error:', err);
             if (err.status === 422 && err.errors) {
@@ -197,7 +194,6 @@ const RegisterEntity: React.FC = () => {
                 <p className={styles.subtitle}>ID del Plan Seleccionado: {planId}</p>
 
                 {error && <div className={styles.error}>{error}</div>}
-                {success && <div className={styles.success}>{success}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
@@ -269,11 +265,34 @@ const RegisterEntity: React.FC = () => {
                         {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit}</span>}
                     </div>
 
-                    <button type="submit" className={styles.button} disabled={loading || !!success}>
-                        {loading ? 'Procesando...' : success ? 'Redirigiendo...' : 'Siguiente: Registrar Administrador'}
+                    <button type="submit" className={styles.button} disabled={loading || showModal}>
+                        {loading ? 'Procesando...' : 'Siguiente: Registrar Administrador'}
                     </button>
                 </form>
             </div>
+
+            {showModal && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalIcon}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                        <h2 className={styles.modalTitle}>Entidad Creada Exitosamente</h2>
+                        <p className={styles.modalSubtitle}>La entidad se ha creado correctamente y ya puedes ver sus detalles.</p>
+                        <button
+                            className={styles.modalButton}
+                            onClick={() => {
+                                setShowModal(false);
+                                navigate('/register-admin', { state: navData });
+                            }}
+                        >
+                            Continuar
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

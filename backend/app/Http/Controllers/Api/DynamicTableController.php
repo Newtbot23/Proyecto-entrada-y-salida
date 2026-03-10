@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Schema;
 class DynamicTableController extends Controller
 {
     private $blacklistedTables = [
-        'cache', 
-        'cache_locks', 
-        'password_reset_codes', 
+        'cache',
+        'cache_locks',
+        'password_reset_codes',
         'personal_access_tokens',
         'migrations',
         'failed_jobs',
@@ -32,7 +32,7 @@ class DynamicTableController extends Controller
         foreach ($tables as $table) {
             // Check if the property exists, if not, try to find the first property
             $tableName = $table->$key ?? reset($table);
-            
+
             // Skip blacklisted tables
             if (in_array($tableName, $this->blacklistedTables)) {
                 continue;
@@ -50,7 +50,7 @@ class DynamicTableController extends Controller
     /**
      * Get the schema (columns and types) of a specific table.
      */
-    public function getTableSchema($table)
+    public function getTableSchema(Request $request, $table)
     {
         if (in_array($table, $this->blacklistedTables)) {
             return response()->json(['error' => 'Unauthorized table'], 403);
@@ -58,6 +58,25 @@ class DynamicTableController extends Controller
 
         if (!Schema::hasTable($table)) {
             return response()->json(['error' => 'Table not found'], 404);
+        }
+
+        $dbName = env('DB_DATABASE');
+
+        // Fetch foreign keys from information_schema
+        $foreignKeys = DB::select("
+            SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME 
+            FROM information_schema.KEY_COLUMN_USAGE 
+            WHERE REFERENCED_TABLE_SCHEMA = ? 
+            AND TABLE_NAME = ?
+        ", [$dbName, $table]);
+
+        // Build the foreign key map
+        $foreignKeyMap = [];
+        foreach ($foreignKeys as $fk) {
+            $foreignKeyMap[$fk->COLUMN_NAME] = [
+                'table' => $fk->REFERENCED_TABLE_NAME,
+                'column' => $fk->REFERENCED_COLUMN_NAME
+            ];
         }
 
         $columns = DB::select("SHOW COLUMNS FROM `$table`");
@@ -70,22 +89,21 @@ class DynamicTableController extends Controller
             if (isset($foreignKeyMap[$column->Field])) {
                 $refTable = $foreignKeyMap[$column->Field]['table'];
                 $refColumn = $foreignKeyMap[$column->Field]['column'];
-                
+
                 // Find a good label column in the referenced table
                 $refSchema = DB::select("SHOW COLUMNS FROM `$refTable`");
                 $labelCol = $refColumn; // fallback to ID
                 foreach ($refSchema as $refCol) {
-                    // Try to find a descriptive text field
                     if (str_contains($refCol->Type, 'varchar') || str_contains($refCol->Type, 'text')) {
                         $labelCol = $refCol->Field;
-                        break; 
+                        break;
                     }
                 }
-                
+
                 $optionsQuery = DB::table($refTable)->select(["$refColumn as value", "$labelCol as label"]);
 
                 // Filter options by NIT if applicable
-                $user = auth()->user();
+                $user = $request->user();
                 if ($user instanceof \App\Models\Usuarios) {
                     if (Schema::hasColumn($refTable, 'nit_entidad')) {
                         $optionsQuery->where('nit_entidad', $user->nit_entidad);
@@ -93,7 +111,7 @@ class DynamicTableController extends Controller
                 }
 
                 $optionsData = $optionsQuery->get();
-                
+
                 $foreign = [
                     'table' => $refTable,
                     'options' => $optionsData
@@ -137,8 +155,19 @@ class DynamicTableController extends Controller
             }
         }
 
-        $data = $query->get();
-        return response()->json(['data' => $data]);
+        $perPage = $request->query('per_page', 50);
+        $data = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'data' => $data->items(),
+                'total' => $data->total(),
+                'current_page' => $data->currentPage(),
+                'per_page' => $data->perPage(),
+                'last_page' => $data->lastPage(),
+            ]
+        ]);
     }
 
     /**
@@ -159,7 +188,7 @@ class DynamicTableController extends Controller
             $columns = DB::select("SHOW COLUMNS FROM `$table`");
             $primaryKey = 'id';
             $isAutoIncrement = false;
-            
+
             foreach ($columns as $column) {
                 if ($column->Key === 'PRI') {
                     $primaryKey = $column->Field;
@@ -180,7 +209,7 @@ class DynamicTableController extends Controller
 
             if ($isAutoIncrement) {
                 $insertedId = DB::table($table)->insertGetId($dataToInsert);
-            // Fetch the created record
+                // Fetch the created record
                 $newItem = DB::table($table)->where($primaryKey, $insertedId)->first();
             } else {
                 DB::table($table)->insert($dataToInsert);
@@ -212,7 +241,7 @@ class DynamicTableController extends Controller
             // Find the primary key column
             $columns = DB::select("SHOW COLUMNS FROM `$table`");
             $primaryKey = 'id';
-            
+
             foreach ($columns as $column) {
                 if ($column->Key === 'PRI') {
                     $primaryKey = $column->Field;
@@ -237,9 +266,9 @@ class DynamicTableController extends Controller
 
             // Exclude fields that shouldn't be updated manually
             $data = $request->except([$primaryKey, 'created_at', 'updated_at', 'nit_entidad']);
-            
+
             DB::table($table)->where($primaryKey, $id)->update($data);
-            
+
             $updatedItem = DB::table($table)->where($primaryKey, $id)->first();
 
             return response()->json(['data' => $updatedItem], 200);

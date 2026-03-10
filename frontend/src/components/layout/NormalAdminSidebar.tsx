@@ -29,9 +29,7 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
     // Improved role detection
     const getRole = () => {
         if (user?.id_rol) return Number(user.id_rol);
-        const storedRole = sessionStorage.getItem('userRole');
-        if (storedRole) return Number(storedRole);
-        const userData = sessionStorage.getItem('userData');
+        const userData = sessionStorage.getItem('authUser');
         if (userData) {
             try {
                 return Number(JSON.parse(userData).id_rol);

@@ -1,0 +1,397 @@
+# 🔍 Análisis Completo de Malas Prácticas — Proyecto Entrada y Salida
+
+Análisis exhaustivo del proyecto para planificar un refactor futuro. **No se toca lógica**, solo se documentan problemas de organización, consistencia y buenas prácticas.
+
+---
+
+## 📊 Resumen Ejecutivo
+
+| Área | Severidad | Archivos Afectados |
+|------|-----------|-------------------|
+| Cliente API inconsistente | 🔴 Crítica | 22+ archivos |
+| Estilos caóticos (inline + modules + cross-import) | 🔴 Crítica | 31+ archivos |
+| Gestión de auth/tokens dispersa | 🟠 Alta | 22+ archivos |
+| Convenciones de nombres inconsistentes | 🟡 Media | Todo el proyecto |
+| Rutas API sin protección | 🟠 Alta | [api.php](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/backend/routes/api.php) |
+| Código duplicado (backend) | 🟡 Media | Controllers |
+| Blade templates en proyecto API puro | 🟢 Baja | 4 archivos |
+| Falta de organización de archivos | 🟡 Media | Frontend + Backend |
+
+---
+
+## 🔴 1. Cliente API Inconsistente (CRÍTICO)
+
+Existe un `apiClient` centralizado en [api.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/config/api.ts), pero **la mayoría de archivos lo ignoran** y hacen [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) directo con URLs hardcodeadas.
+
+### Problema doble: dos env vars distintas
+
+```diff
+- import.meta.env.VITE_API_URL        ← usado en api.ts y archivos de normaladmin
+- import.meta.env.VITE_API_BASE_URL   ← usado en superadmin files
+```
+
+### Archivos que **NO** usan `apiClient` (hacen [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) directo)
+
+| Archivo | Tipo de llamada |
+|---------|----------------|
+| [SuperAdmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_BASE_URL` |
+| [loginsuperadmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/loginsuperadmin.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_BASE_URL` |
+| [InstitutionDetailsPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/InstitutionDetailsPage.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_BASE_URL` |
+| [Login.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/normaladmin/Login.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` |
+| [Dashboard.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/normaladmin/Dashboard.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` |
+| [LicensePayment.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/normaladmin/LicensePayment.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` (×2) |
+| [PaymentSuccess.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/normaladmin/PaymentSuccess.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` |
+| [UserDashboard.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/regular/UserDashboard.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` (×4) |
+| [RegisterAdmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/RegisterAdmin.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` |
+| [PersonasDashboard.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/puertas/PersonasDashboard.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` (×2) |
+| [VehiculosDashboard.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/puertas/VehiculosDashboard.tsx) | [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) con `VITE_API_URL` (×2) |
+| [registrationService.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/services/registrationService.ts) | `const API_URL` propio |
+
+### Archivos que **SÍ** usan `apiClient` correctamente
+- [licenseDashboardService.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/services/licenseDashboardService.ts)
+- [institutionService.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/services/institutionService.ts)
+- [planService.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/services/planService.ts)
+- [reportService.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/services/reportService.ts)
+
+> [!CAUTION]
+> Esto significa que si cambias la URL de la API, tienes que actualizar **dos variables de entorno diferentes** y además los que no usan `apiClient` no tienen manejo de errores estandarizado.
+
+### Recomendación
+- Migrar **todos** los archivos a usar `apiClient` de [config/api.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/config/api.ts)
+- Estandarizar a una sola env var: `VITE_API_URL`
+- Crear servicios para cada módulo (ej: `adminService.ts`, `authService.ts`, `puertasService.ts`)
+
+---
+
+## 🔴 2. Estilos Caóticos (CRÍTICO)
+
+Se usan **3 sistemas de estilos simultáneamente** sin criterio definido:
+
+### 2.1 Inline Styles (`style={{}}`)
+
+**31+ archivos** contienen estilos inline. Archivos más afectados:
+
+| Archivo | Observación |
+|---------|-------------|
+| [MainPageDashborad.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/MainPageDashborad.tsx) | Toda la sección de filtros (80+ líneas de inline styles) |
+| [InstitutionsPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/InstitutionsPage.tsx) | Mezcla inline con CSS module |
+| [ReportsPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/ReportsPage.tsx) | Inline + module |
+| [EntityAdminsPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/EntityAdminsPage.tsx) | Inline + module |
+| Todas las pages de `normaladmin/` | Inline extensivo |
+| Todas las pages de `puertas/` | Inline extensivo |
+| Componentes de `auth/` | `ForgotPassword`, `VerifyCode`, `ResetPassword` |
+
+### 2.2 CSS Modules importados de OTROS archivos
+
+```tsx
+// SuperAdmin.tsx importa estilos de InstitutionsPage 😱
+import styles from './InstitutionsPage.module.css'; // Reusing layout styles
+```
+
+Esto crea **acoplamiento invisible** — si se edita [InstitutionsPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/InstitutionsPage.module.css), [SuperAdmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx) puede romperse.
+
+### 2.3 CSS Modules propio por archivo (correcto pero desordenado)
+
+Cada página tiene su propio [.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/PublicDashboard.module.css), pero muchos tienen estilos duplicados:
+
+| Archivo CSS Module | Ubicación |
+|----|---|
+| [MainPageDashborad.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/MainPageDashborad.module.css) | superadmin |
+| [InstitutionsPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/InstitutionsPage.module.css) | superadmin (11KB — el más grande) |
+| [LicensePlansPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/LicensePlansPage.module.css) | superadmin |
+| [AdminEntitiesPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/AdminEntitiesPage.module.css) | superadmin |
+| [EntityAdminsPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/EntityAdminsPage.module.css) | superadmin |
+| [ReportsPage.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/ReportsPage.module.css) | superadmin |
+| [loginsuperadmin.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/loginsuperadmin.module.css) | superadmin |
+| [Dashboard.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/PublicDashboard.module.css) | normaladmin |
+| [Header.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/Header.module.css) | layout |
+| [NormalAdminHeader.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/NormalAdminHeader.module.css) | layout (duplicado de Header) |
+| [Sidebar.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/Sidebar.module.css) | layout |
+| [NormalAdminSidebar.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/NormalAdminSidebar.module.css) | layout |
+| [DashboardLayout.module.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/DashboardLayout.module.css) | layout |
+
+### 2.4 Archivos sin CSS Module (solo inline)
+
+- Todas las páginas de `normaladmin/` excepto [Dashboard.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/user/normaladmin/Dashboard.tsx)
+- Todas las páginas de `puertas/`
+- Componentes de `auth/`
+- [PublicDashboardPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/PublicDashboardPage.tsx) (tiene module pero no lo usa coherentemente)
+
+### Recomendación
+1. **Definir un design system global** en [index.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/index.css) con variables CSS (colores, spacing, border-radius, shadows)
+2. **Eliminar todos los inline styles** y migrar a clases CSS
+3. **Crear un CSS module compartido** para layouts comunes (`.dashboardLayout`, `.mainContent`, `.contentWrapper`, etc.)
+4. **Cada componente/página** debería tener su propio module CSS únicamente para estilos específicos
+
+---
+
+## 🟠 3. Gestión de Auth/Tokens Dispersa (ALTA)
+
+### 3.1 Dos sistemas de tokens incoherentes
+
+| Storage Key | Usado por | Propósito |
+|------------|-----------|-----------|
+| `adminToken` | SuperAdmin pages, [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) | Token de superadmin |
+| `adminUser` | [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) | Datos de superadmin |
+| `userToken` | [api.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/config/api.ts) ([getHeaders()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/config/api.ts#111-121)) | Token para apiClient |
+| `token` | Normal admin pages | Token de normal admin |
+
+> [!WARNING]
+> [api.ts](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/config/api.ts) lee `sessionStorage.getItem('userToken')`, pero los superadmin pages guardan `adminToken`, y las normal admin pages guardan `token`. Esto causa que `apiClient` **nunca** envíe el token correcto para superadmin ni para normaladmin.
+
+### 3.2 `sessionStorage` accedido directamente en 22+ archivos
+
+En vez de centralizar la gestión de auth en [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) o en un servicio, cada componente accede directamente a `sessionStorage`:
+
+```tsx
+// Patrón repetido en múltiples archivos
+const token = sessionStorage.getItem('adminToken');
+```
+
+### 3.3 [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) incompleto
+
+- Solo maneja `adminUser`/`adminToken` 
+- No tiene soporte para Normal Admin ni Regular User
+- `isAuthenticated` se calcula directamente del storage en cada render (no es reactivo)
+- [logout()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#47-52) hace `window.location.replace()` en vez de usar React Router  
+
+### Recomendación
+1. Unificar tokens a una sola key: `authToken` 
+2. Extender [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) para soportar múltiples roles
+3. Centralizar toda la lógica de auth en un `authService.ts`
+4. Que `apiClient` lea el token desde [AuthContext](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/context/AuthContext.tsx#11-17) o un servicio centralizado
+
+---
+
+## 🟡 4. Convenciones de Nombres Inconsistentes (MEDIA)
+
+### Frontend
+
+| Problema | Ejemplo |
+|---------|---------|
+| Typo en nombre de componente | [MainPageDashborad](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/MainPageDashborad.tsx#12-291) (falta la 'a' en Dashboard) |
+| Mezcla español/inglés | [loginsuperadmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/loginsuperadmin.tsx) vs [LicensePlansPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/LicensePlansPage.tsx) |
+| PascalCase vs lowercase | [loginsuperadmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/loginsuperadmin.tsx) vs [SuperAdmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx) |
+| Carpeta [Plans](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/MainPageDashborad.tsx#35-44) (raíz) vs `normaladmin` (user) | Inconsistencia de organización |
+| [PublicDashboardPage.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/PublicDashboardPage.tsx) está suelto en `pages/` | No tiene carpeta propia |
+
+### Backend
+
+| Problema | Ejemplo |
+|---------|---------|
+| Dos controllers para entidades | `EntidadController` + `EntidadesController` |
+| Dos controllers para planes | `PlanesController` + `PricingController` |
+| Mezcla de nombres | `PlanesLicencia` vs `LicenciasSistema` vs `PagosLicencia` |
+| FormRequest dirs duplicados | `Entidad/` + `Entidades/` |
+
+### Recomendación
+- Estandarizar a inglés O español (no mezclar)
+- Todos los componentes en PascalCase
+- Unificar controllers que manejan la misma entidad
+
+---
+
+## 🟠 5. Rutas API Sin Protección (ALTA)
+
+En [api.php](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/backend/routes/api.php), **la mayoría de rutas son públicas**:
+
+### Rutas que deberían estar protegidas pero NO lo están
+
+```php
+// ⚠️ Cualquiera puede listar/crear/editar/eliminar admins sin autenticación
+Route::apiResource('admins', AdminsController::class);
+
+// ⚠️ CRUD de entidades sin auth
+Route::get('/entidades', ...);
+Route::post('/entidades', ...);
+Route::put('/entidades/{id}', ...);
+Route::delete('/entidades/{id}', ...);
+
+// ⚠️ CRUD de planes sin auth
+Route::get('/planes', ...);
+Route::post('/planes', ...);
+Route::put('/planes/{id}', ...);
+Route::delete('/planes/{id}', ...);
+
+// ⚠️ Dashboard stats público
+Route::get('/dashboard/stats', ...);
+
+// ⚠️ Licencias sin auth
+Route::get('/licencias', ...);
+Route::post('/licencias', ...);
+
+// ⚠️ Reportes descargables sin auth
+Route::get('/reports/licenses', ...);
+Route::get('/reports/entities', ...);
+
+// ⚠️ Dynamic tables sin auth (¡acceso directo a tablas de la BD!)
+Route::get('/tablas-cortas', ...);
+Route::get('/esquema/{table}', ...);
+Route::get('/datos/{table}', ...);
+Route::post('/datos/{table}', ...);
+Route::put('/datos/{table}/{id}', ...);
+```
+
+### Rutas correctamente protegidas (pocas)
+- `auth:sanctum` en Stripe, User Dashboard, QR, Normal Admin Stats, Puertas
+
+> [!CAUTION]
+> Las rutas de Dynamic Tables (`/datos/{table}`, `/esquema/{table}`) dan acceso directo a leer y escribir tablas de la BD sin autenticación. Esto es un **riesgo de seguridad grave**.
+
+### Recomendación
+- Agrupar rutas por rol con middleware: `auth:sanctum` + `role:superadmin`, `role:normaladmin`
+- Solo las rutas públicas (login, registro, planes de precios) deben quedar sin middleware
+
+---
+
+## 🟡 6. Código Duplicado en Backend (MEDIA)
+
+### 6.1 Controllers duplicados
+
+| Entidad | Controllers |
+|---------|------------|
+| Entidades | `EntidadController` (registration) + `EntidadesController` (CRUD) |
+| Planes | `PlanesController` (CRUD) + `PricingController` (público) |
+| Auth | `AdminsAuthController` (superadmin) + `NormalAdminAuthController` (normaladmin) — misma lógica |
+
+### 6.2 Routes definidas manualmente vs `apiResource`
+
+```php
+// Se usa apiResource para admins
+Route::apiResource('admins', AdminsController::class);
+
+// Pero para planes se define ruta por ruta (cuando hace lo mismo)
+Route::get('/planes', [PlanesController::class, 'index']);
+Route::post('/planes', [PlanesController::class, 'store']);
+Route::get('/planes/{id}', [PlanesController::class, 'show']);
+Route::put('/planes/{id}', [PlanesController::class, 'update']);
+Route::delete('/planes/{id}', [PlanesController::class, 'destroy']);
+
+// Lo mismo para entidades
+Route::get('/entidades', ...);
+Route::post('/entidades', ...);
+// etc.
+```
+
+### 6.3 FormRequest duplicados
+
+```
+Requests/Api/
+├── Entidad/         ← Para RegistrationFlow
+│   └── StoreEntidadRequest.php
+├── Entidades/       ← Para CRUD
+│   ├── StoreEntidadesRequest.php
+│   └── UpdateEntidadesRequest.php
+```
+
+### Recomendación
+- Unificar controllers que manejan la misma entidad
+- Usar `apiResource` consistentemente  
+- Consolidar FormRequests duplicados
+
+---
+
+## 🟢 7. Blade Templates en Proyecto API (BAJA)
+
+4 archivos blade encontrados:
+
+| Archivo | Propósito | ¿Debería quedarse? |
+|---------|-----------|-------------------|
+| `emails/recovery_code.blade.php` | Template de email de recuperación | ✅ **Sí** — Es la práctica estándar en Laravel. Los emails siempre usan Blade. |
+| `reports/licenses.blade.php` | HTML para generar PDF | ⚠️ **Aceptable** — Si genera PDFs con DomPDF/Snappy, Blade es la forma correcta. |
+| `reports/entities_general.blade.php` | HTML para generar PDF | ⚠️ **Aceptable** — Igual que arriba. |
+| `reports/entity_full.blade.php` | HTML para generar PDF | ⚠️ **Aceptable** — Igual que arriba. |
+
+> [!NOTE]
+> Los Blade templates para emails y generación de PDFs son **aceptables y correctos** incluso en un proyecto API-only. Laravel los necesita para renderizar HTML que luego se convierte a PDF o se envía como email. No necesitan refactor.
+
+---
+
+## 🟡 8. Organización de Archivos (MEDIA)
+
+### Frontend — Problemas
+
+```
+pages/
+├── Plans/                          ← PascalCase
+├── PublicDashboardPage.tsx          ← Archivo suelto (sin carpeta)
+├── PublicDashboard.module.css       ← Su CSS module suelto también
+├── puertas/                        ← lowercase
+├── superadmin/                     ← lowercase  
+│   ├── ReportsSuperAdmin.tsx       ← Parece no estar en uso
+│   └── SistemLogs.tsx              ← Parece no estar en uso (typo: "Sistem")
+└── user/
+    ├── RegisterAdmin.tsx           ← Suelto, debería estar en normaladmin?
+    ├── RegisterEntity.tsx          ← Suelto, debería estar en registration?
+    └── Registration.module.css     ← CSS suelto
+```
+
+### Frontend — Layout patterns duplicados
+
+Existen **3 layouts separados** con lógica casi idéntica:
+- [NormalAdminLayout.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/NormalAdminLayout.tsx)
+- [UserLayout.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/UserLayout.tsx)
+- [PuertasLayout.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/PuertasLayout.tsx)
+
+Y **2 headers + 2 sidebars** con contenido diferente pero estructura idéntica:
+- [Header.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/Header.tsx) + [NormalAdminHeader.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/NormalAdminHeader.tsx) + [UserHeader.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/UserHeader.tsx)
+- [Sidebar.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/Sidebar.tsx) + [NormalAdminSidebar.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/NormalAdminSidebar.tsx) + [UserSidebar.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/components/layout/UserSidebar.tsx)
+
+### Backend
+
+```
+Controllers/Api/
+├── EntidadController.php        ← Solo para registration
+├── EntidadesController.php      ← CRUD completo — ¿por qué separado?
+├── PlanesController.php         ← CRUD de planes
+├── PricingController.php        ← Solo index de planes — ¿duplicado?
+├── PlanesLicenciasController.php ← Solo store — podría estar en otro controller
+```
+
+### Recomendación
+- Crear carpetas consistentes: `pages/auth/`, `pages/registration/`, `pages/superadmin/`, `pages/normaladmin/`, `pages/user/`, `pages/public/`
+- Crear un `BaseLayout` genérico que reciba sidebar/header como props
+- Unificar controllers por entidad
+
+---
+
+## 🔧 9. Otros Problemas Menores
+
+| Problema | Ubicación | Detalle |
+|---------|-----------|---------|
+| `console.log` en producción | `api.ts:21` | `console.log('Mi URL de API es:', ...)` |
+| Comentario duplicado ruta | `api.php:82` | Ruta comentada con nota confusa |
+| `alert()` para errores | `SuperAdmin.tsx:98` | `alert('Error deleting admin')` |
+| `isOpen` sin uso | `MainPageDashborad.tsx:14` | `isMobileSidebarOpen` se declara pero nunca cambia |
+| `useEffect` con `navigate` en deps | `MainPageDashborad.tsx:48` | `navigate` no debería ser dependencia del efecto de carga |
+| `filtersLoading` nunca se reset | `MainPageDashborad.tsx:86` | Se pone en `false` en `finally` con `setLoading(false)` pero no `setFiltersLoading(false)` |
+
+---
+
+## 📋 Plan de Refactor Recomendado (Priorizado)
+
+### Fase 1 — Seguridad (Urgente)
+1. Proteger rutas API con middleware `auth:sanctum`
+2. Unificar gestión de tokens
+
+### Fase 2 — API Client (Alta prioridad)
+1. Migrar todos los [fetch()](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SuperAdmin.tsx#26-48) directos a `apiClient`
+2. Estandarizar env var a `VITE_API_URL`
+3. Crear servicios faltantes (`adminService.ts`, `authService.ts`, etc.)
+
+### Fase 3 — Estilos (Alta prioridad)
+1. Definir variables CSS globales en [index.css](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/index.css)
+2. Crear módulo CSS compartido para layouts
+3. Migrar inline styles a clases CSS
+4. Eliminar cross-imports de CSS modules
+
+### Fase 4 — Organización (Media prioridad)
+1. Reorganizar estructura de carpetas frontend
+2. Unificar layouts en un `BaseLayout` configurable
+3. Consolidar controllers duplicados en backend
+4. Estandarizar nomenclatura (elegir español o inglés)
+
+### Fase 5 — Cleanup (Baja prioridad)
+1. Eliminar archivos sin uso ([ReportsSuperAdmin.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/ReportsSuperAdmin.tsx), [SistemLogs.tsx](file:///c:/xampp/htdocs/Proyecto-entrada-y-salida/frontend/src/pages/superadmin/SistemLogs.tsx))
+2. Quitar `console.log` de producción
+3. Reemplazar `alert()` por componentes de notificación

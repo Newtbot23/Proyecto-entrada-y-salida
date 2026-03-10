@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Header from '../../components/layout/Header';
 import Sidebar from '../../components/layout/Sidebar';
 import styles from './EntityAdminsPage.module.css';
@@ -15,118 +16,84 @@ interface EntityAdmin {
     correo: string;
     telefono: string;
     estado: string;
+    id_rol: number | string;
+    nit_entidad: string;
 }
 
 export default function EntityAdminsPage() {
     const { nit } = useParams<{ nit: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
-    const [admins, setAdmins] = useState<EntityAdmin[]>([]);
-    const [entityLicenseId, setEntityLicenseId] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-    // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    useEffect(() => {
-        if (nit) {
-            fetchEntityDetails();
-            fetchAdmins();
-        }
-    }, [nit]);
-
-    const fetchEntityDetails = async () => {
-        try {
-            // Fetch entity to get its associated license id
+    // Queries
+    const { data: entityLicenseId } = useQuery({
+        queryKey: ['entityDetails', nit],
+        queryFn: async () => {
             const response: any = await apiClient.get(`/entidades/${nit}`);
-            if (response && response.licencia && response.licencia.id) {
-                setEntityLicenseId(response.licencia.id);
-            }
-        } catch (err) {
-            console.error('Failed to fetch entity details:', err);
-        }
-    };
+            return response?.licencia?.id || null;
+        },
+        enabled: !!nit
+    });
 
-    const fetchAdmins = async () => {
-        setLoading(true);
-        setError(null);
-        try {
+    const { data: admins = [], isLoading: loading, isError, error } = useQuery<EntityAdmin[]>({
+        queryKey: ['entityAdmins', nit],
+        queryFn: async () => {
             const responseData: any = await apiClient.get(`/entidades/${nit}/admins`);
-
-            // Defensive filtering on the frontend to strictly ensure only admins (rol 1) of this nit are shown
-            const filteredAdmins = (responseData || []).filter((admin: any) =>
+            // Defensive filtering on the frontend
+            return (responseData || []).filter((admin: any) =>
                 String(admin.id_rol) === '1' && String(admin.nit_entidad) === String(nit)
             );
+        },
+        enabled: !!nit
+    });
 
-            setAdmins(filteredAdmins);
-            setCurrentPage(1); // Reset to first page on fetch
-        } catch (err: any) {
-            setError(err.message || 'Error al cargar los administradores.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const toggleStatus = async (doc: string) => {
-        try {
-            const response: any = await apiClient.patch(`/usuarios/${doc}/estado`, {});
-            // Since apiClient unwraps the 'data' property of the Axios response:
-            // The object `response` is actually the raw JSON data returned by the backend.
-            if (response.success) {
-                // Update local state
-                setAdmins(admins.map(admin =>
-                    admin.doc === doc ? { ...admin, estado: response.data.estado } : admin
-                ));
-            }
-        } catch (err: any) {
+    // Mutations
+    const toggleStatusMutation = useMutation({
+        mutationFn: (doc: string) => apiClient.patch(`/usuarios/${doc}/estado`, {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['entityAdmins', nit] });
+        },
+        onError: (err: any) => {
             alert('Error al cambiar estado: ' + (err.message || 'Desconocido'));
         }
-    };
+    });
 
-    const handleCreateAdmin = async (formData: AdminFormData) => {
-        try {
-            // Need to map frontend AdminFormData to backend StoreUsuarioRequest or StoreAdminRequest equivalent.
-            // Since role 1 = user type. Let's use the standard admins endpoint if it works, or form an object.
-
-            // Re-formatting payload specifically for standard user registration manually. 
-            // In a real app we'd reuse the proper endpoint from UsuariosController.
-            // Notice: Using the flow for `/registration/usuarios` we made.
-
+    const createAdminMutation = useMutation({
+        mutationFn: async (formData: AdminFormData) => {
             const payload = {
                 doc: formData.doc,
                 id_tip_doc: 1, // CC
-                primer_nombre: formData.nombre.split(' ')[0], // Simulating first name
-                primer_apellido: formData.nombre.split(' ').slice(1).join(' ') || '', // Simulating last names
+                primer_nombre: formData.nombre.split(' ')[0],
+                primer_apellido: formData.nombre.split(' ').slice(1).join(' ') || '',
                 telefono: formData.telefono,
                 correo: formData.correo,
                 contrasena: formData.contrasena,
                 id_rol: 1, // Admin role
-                nit_entidad: nit, // Injecting the URL NIT!
-                id_licencia_sistema: entityLicenseId || 1, // Dynamically use the entity's license ID
+                nit_entidad: nit,
+                id_licencia_sistema: entityLicenseId || 1,
             };
-
-            // Using full registration or admin registration. Since we just need an admin, let's POST to `/admins` or `/usuarios-flow`?
-            // Wait, we have POST /api/admins logic available which uses `StoreAdminRequest`. 
-            // Let's use `apiClient.post('/admins', ...)` but inject `nit_entidad`.
-
-            // Warning: `AdminsController@store` only creates an admin without NIT. 
-            // Let's use our `/registration/usuarios` if it supports it, OR manually create through API if we update it.
-            // For now, let's use the Registration Flow endpoint.
-            // We don't need to read response here necessarily.
-            await apiClient.post('/registration/usuarios', payload);
-
+            return apiClient.post('/registration/usuarios', payload);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['entityAdmins', nit] });
             setIsModalOpen(false);
-            fetchAdmins(); // Refresh
-        } catch (err: any) {
+        },
+        onError: (err: any) => {
             alert('Error al crear administrador: ' + (err.message || 'Desconocido'));
-            throw err;
         }
+    });
+
+    const toggleStatus = (doc: string) => {
+        toggleStatusMutation.mutate(doc);
+    };
+
+    const handleCreateAdmin = async (formData: AdminFormData) => {
+        await createAdminMutation.mutateAsync(formData);
     };
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -168,7 +135,7 @@ export default function EntityAdminsPage() {
                         </button>
                     </div>
 
-                    {error && <div className={styles.errorAlert}>{error}</div>}
+                    {isError && <div className={styles.errorAlert}>{(error as any)?.message || 'Error al cargar los administradores.'}</div>}
 
                     <div className={styles.card}>
                         {loading ? (
@@ -189,7 +156,7 @@ export default function EntityAdminsPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {paginatedAdmins.map(admin => {
+                                        {paginatedAdmins.map((admin: EntityAdmin) => {
                                             const isActive = admin.estado === 'activo' || admin.estado === '1';
                                             return (
                                                 <tr key={admin.doc}>
@@ -216,7 +183,7 @@ export default function EntityAdminsPage() {
                                     </tbody>
                                 </table>
                                 {totalItems > itemsPerPage && (
-                                    <div style={{ marginTop: '20px' }}>
+                                    <div className={styles.paginationWrapper}>
                                         <Pagination
                                             meta={{
                                                 currentPage,

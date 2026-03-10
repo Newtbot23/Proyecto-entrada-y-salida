@@ -25,17 +25,17 @@ class LicenciasController extends Controller
             $search = $request->query('search');
             $estado = $request->query('estado');
             $planId = $request->query('plan_id');
-            
+
             // Construimos la consulta base cargando relaciones
             $query = LicenciasSistema::with(['entidad', 'plan']);
 
             // Filtro de búsqueda general (ID de licencia o Nombre de entidad)
             if (!empty($search)) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('id', 'like', '%' . $search . '%')
-                      ->orWhereHas('entidad', function($qEntidad) use ($search) {
-                          $qEntidad->where('nombre_entidad', 'like', '%' . $search . '%');
-                      });
+                        ->orWhereHas('entidad', function ($qEntidad) use ($search) {
+                            $qEntidad->where('nombre_entidad', 'like', '%' . $search . '%');
+                        });
                 });
             }
 
@@ -62,7 +62,6 @@ class LicenciasController extends Controller
                     'last_page' => $licencias->lastPage(),
                 ]
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en index de LicenciasController: ' . $e->getMessage());
             return response()->json([
@@ -92,7 +91,6 @@ class LicenciasController extends Controller
                 'message' => 'Licencia creada exitosamente',
                 'data' => $licencia
             ], 201);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -129,7 +127,6 @@ class LicenciasController extends Controller
                 'success' => true,
                 'data' => $licencia
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en show de LicenciasController: ' . $e->getMessage());
             return response()->json([
@@ -147,7 +144,7 @@ class LicenciasController extends Controller
     public function activate($id): JsonResponse
     {
         try {
-            $licencia = LicenciasSistema::find($id);
+            $licencia = LicenciasSistema::with(['entidad', 'plan'])->find($id);
 
             if (!$licencia) {
                 return response()->json([
@@ -166,7 +163,6 @@ class LicenciasController extends Controller
                 'message' => 'Licencia activada exitosamente',
                 'data' => $licencia
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en activate de LicenciasController: ' . $e->getMessage());
             return response()->json([
@@ -186,7 +182,7 @@ class LicenciasController extends Controller
         try {
             $validated = $request->validated();
 
-            $licencia = LicenciasSistema::find($id);
+            $licencia = LicenciasSistema::with(['entidad', 'plan'])->find($id);
 
             if (!$licencia) {
                 return response()->json([
@@ -205,7 +201,6 @@ class LicenciasController extends Controller
                 'message' => 'Referencia de pago actualizada exitosamente. Espera la validación del administrador.',
                 'data' => $licencia
             ], 200);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -231,7 +226,7 @@ class LicenciasController extends Controller
         try {
             $validated = $request->validated();
 
-            $licencia = LicenciasSistema::find($id);
+            $licencia = LicenciasSistema::with(['entidad', 'plan'])->find($id);
 
             if (!$licencia) {
                 return response()->json([
@@ -242,14 +237,14 @@ class LicenciasController extends Controller
 
             // Normalize status if needed (optional, depending on DB enum)
             $newState = $validated['estado'];
-            
+
             // Map legacy frontend states to backend enum if necessary
             $stateMap = [
                 'activa' => 'activo',
                 'suspendida' => 'inactivo',
                 'vencida' => 'expirado'
             ];
-            
+
             if (isset($stateMap[$newState])) {
                 $newState = $stateMap[$newState];
             }
@@ -264,7 +259,6 @@ class LicenciasController extends Controller
                 'message' => 'Estado de licencia actualizado exitosamente',
                 'data' => $licencia
             ], 200);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -288,7 +282,7 @@ class LicenciasController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$user || !$user->nit_entidad) {
                 return response()->json([
                     'success' => false,
@@ -312,7 +306,6 @@ class LicenciasController extends Controller
                 'success' => true,
                 'data' => $licencia
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en getActualLicense: ' . $e->getMessage());
             return response()->json([

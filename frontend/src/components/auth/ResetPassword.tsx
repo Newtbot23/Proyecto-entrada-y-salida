@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../config/api';
-import styles from '../../pages/user/Registration.module.css';
+import styles from './AuthFlows.module.css';
 
 /**
  * Componente de restablecimiento de contraseña (Reset Password)
@@ -166,7 +166,7 @@ const ResetPassword = () => {
                             value={email}
                             readOnly
                             disabled={loading}
-                            style={{ backgroundColor: '#f9fafb', cursor: 'default' }}
+                            className={styles.readonlyInput}
                         />
                         {validationErrors.email && <span className={styles.fieldError}>{validationErrors.email}</span>}
                     </div>
@@ -211,10 +211,10 @@ const ResetPassword = () => {
                         {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
                     </button>
 
-                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <div className={styles.backLinkContainer}>
                         <a
                             href={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
-                            style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
+                            className={styles.backLink}
                             onClick={(e) => { e.preventDefault(); navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login'); }}
                         >
                             Cancelar y volver al login

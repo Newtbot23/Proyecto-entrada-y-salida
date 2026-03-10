@@ -52,7 +52,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
             let records = await DynamicTableService.getTableData(tableName);
 
             // --- INICIO LÓGICA CORREGIDA ---
-            const userDataStr = sessionStorage.getItem('userData') || sessionStorage.getItem('adminUser');
+            const userDataStr = sessionStorage.getItem('authUser');
             if (userDataStr) {
                 try {
                     const user = JSON.parse(userDataStr);
@@ -125,11 +125,8 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
         setQrLoading(true);
         setQrError(null);
         try {
-            const token = sessionStorage.getItem('userToken');
-            if (!token) throw new Error('No estás autenticado.');
-
-            const response = await registrationService.getRegistrationQr(token);
-            if (response.success && response.qr_code) {
+            const response = await registrationService.getRegistrationQr();
+            if (response.qr_code) {
                 // Return value is base64 encoded PNG string
                 const mimeType = response.content_type || 'image/png';
                 setQrCodeSvg(`data:${mimeType};base64,${response.qr_code}`);

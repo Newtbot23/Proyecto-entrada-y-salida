@@ -27,6 +27,11 @@ class Entidades extends Model
         return $this->hasMany(Usuarios::class, 'nit_entidad', 'nit');
     }
 
+    public function admins()
+    {
+        return $this->hasMany(Usuarios::class, 'nit_entidad', 'nit')->where('id_rol', 1);
+    }
+
     public function licencia()
     {
         return $this->hasOne(LicenciasSistema::class, 'nit_entidad', 'nit');
@@ -40,7 +45,7 @@ class Entidades extends Model
             if ($entidad->licencia) {
                 $entidad->licencia->delete();
             }
-            
+
             if ($entidad->usuarios) {
                 foreach ($entidad->usuarios as $usuario) {
                     $usuario->delete();
@@ -59,7 +64,7 @@ class Entidades extends Model
     {
         // Remove non-numeric characters except hyphen
         $cleanValue = preg_replace('/[^0-9-]/', '', $value);
-        
+
         $parts = explode('-', $cleanValue);
         $base = $parts[0];
         $dv = isset($parts[1]) && $parts[1] !== '' ? (int)$parts[1] : null;
@@ -73,7 +78,7 @@ class Entidades extends Model
             // If we are here, we trust the input or adjust if slightly off? 
             // Actually, if Validation passed, then DV matches.
             // But if we want to be safe, we can just enforce the calculated DV.
-            $dv = $calculatedDv; 
+            $dv = $calculatedDv;
         }
 
         $this->attributes['nit'] = "{$base}-{$dv}";

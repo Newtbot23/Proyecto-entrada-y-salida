@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import styles from './Sidebar.module.css';
 import {
     DashboardIcon,
@@ -7,7 +8,8 @@ import {
     LicenseIcon,
     ReportIcon,
     ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    SystemLogIcon
 } from '../common/Icons';
 import { DynamicTableService } from '../../services/dynamicTableService';
 
@@ -28,8 +30,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
     const location = useLocation();
     const activePath = location.pathname;
-    const [shortTables, setShortTables] = useState<string[]>([]);
     const [isOtrosExpanded, setIsOtrosExpanded] = useState(false);
+
+    const toggleOtros = () => setIsOtrosExpanded(!isOtrosExpanded);
+
+    const { data: shortTables = [], isLoading } = useQuery({
+        queryKey: ['shortTables'],
+        queryFn: async () => {
+            const response = await DynamicTableService.getShortTables();
+            return (response as any).data || response;
+        },
+        enabled: userType === 'normal', // Solo ejecuta si es admin normal
+    });
 
     const isSuperAdmin = activePath.startsWith('/superadmin');
 
@@ -80,10 +92,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <div
                                 className={`${styles.navLink} ${isOtrosExpanded ? styles.active : ''}`}
                                 onClick={toggleOtros}
-                                style={{ cursor: 'pointer', justifyContent: 'space-between' }}
                                 title={isCollapsed ? "Otros" : ''}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                                <div className={styles.navGroup}>
                                     <span className={styles.navIcon}>
                                         <SystemLogIcon />
                                     </span>
@@ -97,25 +108,25 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </div>
 
                             {isOtrosExpanded && !isCollapsed && (
-                                <ul style={{ listStyle: 'none', paddingLeft: '3rem', margin: 0 }}>
-                                    {shortTables?.map(table => (
-                                        <li key={table} style={{ marginBottom: '0.5rem' }}>
-                                            <Link
-                                                to={`/user/normaladmin/tables/${table}`}
-                                                style={{
-                                                    color: activePath.includes(table) ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                                    textDecoration: 'none',
-                                                    fontSize: '0.9rem',
-                                                    display: 'block',
-                                                    padding: '4px 0'
-                                                }}
-                                            >
-                                                {table}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                    {(!shortTables || shortTables.length === 0) && (
-                                        <li style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>No hay tablas</li>
+                                <ul className={styles.subList}>
+                                    {isLoading ? (
+                                        <li className={styles.emptySubItem}>Cargando...</li>
+                                    ) : (
+                                        <>
+                                            {shortTables?.map((table: string) => (
+                                                <li key={table} className={styles.subItem}>
+                                                    <Link
+                                                        to={`/user/normaladmin/tables/${table}`}
+                                                        className={`${styles.subLink} ${activePath.includes(table) ? styles.subActive : ''}`}
+                                                    >
+                                                        {table}
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                            {(!shortTables || shortTables.length === 0) && (
+                                                <li className={styles.emptySubItem}>No hay tablas</li>
+                                            )}
+                                        </>
                                     )}
                                 </ul>
                             )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from '../Registration.module.css'; // Reusing existing styles
+import { confirmPayment } from '../../../services/paymentService';
 
 const PaymentSuccess: React.FC = () => {
     const navigate = useNavigate();
@@ -21,43 +22,26 @@ const PaymentSuccess: React.FC = () => {
         if (processedRef.current) return;
         processedRef.current = true;
 
-        const confirmPayment = async () => {
+        const confirmPaymentFlow = async () => {
             try {
-                const token = sessionStorage.getItem('userToken');
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-                const response = await fetch(`${API_URL}/stripe/payment-success`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ session_id: sessionId })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    setIsSuccess(true);
-                    setMessage('¡Pago Exitoso! Tu licencia ha sido activada correctamente.');
-                } else {
-                    // If already registered, consider it a success for the UI
-                    if (data.message === 'Pago ya registrado anteriormente') {
-                        setIsSuccess(true);
-                        setMessage('Pago ya registrado. Tu licencia está activa.');
-                    } else {
-                        setMessage(`Error: ${data.error || 'No se pudo confirmar el pago.'}`);
-                    }
-                }
-            } catch (error) {
+                await confirmPayment({ session_id: sessionId });
+                setIsSuccess(true);
+                setMessage('¡Pago Exitoso! Tu licencia ha sido activada correctamente.');
+            } catch (error: any) {
                 console.error('Error confirming payment:', error);
-                setMessage('Error de conexión al confirmar el pago.');
+                // If already registered, consider it a success for the UI
+                if (error.message === 'Pago ya registrado anteriormente') {
+                    setIsSuccess(true);
+                    setMessage('Pago ya registrado. Tu licencia está activa.');
+                } else {
+                    setMessage(`Error: ${error.message || 'No se pudo confirmar el pago.'}`);
+                }
             } finally {
                 setLoading(false);
             }
         };
 
-        confirmPayment();
+        confirmPaymentFlow();
     }, [sessionId]);
 
     return (

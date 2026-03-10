@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import styles from './InstitutionsPage.module.css'; // Reusing layout styles
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import styles from './SuperAdmin.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { PlusIcon, EditIcon, TrashIcon } from '../../components/common/Icons';
 import { AdminFormModal } from '../../components/modals/AdminFormModal';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import type { Admin, AdminFormData } from '../../types/admin';
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin as deleteAdminApi } from '../../services/adminService';
 
 const SuperAdmin: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [admins, setAdmins] = useState<Admin[]>([]);
-    const [loading, setLoading] = useState(true);
-
+    const queryClient = useQueryClient();
 
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -19,56 +19,39 @@ const SuperAdmin: React.FC = () => {
     const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
     const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
 
-    useEffect(() => {
-        fetchAdmins();
-    }, []);
+    // Queries
+    const { data: admins = [], isLoading: loading } = useQuery({
+        queryKey: ['superAdmins'],
+        queryFn: getAdmins
+    });
 
-    const fetchAdmins = async () => {
-        try {
-            setLoading(true);
-            const token = sessionStorage.getItem('adminToken');
-            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins';
-
-            const response = await fetch(API_URL, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            if (data.success) {
-                setAdmins(data.data.data);
+    // Mutations
+    const saveMutation = useMutation({
+        mutationFn: async ({ mode, formData, admin }: { mode: 'create' | 'edit', formData: AdminFormData, admin?: Admin | null }) => {
+            if (mode === 'edit' && admin) {
+                return updateAdmin(String(admin.doc), formData);
+            } else {
+                return createAdmin(formData);
             }
-        } catch (error) {
-            console.error('Failed to fetch admins:', error);
-        } finally {
-            setLoading(false);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['superAdmins'] });
+            setIsFormModalOpen(false);
         }
-    };
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (doc: string) => deleteAdminApi(doc),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['superAdmins'] });
+            setIsDeleteModalOpen(false);
+            setSelectedAdmin(null);
+        }
+    });
 
     const handleSaveAdmin = async (formData: AdminFormData) => {
         try {
-            const token = sessionStorage.getItem('adminToken');
-            const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins';
-            const url = formMode === 'edit' && selectedAdmin ? `${baseUrl}/${selectedAdmin.doc}` : baseUrl;
-            const method = formMode === 'edit' ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to save admin');
-            }
-
-            fetchAdmins();
+            await saveMutation.mutateAsync({ mode: formMode, formData, admin: selectedAdmin });
         } catch (error) {
             console.error('Error saving admin:', error);
             throw error;
@@ -78,21 +61,7 @@ const SuperAdmin: React.FC = () => {
     const handleDeleteAdmin = async () => {
         if (!selectedAdmin) return;
         try {
-            const token = sessionStorage.getItem('adminToken');
-            const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/admins/${selectedAdmin.doc}`;
-
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            if (data.success) {
-                fetchAdmins();
-                setIsDeleteModalOpen(false);
-            }
+            await deleteMutation.mutateAsync(String(selectedAdmin.doc));
         } catch (error) {
             console.error('Error deleting admin:', error);
             alert('Error deleting admin');

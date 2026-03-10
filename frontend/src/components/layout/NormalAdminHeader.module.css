@@ -50,15 +50,17 @@
 
 .logoutBtn {
     padding: var(--spacing-xs) var(--spacing-md);
-    border: 1px solid var(--color-border);
+    border: none;
     border-radius: var(--radius-sm);
-    background-color: transparent;
-    color: var(--color-text-main);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverted);
     font-size: var(--font-size-sm);
-    transition: all 0.2s;
+    font-weight: 600;
+    transition: all var(--transition-speed);
+    cursor: pointer;
 }
 
 .logoutBtn:hover {
-    background-color: var(--color-bg-page);
-    border-color: var(--color-border-focus);
+    background-color: var(--color-primary-hover);
+    box-shadow: var(--shadow-sm);
 }

@@ -5,6 +5,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { formatDateSafe } from '../../utils/dateUtils';
 import { EditIcon, TrashIcon, ArrowLeftIcon } from '../../components/common/Icons';
+import { apiClient } from '../../config/api';
 
 const InstitutionDetailsPage: React.FC = () => {
     const { nit } = useParams<{ nit: string }>();
@@ -12,8 +13,6 @@ const InstitutionDetailsPage: React.FC = () => {
     const [institution, setInstitution] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
-        console.log('InstitutionDetailsPage mounted with nit parameter:', nit);
-
         if (nit && nit !== 'undefined') {
             fetchInstitutionDetails();
         } else {
@@ -30,26 +29,11 @@ const InstitutionDetailsPage: React.FC = () => {
 
         try {
             setLoading(true);
-            const token = sessionStorage.getItem('adminToken');
-            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + `/entidades/${nit}`;
-
-            console.log(`Fetching institution details from: ${API_URL}`);
-            const response = await fetch(API_URL, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            console.log('Institution details API response:', data);
-            if (data.success) {
-                setInstitution(data.data);
-            } else {
-                console.error('API error fetching institution:', data.message);
-                setInstitution(null);
-            }
+            const data = await apiClient.get<any>(`/entidades/${nit}`);
+            setInstitution(data);
         } catch (error) {
-            console.error('Failed to fetch institution details (exception):', error);
+            console.error('Failed to fetch institution details:', error);
+            setInstitution(null);
         } finally {
             setLoading(false);
         }

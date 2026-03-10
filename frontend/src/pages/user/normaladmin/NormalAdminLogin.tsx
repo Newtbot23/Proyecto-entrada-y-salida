@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../Registration.module.css'; // Reusing registration styles for consistency
+import { loginNormalAdmin } from '../../../services/authService';
 
 const NormalAdminLogin: React.FC = () => {
     const navigate = useNavigate();
@@ -31,33 +32,12 @@ const NormalAdminLogin: React.FC = () => {
         setError(null);
 
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/normaladmin/login`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify(formData),
-                }
-            );
+            const data = await loginNormalAdmin(formData);
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Inicio de sesión fallido');
-            }
-
-            // Store token and user data in sessionStorage
-            const { token, user } = result.data;
-            sessionStorage.setItem('userToken', token);
-            sessionStorage.setItem('userData', JSON.stringify(user));
-
-            // Add consistent keys for AuthContext and Sidebar
-            sessionStorage.setItem('adminToken', token);
-            sessionStorage.setItem('adminUser', JSON.stringify(user));
-            sessionStorage.setItem('userRole', user.id_rol.toString());
+            // Store token and user data in sessionStorage (unified keys)
+            const { token, user } = data;
+            sessionStorage.setItem('authToken', token);
+            sessionStorage.setItem('authUser', JSON.stringify(user));
 
             // Phase 15 & 16: Redirect logic based on license
             if (user.license_status === 'pendiente') {
