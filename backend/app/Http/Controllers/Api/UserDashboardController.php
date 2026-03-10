@@ -158,6 +158,83 @@ class UserDashboardController extends Controller
         }
     }
 
+    public function readSerial(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        try {
+            $imagePath = $request->file('image')->getPathname();
+            $base64Image = base64_encode(file_get_contents($imagePath));
+
+            $apiKey = env('GOOGLE_VISION_API_KEY');
+            if (!$apiKey) {
+                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
+            }
+
+            $url = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
+
+            $payload = [
+                'requests' => [
+                    [
+                        'image' => [
+                            'content' => $base64Image
+                        ],
+                        'features' => [
+                            [
+                                'type' => 'TEXT_DETECTION'
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $response = Http::post($url, $payload);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $responses = $result['responses'] ?? [];
+                
+                if (isset($responses[0]['textAnnotations'][0]['description'])) {
+                    $description = $responses[0]['textAnnotations'][0]['description'];
+                    
+                    // Buscar prefijos comunes de serial con una expresión regular: "S/N", "SN:", "Serial:", "Serial No", etc.
+                    // Y capturar la cadena alfanumérica contigua o que le siga después de espacios/dos puntos/guiones.
+                    // Ejemplo de patrones a buscar: "S/N 12345ABC", "Serial: XYZ-987", "SN:123"
+                    $extracted_serial = null;
+                         
+                    if (preg_match('/(?:S\/N|SN|S\.N\.|Serial(?:\s*No\.?|\s*Number)?|Service\s*Tag)\s*[:.\-#]?\s*([A-Z0-9-]+)/i', $description, $matches)) {
+                        $extracted_serial = $matches[1];
+                    }
+                    
+                    // Raw text para validación manual en frontend
+                    // Removemos saltos de línea y espacios extras para facilitar el `includes`
+                    $raw_text = preg_replace('/\s+/', ' ', $description);
+
+                    return response()->json([
+                        'success' => true,
+                        'extracted_serial' => $extracted_serial,
+                        'raw_text' => $raw_text,
+                        'message' => 'Texto extraído exitosamente'
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo extraer texto de la imagen'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la imagen con Google Vision',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function storeVehiculo(Request $request)
     {
         $user = $request->user();
@@ -220,10 +297,16 @@ class UserDashboardController extends Controller
             'modelo' => 'required|string|max:100',
             'tipo_equipo_desc' => 'required|string|max:200',
             'caracteristicas' => 'nullable|string',
-            'id_sistema_operativo' => 'required|integer'
+            'id_sistema_operativo' => 'required|integer',
+            'img_serial' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
+            $imgPath = null;
+            if ($request->hasFile('img_serial')) {
+                $imgPath = $request->file('img_serial')->store('equipos', 'public');
+            }
+
             DB::table('equipos')->insert([
                 'serial' => $request->serial,
                 'tipo_equipo' => 'propio',
@@ -234,6 +317,7 @@ class UserDashboardController extends Controller
                 'tipo_equipo_desc' => $request->tipo_equipo_desc,
                 'caracteristicas' => $request->caracteristicas ?? '',
                 'id_sistema_operativo' => $request->id_sistema_operativo,
+                'img_serial' => $imgPath,
                 'doc' => $user->doc,
                 'created_at' => now(),
                 'updated_at' => now(),

@@ -57,9 +57,10 @@ const UserDashboard: React.FC = () => {
 
     // Estados formularioss
     const [formVehiculo, setFormVehiculo] = useState<Vehiculo & { img_vehiculo?: File | null }>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
-    const [formEquipo, setFormEquipo] = useState<Equipo>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
+    const [formEquipo, setFormEquipo] = useState<Equipo & { img_serial?: File | null }>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
     const [loading, setLoading] = useState(false);
     const [isOcrLoading, setIsOcrLoading] = useState(false);
+    const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
 
     // Fetch initial data
     const fetchData = async () => {
@@ -198,6 +199,55 @@ const UserDashboard: React.FC = () => {
         }
     };
 
+    const handleEquipoImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFormEquipo(prev => ({ ...prev, img_serial: file }));
+        setIsOcrEquipoLoading(true);
+
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch(`${apiUrl}/ocr/read-serial`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.raw_text) {
+                setFormEquipo(prev => {
+                    const currentSerial = prev.serial;
+                    if (!currentSerial && data.extracted_serial) {
+                        return { ...prev, serial: data.extracted_serial };
+                    } else if (currentSerial) {
+                        // Valida si el texto ingresado está en la lectura
+                        const normalizedCurrent = currentSerial.replace(/\s+/g, '').toUpperCase();
+                        const normalizedRaw = data.raw_text.replace(/\s+/g, '').toUpperCase();
+                        if (!normalizedRaw.includes(normalizedCurrent)) {
+                            alert(`Advertencia: El serial ingresado (${currentSerial}) no parece estar en la foto de la etiqueta.`);
+                        }
+                    } else if (!data.extracted_serial) {
+                        alert('No detectamos un serial claro en la imagen. Revisa la foto o digítalo manualmente.');
+                    }
+                    return prev;
+                });
+            } else {
+                alert(data.message || 'No se pudo extraer texto de la imagen');
+            }
+        } catch (error) {
+            console.error('Error in OCR:', error);
+        } finally {
+            setIsOcrEquipoLoading(false);
+        }
+    };
+
     const handleEquipoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -206,16 +256,27 @@ const UserDashboard: React.FC = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
+            const formData = new FormData();
+            formData.append('serial', formEquipo.serial);
+            if (formEquipo.id_marca) formData.append('id_marca', formEquipo.id_marca);
+            formData.append('modelo', formEquipo.modelo);
+            formData.append('tipo_equipo_desc', formEquipo.tipo_equipo_desc || '');
+            if (formEquipo.caracteristicas) formData.append('caracteristicas', formEquipo.caracteristicas);
+            if (formEquipo.id_sistema_operativo) formData.append('id_sistema_operativo', formEquipo.id_sistema_operativo);
+            if (formEquipo.img_serial) {
+                formData.append('img_serial', formEquipo.img_serial);
+            }
+
             const res = await fetch(`${apiUrl}/user/equipos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formEquipo)
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Equipo registrado exitosamente');
                 setShowEquipoModal(false);
-                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
+                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
                 fetchUserRecords();
             } else {
                 alert(data.message || 'Error al registrar equipo');
@@ -432,6 +493,15 @@ const UserDashboard: React.FC = () => {
                         <form onSubmit={handleEquipoSubmit}>
                             <label style={labelStyle}>Serial</label>
                             <input style={inputStyle} type="text" required value={formEquipo.serial} onChange={e => setFormEquipo({ ...formEquipo, serial: e.target.value })} placeholder="Obligatorio" />
+
+                            <label style={labelStyle}>Imagen del Serial (Opcional)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={handleEquipoImageSelect}
+                            />
+                            {isOcrEquipoLoading && <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Leyendo etiqueta...</span>}
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>

@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
     Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
+    Route::post('/ocr/read-serial', [UserDashboardController::class, 'readSerial']);
 });
 
 // Common Data
