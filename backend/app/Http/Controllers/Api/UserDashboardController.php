@@ -67,6 +67,50 @@ class UserDashboardController extends Controller
         ]);
     }
 
+    public function getEntradas(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $query = DB::table('registros')
+            ->leftJoin('vehiculos', 'registros.placa', '=', 'vehiculos.placa')
+            ->leftJoin('equipos', 'registros.serial_equipo', '=', 'equipos.serial')
+            ->leftJoin('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
+            ->where('registros.doc', $user->doc);
+
+        if ($request->has('fecha') && !empty($request->fecha)) {
+            $query->whereDate('registros.fecha', $request->fecha);
+        } else {
+            // Default to last 5 entries if no date filter is provided
+            $query->limit(5);
+        }
+
+        $entradas = $query
+            ->select(
+                'registros.id',
+                'registros.fecha',
+                'registros.hora_entrada',
+                'registros.hora_salida',
+                'registros.placa',
+                'registros.serial_equipo',
+                'vehiculos.marca as vehiculo_marca',
+                'vehiculos.modelo as vehiculo_modelo',
+                'vehiculos.color as vehiculo_color',
+                'equipos.modelo as equipo_modelo',
+                'marcas_equipo.marca as equipo_marca'
+            )
+            ->orderBy('registros.fecha', 'desc')
+            ->orderBy('registros.hora_entrada', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $entradas
+        ]);
+    }
+
     public function readPlate(Request $request)
     {
         $request->validate([

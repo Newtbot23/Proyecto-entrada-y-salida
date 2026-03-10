@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/catalogs', [UserDashboardController::class, 'getCatalogs']);
     Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
     Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
+    Route::get('/user/entradas', [UserDashboardController::class, 'getEntradas']);
     Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
     Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
