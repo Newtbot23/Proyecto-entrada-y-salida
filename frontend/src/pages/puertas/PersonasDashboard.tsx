@@ -19,6 +19,7 @@ interface SearchData {
     equipos: Equipo[];
     estaAdentro: boolean;
     id_registro: number | null;
+    serial_equipo: string | null;
 }
 
 const PersonasDashboard: React.FC = () => {
@@ -49,10 +50,10 @@ const PersonasDashboard: React.FC = () => {
 
             if (data.success) {
                 setSearchResult(data.data);
-                // Optionally select the first equipment if there's exactly one
-                // if (data.data.equipos && data.data.equipos.length === 1) {
-                //     setSelectedEquipo(data.data.equipos[0].serial);
-                // }
+                // Si la persona ya está adentro y entró con un equipo, preseleccionarlo visualmente
+                if (data.data.estaAdentro && data.data.serial_equipo) {
+                    setSelectedEquipo(data.data.serial_equipo);
+                }
             } else {
                 setMessage({ text: data.message || 'Usuario no encontrado', type: 'error' });
             }
@@ -158,44 +159,46 @@ const PersonasDashboard: React.FC = () => {
                         </div>
 
                         {/* Equipos Propios */}
-                        {searchResult.equipos.length > 0 && (
+                        {searchResult.equipos.length > 0 && (!searchResult.estaAdentro || (searchResult.estaAdentro && searchResult.serial_equipo)) && (
                             <div style={{ marginTop: '1.5rem' }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '0.75rem' }}>💻 {searchResult.estaAdentro ? 'Equipo Ingresado' : 'Seleccionar Equipo (Opcional)'}</h4>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '0.75rem' }}>💻 {searchResult.estaAdentro ? 'Equipo Vinculado a la Entrada' : 'Seleccionar Equipo (Opcional)'}</h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                                    {searchResult.equipos.map(eq => {
-                                        const isSelected = selectedEquipo === eq.serial;
-                                        return (
-                                            <div
-                                                key={eq.serial}
-                                                onClick={() => !searchResult.estaAdentro && setSelectedEquipo(isSelected ? null : eq.serial)}
-                                                style={{
-                                                    padding: '1rem',
-                                                    border: `2px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`,
-                                                    borderRadius: '0.5rem',
-                                                    backgroundColor: isSelected ? '#eff6ff' : 'white',
-                                                    cursor: searchResult.estaAdentro ? 'default' : 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    position: 'relative'
-                                                }}
-                                            >
-                                                {/* Checkmark icon for selected equipment */}
-                                                {!searchResult.estaAdentro && (
-                                                    <div style={{
-                                                        position: 'absolute', top: '0.5rem', right: '0.5rem',
-                                                        width: '1.25rem', height: '1.25rem', borderRadius: '50%',
-                                                        border: `1px solid ${isSelected ? '#2563eb' : '#d1d5db'}`,
-                                                        backgroundColor: isSelected ? '#2563eb' : 'transparent',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                    }}>
-                                                        {isSelected && <span style={{ color: 'white', fontSize: '0.75rem' }}>✓</span>}
-                                                    </div>
-                                                )}
-                                                <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
-                                                <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#6b7280', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
-                                                <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>{eq.tipo_equipo}</p>
-                                            </div>
-                                        );
-                                    })}
+                                    {searchResult.equipos
+                                        .filter(eq => !searchResult.estaAdentro || eq.serial === searchResult.serial_equipo)
+                                        .map(eq => {
+                                            const isSelected = selectedEquipo === eq.serial;
+                                            return (
+                                                <div
+                                                    key={eq.serial}
+                                                    onClick={() => !searchResult.estaAdentro && setSelectedEquipo(isSelected ? null : eq.serial)}
+                                                    style={{
+                                                        padding: '1rem',
+                                                        border: `2px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`,
+                                                        borderRadius: '0.5rem',
+                                                        backgroundColor: isSelected ? '#eff6ff' : 'white',
+                                                        cursor: searchResult.estaAdentro ? 'default' : 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        position: 'relative'
+                                                    }}
+                                                >
+                                                    {/* Checkmark icon for selected equipment */}
+                                                    {(!searchResult.estaAdentro || isSelected) && (
+                                                        <div style={{
+                                                            position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                                            width: '1.25rem', height: '1.25rem', borderRadius: '50%',
+                                                            border: `1px solid ${isSelected ? '#2563eb' : '#d1d5db'}`,
+                                                            backgroundColor: isSelected ? '#2563eb' : 'transparent',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}>
+                                                            {isSelected && <span style={{ color: 'white', fontSize: '0.75rem' }}>✓</span>}
+                                                        </div>
+                                                    )}
+                                                    <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
+                                                    <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#6b7280', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                    <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>{eq.tipo_equipo}</p>
+                                                </div>
+                                            );
+                                        })}
                                 </div>
                             </div>
                         )}
@@ -211,7 +214,7 @@ const PersonasDashboard: React.FC = () => {
                                 </button>
                             ) : (
                                 <button onClick={() => handleRegisterAction('salida')} style={btnActionStyle('#dc2626')} disabled={loading}>
-                                    📤 Confirmar Salida
+                                    📤 Confirmar Salida {searchResult.serial_equipo ? ' (Incluye Equipo)' : ''}
                                 </button>
                             )}
                         </div>

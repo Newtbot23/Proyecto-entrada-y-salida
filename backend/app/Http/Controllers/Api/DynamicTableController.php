@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Http\Requests\DynamicTableRequest;
 
 class DynamicTableController extends Controller
 {
@@ -16,6 +17,7 @@ class DynamicTableController extends Controller
         'personal_access_tokens',
         'migrations',
         'failed_jobs',
+        'roles',
         'password_reset_tokens'
     ];
 
@@ -63,6 +65,14 @@ class DynamicTableController extends Controller
         $columns = DB::select("SHOW COLUMNS FROM `$table`");
         $schema = [];
 
+        // Definition of foreign key relationships for the dynamic system
+        $foreignKeyMap = [
+            'id_nave' => ['table' => 'naves', 'column' => 'id', 'label' => 'nave'],
+            'id_tipo_vehiculo' => ['table' => 'tipos_vehiculo', 'column' => 'id', 'label' => 'tipo_vehiculo'],
+            'id_marca' => ['table' => 'marcas_equipo', 'column' => 'id', 'label' => 'marca'],
+            'id_rol' => ['table' => 'roles', 'column' => 'id', 'label' => 'rol'],
+        ];
+
         foreach ($columns as $column) {
             $isAutoIncrement = str_contains(strtolower($column->Extra), 'auto_increment');
             $foreign = null;
@@ -70,17 +80,7 @@ class DynamicTableController extends Controller
             if (isset($foreignKeyMap[$column->Field])) {
                 $refTable = $foreignKeyMap[$column->Field]['table'];
                 $refColumn = $foreignKeyMap[$column->Field]['column'];
-                
-                // Find a good label column in the referenced table
-                $refSchema = DB::select("SHOW COLUMNS FROM `$refTable`");
-                $labelCol = $refColumn; // fallback to ID
-                foreach ($refSchema as $refCol) {
-                    // Try to find a descriptive text field
-                    if (str_contains($refCol->Type, 'varchar') || str_contains($refCol->Type, 'text')) {
-                        $labelCol = $refCol->Field;
-                        break; 
-                    }
-                }
+                $labelCol = $foreignKeyMap[$column->Field]['label'] ?? $refColumn;
                 
                 $optionsQuery = DB::table($refTable)->select(["$refColumn as value", "$labelCol as label"]);
 
@@ -144,7 +144,7 @@ class DynamicTableController extends Controller
     /**
      * Store a new record in the table.
      */
-    public function store(Request $request, $table)
+    public function store(DynamicTableRequest $request, $table)
     {
         if (in_array($table, $this->blacklistedTables)) {
             return response()->json(['error' => 'Unauthorized table'], 403);
@@ -190,6 +190,15 @@ class DynamicTableController extends Controller
             }
 
             return response()->json(['data' => $newItem], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: El registro ya existe (registro duplicado).',
+                    'error' => 'Duplicate entry'
+                ], 409);
+            }
+            return response()->json(['error' => $e->getMessage()], 500);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -198,7 +207,7 @@ class DynamicTableController extends Controller
     /**
      * Update an existing record in the table.
      */
-    public function update(Request $request, $table, $id)
+    public function update(DynamicTableRequest $request, $table, $id)
     {
         if (in_array($table, $this->blacklistedTables)) {
             return response()->json(['error' => 'Unauthorized table'], 403);
@@ -243,6 +252,15 @@ class DynamicTableController extends Controller
             $updatedItem = DB::table($table)->where($primaryKey, $id)->first();
 
             return response()->json(['data' => $updatedItem], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: El registro ya existe (registro duplicado).',
+                    'error' => 'Duplicate entry'
+                ], 409);
+            }
+            return response()->json(['error' => $e->getMessage()], 500);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

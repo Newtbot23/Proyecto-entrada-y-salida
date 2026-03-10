@@ -55,10 +55,11 @@ const UserDashboard: React.FC = () => {
     const [marcasEquipo, setMarcasEquipo] = useState<CatalogType[]>([]);
     const [sistemasOperativos, setSistemasOperativos] = useState<CatalogType[]>([]);
 
-    // Estados formularios
-    const [formVehiculo, setFormVehiculo] = useState<Vehiculo>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
+    // Estados formularioss
+    const [formVehiculo, setFormVehiculo] = useState<Vehiculo & { img_vehiculo?: File | null }>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
     const [formEquipo, setFormEquipo] = useState<Equipo>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
     const [loading, setLoading] = useState(false);
+    const [isOcrLoading, setIsOcrLoading] = useState(false);
 
     // Fetch initial data
     const fetchData = async () => {
@@ -122,16 +123,27 @@ const UserDashboard: React.FC = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
+            const formData = new FormData();
+            formData.append('placa', formVehiculo.placa);
+            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo);
+            formData.append('marca', formVehiculo.marca);
+            formData.append('modelo', formVehiculo.modelo);
+            formData.append('color', formVehiculo.color);
+            if (formVehiculo.descripcion) formData.append('descripcion', formVehiculo.descripcion);
+            if (formVehiculo.img_vehiculo) {
+                formData.append('img_vehiculo', formVehiculo.img_vehiculo);
+            }
+
             const res = await fetch(`${apiUrl}/user/vehiculos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formVehiculo)
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Vehículo registrado exitosamente');
                 setShowVehiculoModal(false);
-                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
+                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
                 fetchUserRecords();
             } else {
                 alert(data.message || 'Error al registrar vehículo');
@@ -141,6 +153,49 @@ const UserDashboard: React.FC = () => {
             alert('Error al conectar con el servidor');
         }
         setLoading(false);
+    };
+
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFormVehiculo(prev => ({ ...prev, img_vehiculo: file }));
+        setIsOcrLoading(true);
+
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch(`${apiUrl}/ocr/read-plate`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.placa) {
+                setFormVehiculo(prev => {
+                    const currentPlaca = prev.placa;
+                    if (!currentPlaca) {
+                        return { ...prev, placa: data.placa };
+                    } else if (currentPlaca.replace(/\s+/g, '').toUpperCase() !== data.placa) {
+                        alert(`La placa detectada en la imagen (${data.placa}) no coincide con la ingresada (${currentPlaca}).`);
+                        return prev;
+                    }
+                    return prev;
+                });
+            } else {
+                alert(data.message || 'No se pudo detectar la placa en la imagen');
+            }
+        } catch (error) {
+            console.error('Error in OCR:', error);
+        } finally {
+            setIsOcrLoading(false);
+        }
     };
 
     const handleEquipoSubmit = async (e: React.FormEvent) => {
@@ -325,6 +380,15 @@ const UserDashboard: React.FC = () => {
                         <form onSubmit={handleVehiculoSubmit}>
                             <label style={labelStyle}>Placa (máx 10)</label>
                             <input style={inputStyle} type="text" maxLength={10} required value={formVehiculo.placa} onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value })} placeholder="Ej: ABC123" />
+
+                            <label style={labelStyle}>Imagen del Vehículo</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={handleImageSelect}
+                            />
+                            {isOcrLoading && <span style={{ fontSize: '0.8rem', color: '#2563eb' }}>Leyendo placa...</span>}
 
                             <label style={labelStyle}>Tipo de Vehículo</label>
                             <select style={inputStyle} required value={formVehiculo.id_tipo_vehiculo} onChange={e => setFormVehiculo({ ...formVehiculo, id_tipo_vehiculo: e.target.value })}>

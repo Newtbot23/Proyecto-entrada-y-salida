@@ -13,7 +13,6 @@ use App\Models\Asignaciones;
 use Illuminate\Http\Request;
 use App\Models\Usuarios;
 use App\Models\Entidades;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -68,10 +67,10 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get statistics for a specific entity (Normal Admin).
-     * GET /api/normaladmin/stats
+     * Get statistics for a specific entity (Normal Admin) - Assets only.
+     * GET /api/normaladmin/stats (Original rename)
      */
-    public function normalAdminStats(Request $request): JsonResponse
+    public function normalAdminAssetStats(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
@@ -104,7 +103,7 @@ class DashboardController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Error en DashboardController@normalAdminStats: ' . $e->getMessage());
+            Log::error('Error en DashboardController@normalAdminAssetStats: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener estadísticas de la entidad',
@@ -121,6 +120,13 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
+            if (!$user || !$user->nit_entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'NIT de entidad no disponible'
+                ], 400);
+            }
+
             $nit = $user->nit_entidad;
 
             // 1. Usuarios Activos (Total users for the entity with status 'activo')
@@ -151,13 +157,13 @@ class DashboardController extends Controller
                     'daily_accesses' => $dailyAccesses,
                     'entity' => [
                         'nombre' => $entidad->nombre_entidad ?? 'No disponible',
-                        'nit' => $entidad->nit ?? 'No disponible',
+                        'nit' => $entidad->nit ?? $nit,
                         'direccion' => $entidad->direccion ?? 'No disponible',
                     ],
                     'license' => [
                         'estado' => $licencia->estado ?? 'Desconocido',
                         'fecha_vencimiento' => $licencia->fecha_vencimiento ?? 'No disponible',
-                        'plan_nombre' => $licencia->plan->nombre_plan ?? 'No disponible',
+                        'plan_nombre' => $licencia?->plan?->nombre_plan ?? 'No disponible',
                     ]
                 ]
             ], 200);

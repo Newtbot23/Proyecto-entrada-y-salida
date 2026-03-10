@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
     Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
+    Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
 });
 
 // Common Data
@@ -112,6 +113,11 @@ Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
 Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
 Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
 Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/reports/person', [ReportController::class, 'getPersonReport']);
+    Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
+});
 
 // Puertas Access Control
 Route::middleware('auth:sanctum')->group(function () {

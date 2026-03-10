@@ -29,6 +29,8 @@ import NormalAdminLayout from './components/layout/NormalAdminLayout';
 import UserLayout from './components/layout/UserLayout';
 import UserDashboard from './pages/user/regular/UserDashboard';
 import DynamicCrud from './components/dynamic/DynamicCrud';
+import ReportePersona from './pages/user/normaladmin/ReportePersona';
+import ReporteDiario from './pages/user/normaladmin/ReporteDiario';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -58,6 +60,8 @@ function App() {
           <Route element={<NormalAdminLayout />}>
             <Route path="/user/normaladmin/registro-personas" element={<RegistroPersonasView />} />
             <Route path="/user/normaladmin/tables/:tableName" element={<DynamicCrud />} />
+            <Route path="/user/normaladmin/reportes/persona" element={<ReportePersona />} />
+            <Route path="/user/normaladmin/reportes/diario" element={<ReporteDiario />} />
           </Route>
 
           {/* Regular User Flow */}

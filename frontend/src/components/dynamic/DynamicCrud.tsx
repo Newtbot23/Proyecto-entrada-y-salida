@@ -29,6 +29,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [serverValidationErrors, setServerValidationErrors] = useState<Record<string, string[]>>({});
 
     // New states for search, pagination and edit
     const [searchTerm, setSearchTerm] = useState('');
@@ -91,6 +92,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
         if (!tableName) return;
         setActionLoading(true);
         setError(null);
+        setServerValidationErrors({});
         try {
             if (editingRecord) {
                 // Find primary key
@@ -105,7 +107,11 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
             await loadData();
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Error al procesar registro');
+            if (err.errors) {
+                setServerValidationErrors(err.errors);
+            } else {
+                setError(err.message || 'Error al procesar registro');
+            }
         } finally {
             setActionLoading(false);
         }
@@ -185,6 +191,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                         title={`Agregar a ${resolvedTitle}`}
                         onCancel={undefined}
                         immutableFields={immutableFields}
+                        serverErrors={serverValidationErrors}
                     />
                 )}
                 {tableName === 'usuarios' && (
@@ -236,6 +243,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                     title="" // Title is handled by the Modal
                     onCancel={handleCancelEdit}
                     immutableFields={immutableFields}
+                    serverErrors={serverValidationErrors}
                 />
             </Modal>
 

@@ -20,12 +20,15 @@ class PuertasController extends Controller
             return response()->json(['success' => false, 'message' => 'Documento requerido'], 400);
         }
 
+        $nit = $request->user()->nit_entidad;
+
         $usuario = DB::table('usuarios')
             ->select(
                 'doc', 
                 DB::raw("TRIM(CONCAT_WS(' ', primer_nombre, segundo_nombre, primer_apellido, segundo_apellido)) as nombre")
             )
             ->where('doc', $doc)
+            ->where('nit_entidad', $nit)
             ->first();
 
         if (!$usuario) {
@@ -53,7 +56,8 @@ class PuertasController extends Controller
                 'usuario' => $usuario,
                 'equipos' => $equipos,
                 'estaAdentro' => !!$registroAbierto,
-                'id_registro' => $registroAbierto ? $registroAbierto->id : null
+                'id_registro' => $registroAbierto ? $registroAbierto->id : null,
+                'serial_equipo' => $registroAbierto ? $registroAbierto->serial_equipo : null
             ]
         ]);
     }
@@ -69,12 +73,18 @@ class PuertasController extends Controller
             return response()->json(['success' => false, 'message' => 'Documento o placa requerida'], 400);
         }
 
+        $nit = $request->user()->nit_entidad;
+
         // Find all vehicles matching the query (either by plate or by owner's doc)
+        // Restricted by the authenticated user's entity (nit_entidad)
         $vehiculos = DB::table('vehiculos')
             ->join('usuarios', 'vehiculos.doc', '=', 'usuarios.doc')
             ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
-            ->where('vehiculos.placa', 'like', "%$query%")
-            ->orWhere('usuarios.doc', $query)
+            ->where(function($q) use ($query) {
+                $q->where('vehiculos.placa', 'like', "%$query%")
+                  ->orWhere('usuarios.doc', $query);
+            })
+            ->where('usuarios.nit_entidad', $nit)
             ->select(
                 'vehiculos.*', 
                 DB::raw("TRIM(CONCAT_WS(' ', usuarios.primer_nombre, usuarios.segundo_nombre, usuarios.primer_apellido, usuarios.segundo_apellido)) as usuario_nombre"), 
@@ -130,6 +140,17 @@ class PuertasController extends Controller
         ]);
 
         $now = Carbon::now();
+        $nit = $request->user()->nit_entidad;
+
+        // Security check: Ensure the user belongs to the same entity
+        $usuarioEntidad = DB::table('usuarios')
+            ->where('doc', $request->doc)
+            ->where('nit_entidad', $nit)
+            ->exists();
+
+        if (!$usuarioEntidad) {
+            return response()->json(['success' => false, 'message' => 'No autorizado para registrar este usuario'], 403);
+        }
 
         if ($request->accion === 'entrada') {
             // Create new entry

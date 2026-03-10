@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Vehiculos;
 use App\Models\Equipos;
 
@@ -65,6 +67,97 @@ class UserDashboardController extends Controller
         ]);
     }
 
+    public function readPlate(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        try {
+            $imagePath = $request->file('image')->getPathname();
+            $base64Image = base64_encode(file_get_contents($imagePath));
+
+            $apiKey = env('GOOGLE_VISION_API_KEY');
+            if (!$apiKey) {
+                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
+            }
+
+            $url = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
+
+            $payload = [
+                'requests' => [
+                    [
+                        'image' => [
+                            'content' => $base64Image
+                        ],
+                        'features' => [
+                            [
+                                'type' => 'TEXT_DETECTION'
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $response = Http::post($url, $payload);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $responses = $result['responses'] ?? [];
+                
+                if (isset($responses[0]['textAnnotations'][0]['description'])) {
+                    $description = $responses[0]['textAnnotations'][0]['description'];
+                    
+                    // Extraemos 6 caracteres alfanuméricos agrupados en 3 y 3, separados opcionalmente por guiones o espacios
+                    preg_match('/([A-Z0-9]{3})[-\s._]*([A-Z0-9]{3})/i', $description, $matches);
+                    
+                    if (isset($matches[1]) && isset($matches[2])) {
+                        $letras = strtoupper($matches[1]);
+                        $numeros = strtoupper($matches[2]);
+
+                        // Autocorrección para las 3 primeras letras (reemplazo de números por letras comunes)
+                        $letras = str_replace(
+                            ['0', '1', '8', '5'], 
+                            ['O', 'I', 'B', 'S'], 
+                            $letras
+                        );
+
+                        // Autocorrección para los 2 siguientes (siempre números en Colombia)
+                        $numerosPrefix = substr($numeros, 0, 2);
+                        $numerosPrefix = str_replace(
+                            ['O', 'I', 'B', 'S'], 
+                            ['0', '1', '8', '5'], 
+                            $numerosPrefix
+                        );
+
+                        // El último carácter puede ser letra o número dependiendo si es moto o carro
+                        $numerosSuffix = substr($numeros, 2, 1);
+
+                        $placa = $letras . $numerosPrefix . $numerosSuffix;
+                        
+                        return response()->json([
+                            'success' => true,
+                            'placa' => $placa,
+                            'message' => 'Placa detectada con éxito'
+                        ]);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo detectar la placa en la imagen'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la imagen con Google Vision',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function storeVehiculo(Request $request)
     {
         $user = $request->user();
@@ -78,18 +171,25 @@ class UserDashboardController extends Controller
             'marca' => 'required|string|max:100',
             'modelo' => 'required|string|max:100',
             'color' => 'required|string|max:50',
-            'descripcion' => 'nullable|string'
+            'descripcion' => 'nullable|string',
+            'img_vehiculo' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
+            $imgPath = null;
+            if ($request->hasFile('img_vehiculo')) {
+                $imgPath = $request->file('img_vehiculo')->store('vehiculos', 'public');
+            }
+
             DB::table('vehiculos')->insert([
-                'placa' => $request->placa,
+                'placa' => strtoupper($request->placa),
                 'id_tipo_vehiculo' => $request->id_tipo_vehiculo,
                 'doc' => $user->doc,
                 'marca' => $request->marca,
                 'modelo' => $request->modelo,
                 'color' => $request->color,
                 'descripcion' => $request->descripcion ?? '',
+                'img_vehiculo' => $imgPath,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
