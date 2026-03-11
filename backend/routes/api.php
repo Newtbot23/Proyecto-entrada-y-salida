@@ -85,23 +85,35 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/stripe/payment-success', [App\Http\Controllers\Api\StripeCheckoutController::class, 'confirmPayment']);
 
     // User Dashboard Routes
-    Route::get('/user/catalogs', [App\Http\Controllers\Api\UserDashboardController::class, 'getCatalogs']);
-    Route::get('/user/vehiculos', [App\Http\Controllers\Api\UserDashboardController::class, 'getVehiculos']);
-    Route::get('/user/equipos', [App\Http\Controllers\Api\UserDashboardController::class, 'getEquipos']);
-    Route::post('/user/vehiculos', [App\Http\Controllers\Api\UserDashboardController::class, 'storeVehiculo']);
-    Route::post('/user/equipos', [App\Http\Controllers\Api\UserDashboardController::class, 'storeEquipo']);
+    Route::get('/user/catalogs', [UserDashboardController::class, 'getCatalogs']);
+    Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
+    Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
+    Route::get('/user/entradas', [UserDashboardController::class, 'getEntradas']);
+    Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
+    Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
+    Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
+    Route::post('/ocr/read-serial', [UserDashboardController::class, 'readSerial']);
+});
 
-    // Dynamic Tables (Critical Data Access)
-    Route::get('/tablas-cortas', [App\Http\Controllers\Api\DynamicTableController::class, 'getShortTables']);
-    Route::get('/esquema/{table}', [App\Http\Controllers\Api\DynamicTableController::class, 'getTableSchema']);
-    Route::get('/datos/{table}', [App\Http\Controllers\Api\DynamicTableController::class, 'index']);
-    Route::post('/datos/{table}', [App\Http\Controllers\Api\DynamicTableController::class, 'store']);
-    Route::put('/datos/{table}/{id}', [App\Http\Controllers\Api\DynamicTableController::class, 'update']);
+// Common Data
+Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 
-    // Reports
-    Route::get('/reports/licenses', [App\Http\Controllers\Api\ReportController::class, 'downloadLicenses']);
-    Route::get('/reports/entities', [App\Http\Controllers\Api\ReportController::class, 'downloadEntities']);
-    Route::get('/reports/entities/{nit}', [App\Http\Controllers\Api\ReportController::class, 'downloadEntity']);
+// Dynamic Tables
+Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
+Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
+Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
+Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
+Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
+
+// Reports
+Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
+Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
+Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/reports/person', [ReportController::class, 'getPersonReport']);
+    Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
+});
 
     // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);

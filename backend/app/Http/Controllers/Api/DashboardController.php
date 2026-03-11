@@ -55,12 +55,56 @@ class DashboardController extends Controller
                     'total_revenue' => $totalRevenue
                 ]
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en DashboardController@stats: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener estadísticas del dashboard',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get statistics for a specific entity (Normal Admin) - Assets only.
+     * GET /api/normaladmin/stats (Original rename)
+     */
+    public function normalAdminAssetStats(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user || !$user->nit_entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado o no vinculado a una entidad'
+                ], 401);
+            }
+
+            $nit = $user->nit_entidad;
+
+            // 1. Vehículos registrados por la entidad
+            $vehiculosCount = Vehiculos::whereHas('usuario', function ($query) use ($nit) {
+                $query->where('nit_entidad', $nit);
+            })->count();
+
+            // 2. Equipos propios traídos (asignados a usuarios de la entidad)
+            $equiposCount = Asignaciones::whereHas('usuario', function ($query) use ($nit) {
+                $query->where('nit_entidad', $nit);
+            })->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'vehiculos_ingresados' => $vehiculosCount,
+                    'equipos_propios' => $equiposCount
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error en DashboardController@normalAdminAssetStats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas de la entidad',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -74,6 +118,7 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
+
             $nit = $user->nit_entidad;
 
             // 1. Usuarios Activos (Total users for the entity with status 'activo')
@@ -91,7 +136,7 @@ class DashboardController extends Controller
 
             // 3. Entity Information
             $entidad = Entidades::where('nit', $nit)->first();
-            
+
             // 4. License Information
             $licencia = LicenciasSistema::where('nit_entidad', $nit)
                 ->with('plan')
@@ -104,17 +149,16 @@ class DashboardController extends Controller
                     'daily_accesses' => $dailyAccesses,
                     'entity' => [
                         'nombre' => $entidad->nombre_entidad ?? 'No disponible',
-                        'nit' => $entidad->nit ?? 'No disponible',
+                        'nit' => $entidad->nit ?? $nit,
                         'direccion' => $entidad->direccion ?? 'No disponible',
                     ],
                     'license' => [
                         'estado' => $licencia->estado ?? 'Desconocido',
                         'fecha_vencimiento' => $licencia->fecha_vencimiento ?? 'No disponible',
-                        'plan_nombre' => $licencia->plan->nombre_plan ?? 'No disponible',
+                        'plan_nombre' => $licencia?->plan?->nombre_plan ?? 'No disponible',
                     ]
                 ]
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Error en DashboardController@normalAdminStats: ' . $e->getMessage());
             return response()->json([

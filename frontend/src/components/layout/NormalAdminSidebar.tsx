@@ -44,6 +44,7 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
 
     const [shortTables, setShortTables] = useState<string[]>([]);
     const [isOtrosOpen, setIsOtrosOpen] = useState(false);
+    const [isReportesOpen, setIsReportesOpen] = useState(false);
 
     useEffect(() => {
         const fetchShortTables = async () => {
@@ -100,6 +101,53 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                             </Link>
                         </li>
                     ))}
+
+                    {/* "Reportes" Accordion Item - Only for Admin */}
+                    {userRole === 1 && (
+                        <li className={styles.navItem}>
+                            <button
+                                className={`${styles.accordionHeader} ${isReportesOpen || activePath.includes('/reportes/') ? styles.active : ''}`}
+                                onClick={() => setIsReportesOpen(!isReportesOpen)}
+                                title={isCollapsed ? "Reportes" : ""}
+                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span className={styles.navIcon}>
+                                        <ReportIcon />
+                                    </span>
+                                    {!isCollapsed && <span className={styles.navLabel}>Reportes</span>}
+                                </div>
+                                {!isCollapsed && (
+                                    <span className={`${styles.chevronIcon} ${isReportesOpen ? styles.rotated : ''}`}>
+                                        <ChevronRightIcon width={16} height={16} />
+                                    </span>
+                                )}
+                            </button>
+
+                            {!isCollapsed && (
+                                <div className={`${styles.accordionContent} ${isReportesOpen || activePath.includes('/reportes/') ? styles.open : ''}`}>
+                                    <ul className={styles.accordionList}>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/reportes/persona"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/persona' ? styles.active : ''}`}
+                                            >
+                                                Reporte por Persona
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/reportes/diario"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/diario' ? styles.active : ''}`}
+                                            >
+                                                Reporte del Día
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                        </li>
+                    )}
 
                     {/* "Otros" Accordion Item - Only for Admin */}
                     {userRole === 1 && (

@@ -29,13 +29,36 @@ const VehiculosDashboard: React.FC = () => {
         setSelectedVehiculo(null);
         setSelectedEquipo(null);
 
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
         try {
-            const data = await searchVehiculo(searchQuery);
-            setSearchResult(data);
-            if (data.vehiculos && data.vehiculos.length === 1) {
-                setSelectedVehiculo(data.vehiculos[0].placa);
+            const res = await fetch(`${apiUrl}/puertas/search-vehiculo?query=${searchQuery}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setSearchResult(data.data);
+                // Si la persona ya está adentro con un vehículo, seleccionarlo automáticamente
+                if (data.data.registrosAbiertos && data.data.registrosAbiertos.length > 0) {
+                    const activeReg = data.data.registrosAbiertos.find((r: RegistroAbierto) => r.placa);
+                    if (activeReg && activeReg.placa) {
+                        setSelectedVehiculo(activeReg.placa);
+                        if (activeReg.serial_equipo) {
+                            setTraeEquipo(true);
+                            setSelectedEquipo(activeReg.serial_equipo);
+                        }
+                    } else if (data.data.vehiculos && data.data.vehiculos.length === 1) {
+                        setSelectedVehiculo(data.data.vehiculos[0].placa);
+                    }
+                } else if (data.data.vehiculos && data.data.vehiculos.length === 1) {
+                    setSelectedVehiculo(data.data.vehiculos[0].placa);
+                }
+            } else {
+                setMessage({ text: data.message || 'Vehículo o usuario no encontrado', type: 'error' });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             setMessage({ text: error.message || 'Vehículo o usuario no encontrado', type: 'error' });
         } finally {
@@ -100,8 +123,8 @@ const VehiculosDashboard: React.FC = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         disabled={loading}
                     />
-                    <button type="submit" className={styles.searchBtn} disabled={loading}>
-                        {loading ? 'Buscando...' : '🔍 Buscar'}
+                    <button type="submit" style={btnSearchStyle} disabled={loading}>
+                        {loading ? 'Buscando...' : 'Buscar'}
                     </button>
                 </form>
             </div>
@@ -116,66 +139,98 @@ const VehiculosDashboard: React.FC = () => {
                 <div className={styles.resultSection}>
                     <div className={styles.card}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <h4 className={styles.sectionTitle}>🚗 Seleccionar Vehículo</h4>
-                            <div className={styles.vehicleList}>
-                                {searchResult.vehiculos.map(vehiculo => {
-                                    const devInside = isVehiculoInside(vehiculo.placa);
-                                    const isSelected = selectedVehiculo === vehiculo.placa;
-                                    return (
-                                        <div
-                                            key={vehiculo.placa}
-                                            onClick={() => setSelectedVehiculo(vehiculo.placa)}
-                                            className={`${styles.vehicleItem} ${isSelected ? styles.vehicleActive : ''}`}
-                                        >
-                                            <div className={styles.vehicleInfo}>
-                                                <h3>{vehiculo.placa}</h3>
-                                                <p className={styles.details}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
-                                                <p className={styles.owner}>Propietario: {vehiculo.usuario_nombre}</p>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {searchResult.vehiculos
+                                    .filter(vehiculo => !estaAdentro || (estaAdentro && getRegistroId(vehiculo.placa) !== null))
+                                    .map(vehiculo => {
+                                        const devInside = isVehiculoInside(vehiculo.placa);
+                                        const isSelected = selectedVehiculo === vehiculo.placa;
+                                        return (
+                                            <div
+                                                key={vehiculo.placa}
+                                                onClick={() => !devInside && setSelectedVehiculo(vehiculo.placa)}
+                                                style={{
+                                                    padding: '1rem',
+                                                    border: `2px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`,
+                                                    borderRadius: '0.5rem',
+                                                    backgroundColor: isSelected ? '#eff6ff' : 'white',
+                                                    cursor: devInside ? 'default' : 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <div>
+                                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>{vehiculo.placa}</h3>
+                                                    <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
+                                                    <p style={{ fontSize: '0.85rem', color: '#4b5563', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ padding: '0.4rem 0.8rem', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: 'bold', backgroundColor: devInside ? '#fef3c7' : '#dcfce7', color: devInside ? '#92400e' : '#166534' }}>
+                                                        {devInside ? '● Vehículo en Sede' : '○ Fuera'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className={`${styles.statusBadge} ${devInside ? styles.statusInside : styles.statusOutside}`}>
-                                                    {devInside ? '● Vehículo en Sede' : '○ Fuera'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
+                                        )
+                                    })}
                             </div>
                         </div>
 
                         {selectedVehiculo && selectedVehiculoData && (
                             <>
-                                {!estaAdentro && searchResult.equipos.length > 0 && (
-                                    <div className={styles.equipmentSelector}>
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={traeEquipo}
-                                                onChange={(e) => setTraeEquipo(e.target.checked)}
-                                            />
-                                            <span>¿El conductor ingresa con equipo propio?</span>
+                                {/* Selector de Equipo */}
+                                {searchResult.equipos.length > 0 && (!estaAdentro || (estaAdentro && selectedEquipo)) && (
+                                    <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '2rem', border: '1px dashed #d1d5db' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: estaAdentro ? 'default' : 'pointer', marginBottom: traeEquipo ? '1rem' : '0' }}>
+                                            {!estaAdentro && (
+                                                <input
+                                                    type="checkbox"
+                                                    style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+                                                    checked={traeEquipo}
+                                                    onChange={(e) => setTraeEquipo(e.target.checked)}
+                                                />
+                                            )}
+                                            <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#374151' }}>
+                                                {estaAdentro ? 'Equipo vinculado a la entrada:' : '¿El conductor ingresa con equipo propio?'}
+                                            </span>
                                         </label>
 
                                         {traeEquipo && (
-                                            <div className={styles.equipmentGrid}>
-                                                {searchResult.equipos.map(eq => {
-                                                    const isEqSelected = selectedEquipo === eq.serial;
-                                                    return (
-                                                        <div
-                                                            key={eq.serial}
-                                                            onClick={() => setSelectedEquipo(isEqSelected ? null : eq.serial)}
-                                                            className={`${styles.equipmentItem} ${isEqSelected ? styles.equipmentActive : ''}`}
-                                                        >
-                                                            {isEqSelected && (
-                                                                <div className={styles.checkIcon}>
-                                                                    <span>✓</span>
-                                                                </div>
-                                                            )}
-                                                            <p className={styles.eqName}>{eq.marca}</p>
-                                                            <p className={styles.eqSerial}>SN: {eq.serial}</p>
-                                                        </div>
-                                                    )
-                                                })}
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                                                {searchResult.equipos
+                                                    .filter(eq => !estaAdentro || eq.serial === selectedEquipo)
+                                                    .map(eq => {
+                                                        const isSelected = selectedEquipo === eq.serial;
+                                                        return (
+                                                            <div
+                                                                key={eq.serial}
+                                                                onClick={() => !estaAdentro && setSelectedEquipo(isSelected ? null : eq.serial)}
+                                                                style={{
+                                                                    padding: '0.75rem',
+                                                                    border: `2px solid ${isSelected ? '#10b981' : '#e5e7eb'}`,
+                                                                    borderRadius: '0.5rem',
+                                                                    backgroundColor: isSelected ? '#ecfdf5' : 'white',
+                                                                    cursor: estaAdentro ? 'default' : 'pointer',
+                                                                    position: 'relative'
+                                                                }}
+                                                            >
+                                                                {isSelected && !estaAdentro && (
+                                                                    <div style={{
+                                                                        position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                                                        width: '1.25rem', height: '1.25rem', borderRadius: '50%',
+                                                                        backgroundColor: '#10b981',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                    }}>
+                                                                        <span style={{ color: 'white', fontSize: '0.75rem' }}>✓</span>
+                                                                    </div>
+                                                                )}
+                                                                <p style={{ fontWeight: 'bold', margin: 0, fontSize: '0.9rem', color: '#111827' }}>{eq.marca}</p>
+                                                                <p style={{ fontSize: '0.8rem', color: '#4b5563', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                            </div>
+                                                        )
+                                                    })}
                                             </div>
                                         )}
                                     </div>
@@ -187,8 +242,8 @@ const VehiculosDashboard: React.FC = () => {
                                             📥 Registrar Ingreso de {selectedVehiculo} {traeEquipo && selectedEquipo ? '(Con equipo)' : ''}
                                         </button>
                                     ) : (
-                                        <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                            📤 Registrar Salida de {selectedVehiculo}
+                                        <button onClick={() => handleRegisterAction('salida')} style={btnActionStyle('#4b5563')} disabled={loading}>
+                                            📤 Registrar Salida de {selectedVehiculo} {traeEquipo && selectedEquipo ? '(Con equipo)' : ''}
                                         </button>
                                     )}
                                 </div>
