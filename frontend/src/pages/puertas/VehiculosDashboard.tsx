@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { searchVehiculo, registrarActividad } from '../../services/puertasService';
+import { registrarActividad } from '../../services/puertasService';
 import type { VehiculoSearchResult } from '../../services/puertasService';
 import styles from './VehiculosDashboard.module.css';
 
@@ -8,6 +8,33 @@ interface User {
     doc: string;
     nombre: string;
 }
+
+interface RegistroAbierto {
+    id: number;
+    placa: string | null;
+    serial_equipo: string | null;
+}
+
+const btnSearchStyle: React.CSSProperties = {
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.5rem',
+    fontWeight: 'bold',
+    border: 'none',
+    cursor: 'pointer'
+};
+
+const btnActionStyle = (color: string): React.CSSProperties => ({
+    backgroundColor: color,
+    color: 'white',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.5rem',
+    fontWeight: 'bold',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%'
+});
 
 const VehiculosDashboard: React.FC = () => {
     useOutletContext<{ user: User }>();
@@ -58,7 +85,7 @@ const VehiculosDashboard: React.FC = () => {
             } else {
                 setMessage({ text: data.message || 'Vehículo o usuario no encontrado', type: 'error' });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             setMessage({ text: error.message || 'Vehículo o usuario no encontrado', type: 'error' });
         } finally {
@@ -142,7 +169,7 @@ const VehiculosDashboard: React.FC = () => {
                             <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {searchResult.vehiculos
-                                    .filter(vehiculo => !estaAdentro || (estaAdentro && getRegistroId(vehiculo.placa) !== null))
+                                    .filter(vehiculo => !estaAdentro || (searchResult.registrosAbiertos.some(r => r.placa === vehiculo.placa)))
                                     .map(vehiculo => {
                                         const devInside = isVehiculoInside(vehiculo.placa);
                                         const isSelected = selectedVehiculo === vehiculo.placa;

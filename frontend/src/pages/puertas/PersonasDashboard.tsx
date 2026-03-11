@@ -41,6 +41,9 @@ const PersonasDashboard: React.FC = () => {
         setMessage(null);
         setSelectedEquipo(null);
 
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
         try {
             const res = await fetch(`${apiUrl}/puertas/search-persona?doc=${searchDoc}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -56,7 +59,7 @@ const PersonasDashboard: React.FC = () => {
             } else {
                 setMessage({ text: data.message || 'Usuario no encontrado', type: 'error' });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             setMessage({ text: error.message || 'Usuario no encontrado', type: 'error' });
         } finally {
@@ -131,7 +134,7 @@ const PersonasDashboard: React.FC = () => {
                         </div>
 
                         {/* Equipos Propios */}
-                        {searchResult.equipos.length > 0 && (!searchResult.estaAdentro || (searchResult.estaAdentro && searchResult.serial_equipo)) && (
+                        {searchResult.equipos.length > 0 && (!searchResult.estaAdentro || (searchResult.estaAdentro && searchResult.serial_equipo)) ? (
                             <div style={{ marginTop: '1.5rem' }}>
                                 <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '0.75rem' }}>💻 {searchResult.estaAdentro ? 'Equipo Vinculado a la Entrada' : 'Seleccionar Equipo (Opcional)'}</h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
@@ -172,10 +175,10 @@ const PersonasDashboard: React.FC = () => {
                                             );
                                         })}
                                 </div>
-                            ) : (
-                                <p className={styles.noEquipment}>Sin equipos propios registrados.</p>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <p className={styles.noEquipment}>Sin equipos propios registrados.</p>
+                        )}
 
                         <div className={styles.actionButtons}>
                             {!searchResult.estaAdentro ? (
@@ -183,7 +186,7 @@ const PersonasDashboard: React.FC = () => {
                                     📥 Confirmar Entrada {selectedEquipo ? '(Con Equipo)' : ''}
                                 </button>
                             ) : (
-                                <button onClick={() => handleRegisterAction('salida')} style={btnActionStyle('#dc2626')} disabled={loading}>
+                                <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
                                     📤 Confirmar Salida {searchResult.serial_equipo ? ' (Incluye Equipo)' : ''}
                                 </button>
                             )}

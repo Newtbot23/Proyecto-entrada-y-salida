@@ -22,6 +22,7 @@ export interface PersonaSearchResult {
     }[];
     estaAdentro: boolean;
     id_registro: number | null;
+    serial_equipo: string | null;
 }
 
 export interface VehiculoSearchResult {

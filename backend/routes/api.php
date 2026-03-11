@@ -2,6 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\UserDashboardController;
+use App\Http\Controllers\Api\DynamicTableController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\TipoDocController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +25,7 @@ Route::post('/reset-password', [App\Http\Controllers\Api\PasswordRecoveryApiCont
 // Public Pricing & Common Data
 Route::get('/plans', [App\Http\Controllers\Api\PricingController::class, 'index']);
 Route::post('/plans/select', [App\Http\Controllers\Api\PricingController::class, 'select']);
-Route::get('/tipo-doc', [App\Http\Controllers\Api\TipoDocController::class, 'index']);
+Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 
 // Registration Flow
 Route::post('/registration/entidades', [App\Http\Controllers\Api\EntidadController::class, 'store']);
@@ -93,27 +97,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
     Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
     Route::post('/ocr/read-serial', [UserDashboardController::class, 'readSerial']);
-});
 
-// Common Data
-Route::get('/tipo-doc', [TipoDocController::class, 'index']);
+    // Dynamic Tables
+    Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
+    Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
+    Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
+    Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
+    Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
 
-// Dynamic Tables
-Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
-Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
-Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
-Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
-Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
-
-// Reports
-Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
-Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
-Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
-
-Route::middleware('auth:sanctum')->group(function () {
+    // Reports
+    Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
+    Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
+    Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
     Route::get('/reports/person', [ReportController::class, 'getPersonReport']);
     Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
-});
 
     // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);
