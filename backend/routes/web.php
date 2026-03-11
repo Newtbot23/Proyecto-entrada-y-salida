@@ -1,16 +1,17 @@
 <?php
 
-use App\Http\Controllers\AdminsController;
-use App\Http\Controllers\UsuariosAuthController;
+use App\Http\Controllers\Api\AdminsController;
+// use App\Http\Controllers\UsuariosAuthController; // Missing file
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EntidadesController;
-use App\Http\Controllers\PlanesLicenciaController;
-use App\Http\Controllers\UsuariosController;
-use App\Http\Controllers\PasswordRecoveryController;
+use App\Http\Controllers\Api\EntidadController;
+use App\Http\Controllers\Api\PlanesLicenciasController;
+use App\Http\Controllers\Api\UsuariosController;
+use App\Http\Controllers\Api\PasswordRecoveryApiController as PasswordRecoveryController;
 
 Route::get('/', function () {
     return redirect()->route('superadmin.login');
 });
+/*
 Route::get('/login', [UsuariosAuthController::class, 'showLogin'])
     ->name('login');
 
@@ -19,6 +20,7 @@ Route::post('/login', [UsuariosAuthController::class, 'login'])
 
 Route::post('/logout', [UsuariosAuthController::class, 'logout'])
     ->name('logout');
+*/
 
 Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
@@ -31,22 +33,26 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
     Route::post('/logout', [AdminsController::class, 'logout'])
         ->name('logout');
 
-    Route::get('/planes_user', [PlanesLicenciaController::class, 'userPlanes'])
+    Route::get('/planes_user', [PlanesLicenciasController::class, 'userPlanes'])
         ->name('planes_user.index');
 
-    Route::get('/entidad-usuario/create/{plan}', 
+    Route::get(
+        '/entidad-usuario/create/{plan}',
         [UsuariosController::class, 'createEntidadUsuario']
     )->name('entidad-usuario.create');
 
-    Route::post('/entidad-usuario', 
+    Route::post(
+        '/entidad-usuario',
         [UsuariosController::class, 'storeEntidadUsuario']
     )->name('entidad-usuario.store');
 
-    Route::get('/usuarios-pagos/create/{entidad}/{plan}',
+    Route::get(
+        '/usuarios-pagos/create/{entidad}/{plan}',
         [UsuariosController::class, 'createUsuariosPagos']
     )->name('usuarios-pagos.create');
 
-    Route::post('/usuarios-pagos',
+    Route::post(
+        '/usuarios-pagos',
         [UsuariosController::class, 'storeUsuariosPagos']
     )->name('usuarios-pagos.store');
 
@@ -64,20 +70,20 @@ Route::prefix('superadmin')
     ->middleware('auth.superadmin')
     ->group(function () {
 
-    Route::get('/dashboard', [EntidadesController::class, 'dashboard'])
-        ->name('dashboard');
+        Route::get('/dashboard', [EntidadController::class, 'dashboard'])
+            ->name('dashboard');
 
-    Route::resource('planes', PlanesLicenciaController::class)
-        ->except(['show', 'create']);
+        Route::resource('planes', PlanesLicenciasController::class)
+            ->except(['show', 'create']);
 
-    Route::resource('institutions', EntidadesController::class)
-        ->except(['show']);
+        Route::resource('institutions', EntidadController::class)
+            ->except(['show']);
 
-    Route::prefix('usuarios')->name('usuarios.')->group(function () {
-        Route::post('/', [UsuariosController::class, 'store'])
-            ->name('store');
+        Route::prefix('usuarios')->name('usuarios.')->group(function () {
+            Route::post('/', [UsuariosController::class, 'store'])
+                ->name('store');
+        });
     });
-});
 
 // Rutas de recuperación de contraseña para Usuarios normales (código de 6 dígitos)
 Route::prefix('usuario')->group(function () {

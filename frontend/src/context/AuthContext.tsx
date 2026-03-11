@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export interface User {
     doc: string;
@@ -18,19 +19,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const navigate = useNavigate();
     const [user, setUserState] = useState<User | null>(null);
 
     // Sync user state with sessionStorage on mount
     useEffect(() => {
-        const storedUser = sessionStorage.getItem('adminUser');
-        const token = sessionStorage.getItem('adminToken');
+        const storedUser = sessionStorage.getItem('authUser');
+        const token = sessionStorage.getItem('authToken');
 
         if (token && storedUser) {
             try {
                 setUserState(JSON.parse(storedUser));
             } catch (e) {
                 console.error('Error parsing stored user:', e);
-                // If invalid data, we don't necessarily logout, just stay null
             }
         }
     }, []);
@@ -38,19 +39,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const setUser = (newUser: User | null) => {
         setUserState(newUser);
         if (newUser) {
-            sessionStorage.setItem('adminUser', JSON.stringify(newUser));
+            sessionStorage.setItem('authUser', JSON.stringify(newUser));
         } else {
-            sessionStorage.removeItem('adminUser');
+            sessionStorage.removeItem('authUser');
         }
     };
 
-    const logout = () => {
+    const logout = useCallback(() => {
+        // Determine redirect path based on user role before clearing state
+        const currentUser = user;
         setUserState(null);
-        sessionStorage.clear(); // Clears token and user data
-        window.location.replace('/login');
-    };
+        sessionStorage.clear();
 
-    const isAuthenticated = !!sessionStorage.getItem('adminToken');
+        // Redirect based on the role of the user that was logged in
+        if (currentUser && currentUser.id_rol === 0) {
+            // Superadmin (id_rol 0 or a convention you use)
+            navigate('/superadmin/login', { replace: true });
+        } else {
+            // Normal admins and all other roles
+            navigate('/login', { replace: true });
+        }
+    }, [user, navigate]);
+
+    const isAuthenticated = !!sessionStorage.getItem('authToken');
 
     return (
         <AuthContext.Provider value={{ user, setUser, logout, isAuthenticated }}>

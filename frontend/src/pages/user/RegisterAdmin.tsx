@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { registrationService } from '../../services/registrationService';
+import { getTiposDoc } from '../../services/userDashboardService';
 import styles from './Registration.module.css';
 
 const RegisterAdmin: React.FC = () => {
@@ -29,6 +30,7 @@ const RegisterAdmin: React.FC = () => {
     const [tiposDoc, setTiposDoc] = useState<TipoDoc[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showModal, setShowModal] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -40,9 +42,7 @@ const RegisterAdmin: React.FC = () => {
 
         const fetchTiposDoc = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tipo-doc`);
-                if (!response.ok) throw new Error('Error al obtener tipos de documento');
-                const data = await response.json();
+                const data = await getTiposDoc();
                 setTiposDoc(data);
             } catch (err) {
                 console.error('Error fetching doc types:', err);
@@ -169,12 +169,9 @@ const RegisterAdmin: React.FC = () => {
                 contrasena: formData.contrasena,
             };
 
-            const response = await registrationService.completeEntityRegistration(payload);
-
-            if (response.success) {
-                alert('¡Registro completado exitosamente! Por favor inicie sesión.');
-                navigate('/login');
-            }
+            await registrationService.completeEntityRegistration(payload);
+            // If no error was thrown, registration succeeded
+            setShowModal(true);
         } catch (err: any) {
             console.error('Final registration error:', err);
 
@@ -274,11 +271,34 @@ const RegisterAdmin: React.FC = () => {
                         {fieldErrors.confirm_contrasena && <span className={styles.fieldError}>{fieldErrors.confirm_contrasena}</span>}
                     </div>
 
-                    <button type="submit" className={styles.button} disabled={loading}>
+                    <button type="submit" className={styles.button} disabled={loading || showModal}>
                         {loading ? 'Completando Registro...' : 'Finalizar Registro'}
                     </button>
                 </form>
             </div>
+
+            {showModal && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalIcon}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                        <h2 className={styles.modalTitle}>Usuario registrado correctamente</h2>
+                        <p className={styles.modalSubtitle}>Bienvenido {formData.primer_nombre} {formData.primer_apellido}</p>
+                        <button
+                            className={styles.modalButton}
+                            onClick={() => {
+                                setShowModal(false);
+                                navigate('/login');
+                            }}
+                        >
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

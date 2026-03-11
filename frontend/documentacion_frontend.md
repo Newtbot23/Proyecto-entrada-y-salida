@@ -58,7 +58,7 @@ src/
 
 Este es el núcleo de la aplicación administrativa. Incluye:
 
-1.  **Dashboard (`MainPageDashborad.tsx`)**:
+1.  **Dashboard (`SuperAdminDashboard.tsx`)**:
     - Vista general con tarjetas de estadísticas (`StatCard`).
     - Tabla de actividades recientes de licencias (`LicenseTable`).
     

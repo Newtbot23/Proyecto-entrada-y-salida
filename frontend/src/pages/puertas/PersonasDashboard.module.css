@@ -1,0 +1,291 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-bottom: var(--spacing-2xl);
+}
+
+.title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin-bottom: var(--spacing-xl);
+}
+
+.card {
+    composes: card from '../../styles/SharedLayout.module.css';
+    margin-bottom: var(--spacing-xl);
+}
+
+.cardTitle {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-main);
+}
+
+.searchForm {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.searchInput {
+    flex: 1;
+    max-width: 400px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    background-color: var(--color-bg-card);
+    color: var(--color-text-main);
+    transition: border-color var(--transition-speed);
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.searchBtn {
+    padding: var(--spacing-sm) var(--spacing-xl);
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+.searchBtn:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.searchBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.message {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-xl);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.messageSuccess {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--color-success);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.messageError {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.resultSection {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.resultHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.userInfo p {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.userInfo h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin: 4px 0;
+    color: var(--color-text-main);
+}
+
+.userInfo .doc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-family-mono);
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.statusInside {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+}
+
+.statusOutside {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--color-success);
+}
+
+.equipmentSection {
+    margin-top: var(--spacing-xl);
+}
+
+.equipmentSection h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin-bottom: var(--spacing-md);
+}
+
+.equipmentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.equipmentItem {
+    padding: var(--spacing-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-bg-card);
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    position: relative;
+}
+
+.equipmentItem:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(0, 143, 57, 0.02);
+}
+
+.equipmentActive {
+    border-color: var(--color-primary);
+    background-color: rgba(0, 143, 57, 0.05);
+}
+
+.checkIcon {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.checkIconActive {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.equipmentInfo .name {
+    font-weight: 700;
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+.equipmentInfo .serial {
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    margin: 4px 0;
+    font-family: var(--font-family-mono);
+}
+
+.equipmentInfo .type {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.noEquipment {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: var(--font-size-sm);
+}
+
+.actionButtons {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-2xl);
+}
+
+.entryBtn,
+.exitBtn {
+    flex: 1;
+    padding: var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    color: white;
+}
+
+.entryBtn {
+    background-color: var(--color-success);
+}
+
+.entryBtn:hover:not(:disabled) {
+    background-color: #059669;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.exitBtn {
+    background-color: var(--color-danger);
+}
+
+.exitBtn:hover:not(:disabled) {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.entryBtn:disabled,
+.exitBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .searchForm {
+        flex-direction: column;
+    }
+
+    .searchInput,
+    .searchBtn {
+        width: 100%;
+        max-width: none;
+    }
+}

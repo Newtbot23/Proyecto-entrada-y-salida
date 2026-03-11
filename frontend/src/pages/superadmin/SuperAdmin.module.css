@@ -1,0 +1,102 @@
+.dashboardLayout {
+    composes: dashboardLayout from '../../styles/SharedLayout.module.css';
+}
+
+.mainContent {
+    composes: mainContent from '../../styles/SharedLayout.module.css';
+}
+
+.mainContentCollapsed {
+    composes: mainContentCollapsed from '../../styles/SharedLayout.module.css';
+}
+
+.contentWrapper {
+    composes: contentWrapper from '../../styles/SharedLayout.module.css';
+}
+
+.pageHeader {
+    composes: pageHeader from '../../styles/SharedLayout.module.css';
+}
+
+.pageTitle {
+    composes: pageTitle from '../../styles/SharedLayout.module.css';
+}
+
+.pageSubtitle {
+    composes: pageSubtitle from '../../styles/SharedLayout.module.css';
+}
+
+.createButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverted);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    transition: background-color var(--transition-speed);
+}
+
+.createButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.tableContainer {
+    composes: card from '../../styles/SharedLayout.module.css';
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-main);
+}
+
+.actionButtons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.actionButton {
+    padding: var(--spacing-xs);
+    color: var(--color-text-muted);
+    background: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+
+.actionButton:hover {
+    color: var(--color-primary);
+    background-color: var(--color-bg-hover);
+}
+
+.actionButton.danger:hover {
+    color: var(--color-danger);
+    background-color: #fee2e2;
+}
+
+.loadingContainer {
+    composes: loadingContainer from '../../styles/SharedLayout.module.css';
+}
+
+.emptyState {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-dim);
+}

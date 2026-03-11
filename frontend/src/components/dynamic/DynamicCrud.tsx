@@ -29,6 +29,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [serverValidationErrors, setServerValidationErrors] = useState<Record<string, string[]>>({});
 
     // New states for search, pagination and edit
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +53,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
             let records = await DynamicTableService.getTableData(tableName);
 
             // --- INICIO LÓGICA CORREGIDA ---
-            const userDataStr = sessionStorage.getItem('userData') || sessionStorage.getItem('adminUser');
+            const userDataStr = sessionStorage.getItem('authUser');
             if (userDataStr) {
                 try {
                     const user = JSON.parse(userDataStr);
@@ -91,6 +92,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
         if (!tableName) return;
         setActionLoading(true);
         setError(null);
+        setServerValidationErrors({});
         try {
             if (editingRecord) {
                 // Find primary key
@@ -105,7 +107,11 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
             await loadData();
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Error al procesar registro');
+            if (err.errors) {
+                setServerValidationErrors(err.errors);
+            } else {
+                setError(err.message || 'Error al procesar registro');
+            }
         } finally {
             setActionLoading(false);
         }
@@ -125,11 +131,8 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
         setQrLoading(true);
         setQrError(null);
         try {
-            const token = sessionStorage.getItem('userToken');
-            if (!token) throw new Error('No estás autenticado.');
-
-            const response = await registrationService.getRegistrationQr(token);
-            if (response.success && response.qr_code) {
+            const response = await registrationService.getRegistrationQr();
+            if (response.qr_code) {
                 // Return value is base64 encoded PNG string
                 const mimeType = response.content_type || 'image/png';
                 setQrCodeSvg(`data:${mimeType};base64,${response.qr_code}`);
@@ -185,6 +188,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                         title={`Agregar a ${resolvedTitle}`}
                         onCancel={undefined}
                         immutableFields={immutableFields}
+                        serverErrors={serverValidationErrors}
                     />
                 )}
                 {tableName === 'usuarios' && (
@@ -236,6 +240,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                     title="" // Title is handled by the Modal
                     onCancel={handleCancelEdit}
                     immutableFields={immutableFields}
+                    serverErrors={serverValidationErrors}
                 />
             </Modal>
 

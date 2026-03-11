@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import styles from './InstitutionsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
@@ -11,14 +12,27 @@ import { formatDateSafe } from '../../utils/dateUtils';
 
 const InstitutionsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [institutions, setInstitutions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     // Pagination & Search State
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
+
+    // Query for Institutions
+    const {
+        data: response,
+        isLoading: loading,
+        refetch
+    } = useQuery({
+        queryKey: ['institutions', debouncedSearch, currentPage],
+        queryFn: () => getInstitutions({
+            search: debouncedSearch,
+            statuses: []
+        }, currentPage, 10),
+    });
+
+    const institutions: any[] = response?.data || [];
+    const totalPages = response?.meta?.totalPages || 1;
 
     // Modals State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,37 +56,6 @@ const InstitutionsPage: React.FC = () => {
     const REGEX = {
         NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    };
-
-
-
-    useEffect(() => {
-        fetchInstitutions();
-    }, [debouncedSearch, currentPage]);
-
-    const fetchInstitutions = async () => {
-        try {
-            setLoading(true);
-            // Use the service which handles pagination and search params
-            const response = await getInstitutions({
-                search: debouncedSearch,
-                statuses: []
-            }, currentPage, 10); // 10 items per page
-
-            setInstitutions(response.data);
-            setTotalPages(response.meta.totalPages);
-
-            // Adjust current page if out of bounds (e.g. after search reduces results)
-            if (currentPage > response.meta.totalPages && response.meta.totalPages > 0) {
-                setCurrentPage(1);
-            }
-
-        } catch (error) {
-            console.error('Failed to fetch institutions:', error);
-            setInstitutions([]);
-        } finally {
-            setLoading(false);
-        }
     };
 
     // ✅ VALIDACIÓN EN TIEMPO REAL POR CAMPO
@@ -205,7 +188,7 @@ const InstitutionsPage: React.FC = () => {
 
         try {
             setIsSaving(true);
-            const token = sessionStorage.getItem('adminToken');
+            const token = sessionStorage.getItem('authToken');
             const nitToUpdate = selectedInstitution.nit || selectedInstitution.id;
             const url = `${API_BASE_URL}/entidades/${nitToUpdate}`;
 
@@ -223,7 +206,7 @@ const InstitutionsPage: React.FC = () => {
             if (response.ok) {
                 alert('Institución actualizada exitosamente');
                 setIsEditModalOpen(false);
-                fetchInstitutions();
+                refetch();
             } else {
                 const errorData = await response.json();
                 console.error('Update failed:', errorData);
@@ -243,7 +226,7 @@ const InstitutionsPage: React.FC = () => {
                 const idToDisable = inst.nit || inst.id;
                 await disableInstitution(idToDisable);
                 alert('Institución desactivada exitosamente');
-                fetchInstitutions();
+                refetch();
             } catch (error: any) {
                 console.error('Failed to disable institution:', error);
                 alert(error.response?.data?.message || 'Error al desactivar la institución');
@@ -257,7 +240,7 @@ const InstitutionsPage: React.FC = () => {
                 const idToEnable = inst.nit || inst.id;
                 await enableInstitution(idToEnable);
                 alert('Institución reactivada exitosamente');
-                fetchInstitutions();
+                refetch();
             } catch (error: any) {
                 console.error('Failed to enable institution:', error);
                 alert(error.response?.data?.message || 'Error al reactivar la institución');
@@ -284,15 +267,15 @@ const InstitutionsPage: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className={styles.controlsContainer} style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>
+                    <div className={styles.controlsContainer}>
+                        <label className={styles.searchLabel}>
                             Buscador por nit, correo y nombre de la entidad
                         </label>
-                        <div className={styles.searchContainer} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '350px' }}>
+                        <div className={styles.searchWrapper}>
                             <SearchIcon
                                 width={18}
                                 height={18}
-                                style={{ color: '#6b7280', flexShrink: 0 }}
+                                className={styles.searchIcon}
                             />
                             <input
                                 type="text"
@@ -300,13 +283,6 @@ const InstitutionsPage: React.FC = () => {
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                                 className={styles.searchInput}
-                                style={{
-                                    flex: 1,
-                                    padding: '8px 12px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '0.9rem'
-                                }}
                             />
                         </div>
                     </div>
@@ -401,26 +377,17 @@ const InstitutionsPage: React.FC = () => {
                     )}
 
                     {!loading && institutions.length > 0 && (
-                        <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '1rem' }}>
+                        <div className={styles.pagination}>
                             <button
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={styles.pageButton}
-                                style={{
-                                    padding: '6px 12px',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '4px',
-                                    backgroundColor: currentPage === 1 ? '#f3f4f6' : 'white',
-                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center'
-                                }}
                             >
                                 <ChevronLeftIcon width={16} height={16} />
-                                <span style={{ marginLeft: '4px' }}>Anterior</span>
+                                <span>Anterior</span>
                             </button>
 
-                            <span style={{ fontSize: '0.9rem', color: '#4b5563' }}>
+                            <span className={styles.pageInfo}>
                                 Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
                             </span>
 
@@ -428,17 +395,8 @@ const InstitutionsPage: React.FC = () => {
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
                                 className={styles.pageButton}
-                                style={{
-                                    padding: '6px 12px',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '4px',
-                                    backgroundColor: currentPage === totalPages ? '#f3f4f6' : 'white',
-                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center'
-                                }}
                             >
-                                <span style={{ marginRight: '4px' }}>Siguiente</span>
+                                <span>Siguiente</span>
                                 <ChevronRightIcon width={16} height={16} />
                             </button>
                         </div>
@@ -535,7 +493,7 @@ const InstitutionsPage: React.FC = () => {
             >
                 <form className={styles.editForm} onSubmit={handleEditSubmit}>
                     {serverError && (
-                        <div style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                        <div className={styles.serverErrorMessage}>
                             <strong>Error:</strong> {serverError}
                         </div>
                     )}
@@ -548,7 +506,7 @@ const InstitutionsPage: React.FC = () => {
                         <input type="text" value={editFormData.nombre_entidad} readOnly className={styles.readOnlyInput} />
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Representante Legal <span style={{ color: '#ef4444' }}>*</span></label>
+                        <label>Representante Legal <span className={styles.requiredStar}>*</span></label>
                         <input
                             type="text"
                             value={editFormData.nombre_titular}
@@ -562,7 +520,7 @@ const InstitutionsPage: React.FC = () => {
                         )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Correo <span style={{ color: '#ef4444' }}>*</span></label>
+                        <label>Correo <span className={styles.requiredStar}>*</span></label>
                         <input
                             type="email"
                             value={editFormData.correo}
@@ -576,7 +534,7 @@ const InstitutionsPage: React.FC = () => {
                         )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Teléfono <span style={{ color: '#ef4444' }}>*</span></label>
+                        <label>Teléfono <span className={styles.requiredStar}>*</span></label>
                         <input
                             type="text"
                             inputMode="numeric"
@@ -591,7 +549,7 @@ const InstitutionsPage: React.FC = () => {
                         )}
                     </div>
                     <div className={styles.formGroup}>
-                        <label>Dirección <span style={{ color: '#ef4444' }}>*</span></label>
+                        <label>Dirección <span className={styles.requiredStar}>*</span></label>
                         <input
                             type="text"
                             value={editFormData.direccion}

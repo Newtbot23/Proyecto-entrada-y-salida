@@ -1,120 +1,107 @@
 .dashboardLayout {
-    display: flex;
-    min-height: 100vh;
-    background-color: var(--color-bg-page);
-    width: 100vw;
-    overflow-x: hidden;
+    composes: dashboardLayout from '../../styles/SharedLayout.module.css';
 }
 
 .mainContent {
-    flex: 1;
-    margin-left: 250px;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    transition: margin-left 0.3s ease-in-out;
-    width: 100%;
-    max-width: calc(100vw - 250px);
+    composes: mainContent from '../../styles/SharedLayout.module.css';
 }
 
 .mainContentCollapsed {
-    margin-left: 80px;
-    max-width: calc(100vw - 80px);
+    composes: mainContentCollapsed from '../../styles/SharedLayout.module.css';
 }
 
 .contentWrapper {
-    padding: var(--spacing-xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xl);
-    width: 100%;
-    box-sizing: border-box;
+    composes: contentWrapper from '../../styles/SharedLayout.module.css';
 }
 
-/* Header Action Row */
+.card {
+    composes: card from '../../styles/SharedLayout.module.css';
+}
+
 .headerRow {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
 }
 
 .backButton {
-    background: none;
-    border: none;
-    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-main);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
     cursor: pointer;
-    padding: 0;
-    margin-right: 15px;
-    font-size: 14px;
-    font-weight: 500;
+    transition: all var(--transition-speed);
 }
 
 .backButton:hover {
-    text-decoration: underline;
+    background-color: var(--color-bg-page);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .titlesWrapper {
-    display: flex;
-    flex-direction: column;
+    flex: 1;
 }
 
 .pageTitle {
-    font-size: 1.875rem;
+    font-size: var(--font-size-2xl);
     font-weight: 700;
     color: var(--color-text-main);
     margin: 0;
 }
 
 .pageSubtitle {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     color: var(--color-text-muted);
-    margin: 0;
+    margin: var(--spacing-xs) 0 0 0;
 }
 
 .addBtn {
-    margin-left: auto;
-    padding: 10px 20px;
-    background-color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-primary);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
+    transition: all var(--transition-speed);
 }
 
 .addBtn:hover {
-    background-color: #059669;
+    background-color: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .errorAlert {
     padding: var(--spacing-md);
-    background-color: #fee2e2;
-    color: #ef4444;
-    border-radius: 8px;
-    border: 1px solid #f87171;
-}
-
-.card {
-    background-color: var(--color-bg-card);
-    border-radius: 12px;
-    border: 1px solid var(--color-border);
-    padding: var(--spacing-xl);
-    width: 100%;
-    box-sizing: border-box;
-    overflow-x: auto;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    margin-bottom: var(--spacing-lg);
 }
 
 .loadingState,
 .emptyState {
     text-align: center;
+    padding: var(--spacing-2xl) 0;
     color: var(--color-text-muted);
-    padding: var(--spacing-xl) 0;
+    font-size: var(--font-size-md);
 }
 
-/* Table Styles from InstitutionsPage */
+/* Table */
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -127,7 +114,7 @@
 .table th {
     text-align: left;
     padding: var(--spacing-md) var(--spacing-lg);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--color-text-muted);
     text-transform: uppercase;
@@ -137,7 +124,7 @@
 
 .table tbody tr {
     border-bottom: 1px solid var(--color-border);
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-speed);
 }
 
 .table tbody tr:last-child {
@@ -145,62 +132,74 @@
 }
 
 .table tbody tr:hover {
-    background-color: var(--color-bg-hover);
+    background-color: var(--color-bg-page);
 }
 
 .table td {
     padding: var(--spacing-md) var(--spacing-lg);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     color: var(--color-text-main);
 }
 
 .statusBadge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 .statusActive {
-    background-color: #c6f6d5;
-    color: #2f855a;
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--color-success);
 }
 
 .statusInactive {
-    background-color: #fed7d7;
-    color: #c53030;
+    background-color: rgba(156, 163, 175, 0.1);
+    color: var(--color-text-muted);
 }
 
 .actionToggleBtn {
-    padding: 6px 12px;
-    color: white;
-    border: none;
-    border-radius: 4px;
+    padding: 6px 16px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
     cursor: pointer;
-    font-size: 12px;
-    transition: opacity 0.2s;
-}
-
-.actionToggleBtn:hover {
-    opacity: 0.9;
+    transition: all var(--transition-speed);
+    border: 1px solid transparent;
 }
 
 .toggleInactivate {
-    background-color: #ef4444;
+    background-color: transparent;
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.toggleInactivate:hover {
+    background-color: rgba(239, 68, 68, 0.05);
 }
 
 .toggleActivate {
-    background-color: #10b981;
+    background-color: var(--color-primary);
+    color: white;
 }
 
-@media (max-width: 768px) {
-    .mainContent {
-        margin-left: 0;
-        max-width: 100vw;
+.toggleActivate:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.paginationWrapper {
+    margin-top: var(--spacing-xl);
+}
+
+@media (max-width: 1024px) {
+    .headerRow {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .addBtn {
-        margin-left: 0;
-        width: 100%;
+        justify-content: center;
     }
 }

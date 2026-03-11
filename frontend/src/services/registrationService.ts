@@ -1,9 +1,14 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
 /**
  * Registration Service
  * Handles the multi-step registration flow: Entity -> (License + Admin User)
+ * Uses the centralized apiClient for all HTTP requests.
  */
+import { apiClient } from '../config/api';
+
+// ============================================================================
+// FUNCIONES
+// ============================================================================
+
 export const registrationService = {
     /**
      * Step 1: Create an Entity
@@ -11,18 +16,9 @@ export const registrationService = {
      */
     createEntity: async (entityData: any) => {
         try {
-            const response = await fetch(`${API_URL}/registration/entidades`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(entityData),
-            });
-            const data = await response.json();
-            if (!response.ok) throw data;
-            return data;
-        } catch (error: any) {
+            const response = await apiClient.post<any, any>('/registration/entidades', entityData);
+            return response;
+        } catch (error) {
             console.error('Error creating entity:', error);
             throw error;
         }
@@ -34,18 +30,9 @@ export const registrationService = {
      */
     completeEntityRegistration: async (payload: any) => {
         try {
-            const response = await fetch(`${API_URL}/registration/complete-entity`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            if (!response.ok) throw data;
-            return data;
-        } catch (error: any) {
+            const response = await apiClient.post<any, any>('/registration/complete-entity', payload);
+            return response;
+        } catch (error) {
             console.error('Error completing registration:', error);
             throw error;
         }
@@ -56,18 +43,9 @@ export const registrationService = {
      */
     fullRegistration: async (allData: any) => {
         try {
-            const response = await fetch(`${API_URL}/registration/full`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(allData),
-            });
-            const result = await response.json();
-            if (!response.ok) throw result;
-            return result;
-        } catch (error: any) {
+            const response = await apiClient.post<any, any>('/registration/full', allData);
+            return response;
+        } catch (error) {
             console.error('Error during full registration:', error);
             throw error;
         }
@@ -78,18 +56,9 @@ export const registrationService = {
      */
     registerUser: async (userData: any) => {
         try {
-            const response = await fetch(`${API_URL}/registration/usuarios`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(userData),
-            });
-            const data = await response.json();
-            if (!response.ok) throw data;
-            return data;
-        } catch (error: any) {
+            const response = await apiClient.post<any, any>('/registration/usuarios', userData);
+            return response;
+        } catch (error) {
             console.error('Error registering user:', error);
             throw error;
         }
@@ -98,19 +67,11 @@ export const registrationService = {
     /**
      * Get QR Code for Registration (Admin only)
      */
-    getRegistrationQr: async (token: string) => {
+    getRegistrationQr: async () => {
         try {
-            const response = await fetch(`${API_URL}/usuarios/qr-registro`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const data = await response.json();
-            if (!response.ok) throw data;
-            return data;
-        } catch (error: any) {
+            const response = await apiClient.get<any>('/usuarios/qr-registro');
+            return response;
+        } catch (error) {
             console.error('Error getting QR code:', error);
             throw error;
         }
@@ -122,18 +83,9 @@ export const registrationService = {
     registerUserWithQr: async (userData: any, qrToken: string) => {
         try {
             const payload = { ...userData, qr_token: qrToken };
-            const response = await fetch(`${API_URL}/usuarios/qr-register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            if (!response.ok) throw data;
-            return data;
-        } catch (error: any) {
+            const response = await apiClient.post<any, any>('/usuarios/qr-register', payload);
+            return response;
+        } catch (error) {
             console.error('Error registering user with QR:', error);
             throw error;
         }

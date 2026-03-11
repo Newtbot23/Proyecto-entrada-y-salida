@@ -1,31 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { PlanCard } from '../../components/Plans/PlanCard';
-import type { PricingPlan } from '../../types/plans';
 import { getPricingPlans } from '../../services/planService';
 import { TopBar } from '../../layouts/TopBar';
 
 export const PlansPage: React.FC = () => {
-    const [plans, setPlans] = useState<PricingPlan[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchPlans = async () => {
-            try {
-                const data = await getPricingPlans();
-                setPlans(data);
-            } catch (err) {
-                setError('No se pudieron cargar los planes. Intenta de nuevo más tarde.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPlans();
-    }, []);
+    const { data: plans = [], isLoading: loading, error } = useQuery({
+        queryKey: ['plans'],
+        queryFn: getPricingPlans,
+    });
 
     const handlePlanSelect = (planId: string) => {
         navigate('/register-entity', { state: { planId } });
@@ -85,7 +71,7 @@ export const PlansPage: React.FC = () => {
 
                 {error && (
                     <div style={centerMessageStyle}>
-                        <p style={{ color: 'red' }}>{error}</p>
+                        <p style={{ color: 'red' }}>{String(error)}</p>
                     </div>
                 )}
 

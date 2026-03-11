@@ -3,11 +3,11 @@ import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 
 /**
  * Route Guard for SuperAdmin routes.
- * Checks for adminToken in localStorage.
+ * Checks for authToken in sessionStorage.
  */
 const ProtectedRoute: React.FC = () => {
     const navigate = useNavigate();
-    const adminToken = sessionStorage.getItem('adminToken');
+    const adminToken = sessionStorage.getItem('authToken');
 
     useEffect(() => {
         const checkBackNavigation = (event?: PageTransitionEvent) => {
@@ -34,8 +34,8 @@ const ProtectedRoute: React.FC = () => {
             // If we detected that the user pressed "Back" from an external site, forcefully logout
             // This prevents bfcache from restoring a protected view if navigate away and back
             if (isBackFromExternal) {
-                sessionStorage.removeItem('adminToken');
-                sessionStorage.removeItem('adminUser');
+                sessionStorage.removeItem('authToken');
+                sessionStorage.removeItem('authUser');
                 navigate('/superadmin/login', { replace: true });
             }
         };

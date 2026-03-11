@@ -1,5 +1,5 @@
 .sidebar {
-    width: 250px;
+    width: var(--sidebar-width);
     height: 100vh;
     background-color: var(--color-bg-card);
     border-right: 1px solid var(--color-border);
@@ -8,14 +8,13 @@
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 10;
-    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+    z-index: 100;
+    transition: width var(--transition-speed) var(--transition-cubic), transform var(--transition-speed) var(--transition-cubic);
     overflow-x: hidden;
-    /* Hide overflow during transition */
 }
 
 .sidebar.collapsed {
-    width: 80px;
+    width: var(--sidebar-collapsed-width);
 }
 
 .logoArea {
@@ -24,8 +23,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 70px;
-    /* Fixed height for consistency */
+    height: var(--header-height);
     overflow: hidden;
     white-space: nowrap;
 }

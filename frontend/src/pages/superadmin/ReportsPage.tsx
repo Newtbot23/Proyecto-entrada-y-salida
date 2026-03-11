@@ -157,13 +157,6 @@ const ReportsPage: React.FC = () => {
                                 className={styles.selectInput}
                                 value={selectedInstitutionId}
                                 onChange={(e) => setSelectedInstitutionId(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px',
-                                    marginBottom: '10px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #ccc'
-                                }}
                             >
                                 <option value="">Seleccione una entidad...</option>
                                 {institutions.map((inst, idx) => (
@@ -185,28 +178,28 @@ const ReportsPage: React.FC = () => {
 
                     {/* Preview Section */}
                     {showPreview && previewData && (
-                        <div className={styles.previewSection} style={{ marginTop: '30px', padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <h3 style={{ margin: 0 }}>{previewTitle}</h3>
+                        <div className={styles.previewSection}>
+                            <div className={styles.previewHeader}>
+                                <h3>{previewTitle}</h3>
                                 <button
                                     onClick={handleClosePreview}
-                                    style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', background: 'white', cursor: 'pointer' }}
+                                    className={styles.closeBtn}
                                 >
                                     Cerrar
                                 </button>
                             </div>
 
-                            <div style={{ overflowX: 'auto', maxHeight: '500px', marginBottom: '20px' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <div className={styles.tableWrapper}>
+                                <table className={styles.previewTable}>
                                     <thead>
-                                        <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                                        <tr>
                                             {(() => {
                                                 const data = Array.isArray(previewData) ? previewData : (previewData.data || [previewData]);
                                                 const firstItem = data[0];
                                                 if (!firstItem) return <th>No data</th>;
                                                 return Object.keys(firstItem).map(key => (
                                                     typeof firstItem[key] !== 'object' && (
-                                                        <th key={key} style={{ padding: '12px', textTransform: 'capitalize' }}>
+                                                        <th key={key}>
                                                             {key.replace(/_/g, ' ')}
                                                         </th>
                                                     )
@@ -217,16 +210,15 @@ const ReportsPage: React.FC = () => {
                                     <tbody>
                                         {(() => {
                                             const data = Array.isArray(previewData) ? previewData : (previewData.data || [previewData]);
-                                            if (data.length === 0) return <tr><td colSpan={5} style={{ padding: '20px', textAlign: 'center' }}>No hay datos disponibles</td></tr>;
+                                            if (data.length === 0) return <tr><td colSpan={5} className={styles.emptyTd}>No hay datos disponibles</td></tr>;
 
-                                            // Get headers again to match order
                                             const firstItem = data[0];
                                             const headers = firstItem ? Object.keys(firstItem).filter(k => typeof firstItem[k] !== 'object') : [];
 
                                             return data.map((row: any, idx: number) => (
-                                                <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                                <tr key={idx}>
                                                     {headers.map(header => (
-                                                        <td key={`${idx}-${header}`} style={{ padding: '12px' }}>
+                                                        <td key={`${idx}-${header}`}>
                                                             {row[header]}
                                                         </td>
                                                     ))}
@@ -237,11 +229,11 @@ const ReportsPage: React.FC = () => {
                                 </table>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <div className={styles.downloadActions}>
                                 <button
                                     onClick={handleConfirmDownload}
                                     disabled={loading}
-                                    style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', fontWeight: 500 }}
+                                    className={styles.downloadBtn}
                                 >
                                     {loading ? 'Descargando...' : 'Descargar PDF'}
                                 </button>

@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Api\Planes\StorePlanRequest;
 use App\Http\Requests\Api\Planes\UpdatePlanRequest;
 
-class PlanesController extends Controller
+class PlanController extends Controller
 {
     /**
      * Display a listing of the plans with pagination.
@@ -22,7 +22,7 @@ class PlanesController extends Controller
         try {
             $perPage = $request->query('per_page', 10);
             $planes = PlanesLicencia::paginate($perPage);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -33,9 +33,8 @@ class PlanesController extends Controller
                     'last_page' => $planes->lastPage(),
                 ]
             ], 200);
-            
         } catch (\Exception $e) {
-            Log::error('Error en index de PlanesController: ' . $e->getMessage());
+            Log::error('Error en index de PlanController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener los planes',
@@ -51,7 +50,7 @@ class PlanesController extends Controller
     public function store(StorePlanRequest $request): JsonResponse
     {
         try {
-            Log::info('Datos recibidos en store de PlanesController:', $request->all());
+            Log::info('Datos recibidos en store de PlanController:', $request->all());
 
             $validated = $request->validated();
 
@@ -66,17 +65,15 @@ class PlanesController extends Controller
                 'message' => 'Plan creado exitosamente',
                 'data' => $plan
             ], 201);
-
         } catch (ValidationException $e) {
-            Log::error('Error de validación en store de PlanesController:', $e->errors());
+            Log::error('Error de validación en store de PlanController:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
-            
         } catch (\Exception $e) {
-            Log::error('Error en store de PlanesController: ' . $e->getMessage());
+            Log::error('Error en store de PlanController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al crear el plan',
@@ -105,9 +102,8 @@ class PlanesController extends Controller
                 'success' => true,
                 'data' => $plan
             ], 200);
-
         } catch (\Exception $e) {
-            Log::error('Error en show de PlanesController: ' . $e->getMessage());
+            Log::error('Error en show de PlanController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener el plan',
@@ -148,17 +144,15 @@ class PlanesController extends Controller
                 'message' => 'Plan actualizado exitosamente',
                 'data' => $plan
             ], 200);
-
         } catch (ValidationException $e) {
-            Log::error('Error de validación en update de PlanesController:', $e->errors());
+            Log::error('Error de validación en update de PlanController:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
-
         } catch (\Exception $e) {
-            Log::error('Error en update de PlanesController: ' . $e->getMessage());
+            Log::error('Error en update de PlanController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar el plan',
@@ -193,9 +187,8 @@ class PlanesController extends Controller
                 'message' => 'Plan eliminado exitosamente',
                 'data' => $planData
             ], 200);
-
         } catch (\Exception $e) {
-            Log::error('Error en destroy de PlanesController: ' . $e->getMessage());
+            Log::error('Error en destroy de PlanController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el plan',

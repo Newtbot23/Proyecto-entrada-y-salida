@@ -2,119 +2,117 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\PricingController;
-use App\Http\Controllers\Api\EntidadesController;
-use App\Http\Controllers\Api\EntidadController;
-use App\Http\Controllers\Api\PlanesLicenciasController;
-use App\Http\Controllers\Api\UsuariosController;
-use App\Http\Controllers\Api\NormalAdminAuthController;
-use App\Http\Controllers\Api\RegistrationFlowController;
-use App\Http\Controllers\Api\TipoDocController;
-use App\Http\Controllers\Api\PlanesController;
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\LicenciasController;
-use App\Http\Controllers\Api\AdminsAuthController;
-use App\Http\Controllers\Api\AdminsController;
-use App\Http\Controllers\Api\PasswordRecoveryApiController;
-use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\StripeCheckoutController;
-use App\Http\Controllers\Api\DynamicTableController;
 use App\Http\Controllers\Api\UserDashboardController;
+use App\Http\Controllers\Api\DynamicTableController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\TipoDocController;
 
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-// Admins Authentication
-Route::post('/admins/login', [AdminsAuthController::class, 'login']);
+// Authentication
+Route::post('/admins/login', [App\Http\Controllers\Api\AdminsAuthController::class, 'login']);
+Route::post('/normaladmin/login', [App\Http\Controllers\Api\NormalAdminAuthController::class, 'login']);
 
 // Password Recovery
-Route::post('/forgot-password', [PasswordRecoveryApiController::class, 'sendResetCode']);
-Route::post('/verify-code', [PasswordRecoveryApiController::class, 'verifyCode']);
-Route::post('/reset-password', [PasswordRecoveryApiController::class, 'resetPassword']);
+Route::post('/forgot-password', [App\Http\Controllers\Api\PasswordRecoveryApiController::class, 'sendResetCode']);
+Route::post('/verify-code', [App\Http\Controllers\Api\PasswordRecoveryApiController::class, 'verifyCode']);
+Route::post('/reset-password', [App\Http\Controllers\Api\PasswordRecoveryApiController::class, 'resetPassword']);
 
-// Admins Management CRUD
-Route::apiResource('admins', AdminsController::class);
-
-Route::get('/plans', [PricingController::class, 'index']);
-Route::post('/plans/select', [PricingController::class, 'select']);
-
-Route::get('/planes', [PlanesController::class, 'index']);
-Route::post('/planes', [PlanesController::class, 'store']);
-Route::get('/planes/{id}', [PlanesController::class, 'show']);
-Route::put('/planes/{id}', [PlanesController::class, 'update']);
-Route::delete('/planes/{id}', [PlanesController::class, 'destroy']);
-
-//Esta es la manera de listar todas las rutas de un controlador dentro de la carpeta api
-//Route::apiResource('entidades', EntidadesController::class);
-Route::get('/entidades', [EntidadesController::class, 'index']);
-Route::post('/entidades', [EntidadesController::class, 'store']);
-Route::get('/entidades/{id}', [EntidadesController::class, 'show']);
-Route::put('/entidades/{id}', [EntidadesController::class, 'update']);
-Route::delete('/entidades/{id}', [EntidadesController::class, 'destroy']);
-Route::get('/entidades/{nit}/admins', [EntidadesController::class, 'getAdmins']);
-
-// User status toggle
-Route::patch('/usuarios/{doc}/estado', [UsuariosController::class, 'toggleEstado']);
-
-// QR Registration
-Route::middleware('auth:sanctum')->get('/usuarios/qr-registro', [UsuariosController::class, 'generateQr']);
-Route::post('/usuarios/qr-register', [UsuariosController::class, 'registerWithQr']);
+// Public Pricing & Common Data
+Route::get('/plans', [App\Http\Controllers\Api\PricingController::class, 'index']);
+Route::post('/plans/select', [App\Http\Controllers\Api\PricingController::class, 'select']);
+Route::get('/tipo-doc', [TipoDocController::class, 'index']);
 
 // Registration Flow
-Route::post('/registration/entidades', [EntidadController::class, 'store']);
-Route::post('/registration/licencias', [PlanesLicenciasController::class, 'store']);
-Route::post('/registration/usuarios', [UsuariosController::class, 'store']);
-Route::post('/registration/complete-entity', [RegistrationFlowController::class, 'finishRegistration']);
-Route::post('/registration/full', [RegistrationFlowController::class, 'register']);
+Route::post('/registration/entidades', [App\Http\Controllers\Api\EntidadController::class, 'store']);
+Route::post('/registration/licencias', [App\Http\Controllers\Api\PlanesLicenciasController::class, 'store']);
+Route::post('/registration/usuarios', [App\Http\Controllers\Api\UsuariosController::class, 'store']);
+Route::post('/registration/complete-entity', [App\Http\Controllers\Api\RegistrationFlowController::class, 'finishRegistration']);
+Route::post('/registration/full', [App\Http\Controllers\Api\RegistrationFlowController::class, 'register']);
 
-// Normal Admin Auth
-Route::post('/normaladmin/login', [NormalAdminAuthController::class, 'login']);
+// QR External Registration (Public)
+Route::post('/usuarios/qr-register', [App\Http\Controllers\Api\UsuariosController::class, 'registerWithQr']);
 
-// Dashboard Stats
-Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
-Route::get('/normal-admin/stats', [DashboardController::class, 'normalAdminStats'])->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Sanctum)
+|--------------------------------------------------------------------------
+*/
 
-// Licenses Management
-Route::get('/licencias', [LicenciasController::class, 'index']);
-Route::post('/licencias', [LicenciasController::class, 'store']);
-// Route::get('/licencias/{id}', [LicenciasController::class, 'show']); // Duplicate removed? No, it was there.
-Route::get('/licencias/{id}', [LicenciasController::class, 'show']);
-Route::put('/licencias/{id}/activate', [LicenciasController::class, 'activate']);
-Route::patch('/licencias-sistema/{id}/estado', [LicenciasController::class, 'updateEstado']);
-Route::get('/licencia-actual', [LicenciasController::class, 'getActualLicense'])->middleware('auth:sanctum');
-
-// Stripe Payment
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/stripe/checkout-session', [StripeCheckoutController::class, 'createCheckoutSession']);
-    Route::post('/stripe/payment-success', [StripeCheckoutController::class, 'confirmPayment']);
+
+    // User Context
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // Admins Management
+    Route::apiResource('admins', App\Http\Controllers\Api\AdminsController::class);
+
+    // Planes Management
+    Route::get('/planes', [App\Http\Controllers\Api\PlanController::class, 'index']);
+    Route::post('/planes', [App\Http\Controllers\Api\PlanController::class, 'store']);
+    Route::get('/planes/{id}', [App\Http\Controllers\Api\PlanController::class, 'show']);
+    Route::put('/planes/{id}', [App\Http\Controllers\Api\PlanController::class, 'update']);
+    Route::delete('/planes/{id}', [App\Http\Controllers\Api\PlanController::class, 'destroy']);
+
+    // Entidades Management
+    Route::get('/entidades', [App\Http\Controllers\Api\EntidadController::class, 'index']);
+    Route::post('/entidades', [App\Http\Controllers\Api\EntidadController::class, 'store']);
+    Route::get('/entidades/{id}', [App\Http\Controllers\Api\EntidadController::class, 'show']);
+    Route::put('/entidades/{id}', [App\Http\Controllers\Api\EntidadController::class, 'update']);
+    Route::delete('/entidades/{id}', [App\Http\Controllers\Api\EntidadController::class, 'destroy']);
+    Route::get('/entidades/{nit}/admins', [App\Http\Controllers\Api\EntidadController::class, 'getAdmins']);
+
+    // User Management
+    Route::patch('/usuarios/{doc}/estado', [App\Http\Controllers\Api\UsuariosController::class, 'toggleEstado']);
+    Route::get('/usuarios/qr-registro', [App\Http\Controllers\Api\UsuariosController::class, 'generateQr']);
+
+    // Dashboard & Stats
+    Route::get('/dashboard/stats', [App\Http\Controllers\Api\DashboardController::class, 'stats']);
+    Route::get('/normal-admin/stats', [App\Http\Controllers\Api\DashboardController::class, 'normalAdminStats']);
+
+    // Licenses Management
+    Route::get('/licencias', [App\Http\Controllers\Api\LicenciasController::class, 'index']);
+    Route::post('/licencias', [App\Http\Controllers\Api\LicenciasController::class, 'store']);
+    Route::get('/licencias/{id}', [App\Http\Controllers\Api\LicenciasController::class, 'show']);
+    Route::put('/licencias/{id}/activate', [App\Http\Controllers\Api\LicenciasController::class, 'activate']);
+    Route::patch('/licencias-sistema/{id}/estado', [App\Http\Controllers\Api\LicenciasController::class, 'updateEstado']);
+    Route::get('/licencia-actual', [App\Http\Controllers\Api\LicenciasController::class, 'getActualLicense']);
+
+    // Stripe Payment
+    Route::post('/stripe/checkout-session', [App\Http\Controllers\Api\StripeCheckoutController::class, 'createCheckoutSession']);
+    Route::post('/stripe/payment-success', [App\Http\Controllers\Api\StripeCheckoutController::class, 'confirmPayment']);
 
     // User Dashboard Routes
     Route::get('/user/catalogs', [UserDashboardController::class, 'getCatalogs']);
     Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
     Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
+    Route::get('/user/entradas', [UserDashboardController::class, 'getEntradas']);
     Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
-});
+    Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
+    Route::post('/ocr/read-serial', [UserDashboardController::class, 'readSerial']);
 
-// Common Data
-Route::get('/tipo-doc', [TipoDocController::class, 'index']);
+    // Dynamic Tables
+    Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
+    Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
+    Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
+    Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
+    Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
 
-// Dynamic Tables
-Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
-Route::get('/esquema/{table}', [DynamicTableController::class, 'getTableSchema']);
-Route::get('/datos/{table}', [DynamicTableController::class, 'index']);
-Route::post('/datos/{table}', [DynamicTableController::class, 'store']);
-Route::put('/datos/{table}/{id}', [DynamicTableController::class, 'update']);
+    // Reports
+    Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
+    Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
+    Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
+    Route::get('/reports/person', [ReportController::class, 'getPersonReport']);
+    Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
 
-// Reports
-Route::get('/reports/licenses', [ReportController::class, 'downloadLicenses']);
-Route::get('/reports/entities', [ReportController::class, 'downloadEntities']);
-Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
-
-// Puertas Access Control
-Route::middleware('auth:sanctum')->group(function () {
+    // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);
     Route::get('/puertas/search-vehiculo', [App\Http\Controllers\Api\PuertasController::class, 'searchVehiculo']);
     Route::post('/puertas/registrar-actividad', [App\Http\Controllers\Api\PuertasController::class, 'registrarActividad']);

@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCatalogs, getUserVehiculos, getUserEquipos, storeVehiculo, storeEquipo } from '../../../services/userDashboardService';
+import type { Vehiculo, Equipo } from '../../../services/userDashboardService';
 
 interface User {
     id: number;
@@ -7,37 +10,9 @@ interface User {
     correo: string;
 }
 
-interface Vehiculo {
-    id?: number;
-    placa: string;
-    tipo?: string; // from local/mock
-    tipo_vehiculo?: string; // from join
-    id_tipo_vehiculo?: string;
-    marca: string;
-    modelo: string;
-    color: string;
-    descripcion?: string;
-}
-
-interface Equipo {
-    id?: number;
-    serial: string;
-    marca?: string; // from join
-    id_marca?: string;
-    modelo: string;
-    tipo_equipo_desc?: string;
-    caracteristicas?: string;
-    so?: string; // from join
-    id_sistema_operativo?: string;
-}
-
-interface CatalogType {
-    id: number;
-    name: string;
-}
-
 const UserDashboard: React.FC = () => {
     const { user } = useOutletContext<{ user: User }>();
+    const queryClient = useQueryClient();
 
     // Estados modales
     const [showVehiculoModal, setShowVehiculoModal] = useState(false);
@@ -46,19 +21,34 @@ const UserDashboard: React.FC = () => {
     // Estado de Pestañas
     const [activeTab, setActiveTab] = useState<'vehiculos' | 'equipos'>('vehiculos');
 
-    // Datos
-    const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
-    const [equipos, setEquipos] = useState<Equipo[]>([]);
+    // Query para Catálogos
+    const { data: catalogs } = useQuery({
+        queryKey: ['catalogs'],
+        queryFn: getCatalogs,
+    });
 
-    // Catalogos
-    const [tiposVehiculo, setTiposVehiculo] = useState<CatalogType[]>([]);
-    const [marcasEquipo, setMarcasEquipo] = useState<CatalogType[]>([]);
-    const [sistemasOperativos, setSistemasOperativos] = useState<CatalogType[]>([]);
+    const tiposVehiculo = catalogs?.tipos_vehiculo.map((t: any) => ({ id: t.id, name: t.tipo_vehiculo })) || [];
+    const marcasEquipo = catalogs?.marcas_equipo.map((m: any) => ({ id: m.id, name: m.marca })) || [];
+    const sistemasOperativos = catalogs?.sistemas_operativos.map((s: any) => ({ id: s.id, name: s.sistema_operativo })) || [];
 
-    // Estados formularios
-    const [formVehiculo, setFormVehiculo] = useState<Vehiculo>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
-    const [formEquipo, setFormEquipo] = useState<Equipo>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
+    // Query para Vehículos
+    const { data: vehiculos = [], isLoading: loadingVehiculos } = useQuery({
+        queryKey: ['userVehiculos'],
+        queryFn: getUserVehiculos,
+    });
+
+    // Query para Equipos
+    const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
+        queryKey: ['userEquipos'],
+        queryFn: getUserEquipos,
+    });
+
+    // Estados formularioss
+    const [formVehiculo, setFormVehiculo] = useState<Vehiculo & { img_vehiculo?: File | null }>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
+    const [formEquipo, setFormEquipo] = useState<Equipo & { img_serial?: File | null }>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
     const [loading, setLoading] = useState(false);
+    const [isOcrLoading, setIsOcrLoading] = useState(false);
+    const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
 
     // Fetch initial data
     const fetchData = async () => {
@@ -122,25 +112,128 @@ const UserDashboard: React.FC = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
+            const formData = new FormData();
+            formData.append('placa', formVehiculo.placa);
+            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo);
+            formData.append('marca', formVehiculo.marca);
+            formData.append('modelo', formVehiculo.modelo);
+            formData.append('color', formVehiculo.color);
+            if (formVehiculo.descripcion) formData.append('descripcion', formVehiculo.descripcion);
+            if (formVehiculo.img_vehiculo) {
+                formData.append('img_vehiculo', formVehiculo.img_vehiculo);
+            }
+
             const res = await fetch(`${apiUrl}/user/vehiculos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formVehiculo)
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Vehículo registrado exitosamente');
                 setShowVehiculoModal(false);
-                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '' });
+                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
                 fetchUserRecords();
             } else {
                 alert(data.message || 'Error al registrar vehículo');
             }
         } catch (error) {
             console.error(error);
-            alert('Error al conectar con el servidor');
+            alert(error.message || 'Error al registrar vehículo');
         }
         setLoading(false);
+    };
+
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFormVehiculo(prev => ({ ...prev, img_vehiculo: file }));
+        setIsOcrLoading(true);
+
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch(`${apiUrl}/ocr/read-plate`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.placa) {
+                setFormVehiculo(prev => {
+                    const currentPlaca = prev.placa;
+                    if (!currentPlaca) {
+                        return { ...prev, placa: data.placa };
+                    } else if (currentPlaca.replace(/\s+/g, '').toUpperCase() !== data.placa) {
+                        alert(`La placa detectada en la imagen (${data.placa}) no coincide con la ingresada (${currentPlaca}).`);
+                        return prev;
+                    }
+                    return prev;
+                });
+            } else {
+                alert(data.message || 'No se pudo detectar la placa en la imagen');
+            }
+        } catch (error) {
+            console.error('Error in OCR:', error);
+        } finally {
+            setIsOcrLoading(false);
+        }
+    };
+
+    const handleEquipoImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFormEquipo(prev => ({ ...prev, img_serial: file }));
+        setIsOcrEquipoLoading(true);
+
+        const token = sessionStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch(`${apiUrl}/ocr/read-serial`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.raw_text) {
+                setFormEquipo(prev => {
+                    const currentSerial = prev.serial;
+                    if (!currentSerial && data.extracted_serial) {
+                        return { ...prev, serial: data.extracted_serial };
+                    } else if (currentSerial) {
+                        // Valida si el texto ingresado está en la lectura
+                        const normalizedCurrent = currentSerial.replace(/\s+/g, '').toUpperCase();
+                        const normalizedRaw = data.raw_text.replace(/\s+/g, '').toUpperCase();
+                        if (!normalizedRaw.includes(normalizedCurrent)) {
+                            alert(`Advertencia: El serial ingresado (${currentSerial}) no parece estar en la foto de la etiqueta.`);
+                        }
+                    } else if (!data.extracted_serial) {
+                        alert('No detectamos un serial claro en la imagen. Revisa la foto o digítalo manualmente.');
+                    }
+                    return prev;
+                });
+            } else {
+                alert(data.message || 'No se pudo extraer texto de la imagen');
+            }
+        } catch (error) {
+            console.error('Error in OCR:', error);
+        } finally {
+            setIsOcrEquipoLoading(false);
+        }
     };
 
     const handleEquipoSubmit = async (e: React.FormEvent) => {
@@ -151,23 +244,34 @@ const UserDashboard: React.FC = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
+            const formData = new FormData();
+            formData.append('serial', formEquipo.serial);
+            if (formEquipo.id_marca) formData.append('id_marca', formEquipo.id_marca);
+            formData.append('modelo', formEquipo.modelo);
+            formData.append('tipo_equipo_desc', formEquipo.tipo_equipo_desc || '');
+            if (formEquipo.caracteristicas) formData.append('caracteristicas', formEquipo.caracteristicas);
+            if (formEquipo.id_sistema_operativo) formData.append('id_sistema_operativo', formEquipo.id_sistema_operativo);
+            if (formEquipo.img_serial) {
+                formData.append('img_serial', formEquipo.img_serial);
+            }
+
             const res = await fetch(`${apiUrl}/user/equipos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(formEquipo)
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Equipo registrado exitosamente');
                 setShowEquipoModal(false);
-                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '' });
+                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
                 fetchUserRecords();
             } else {
                 alert(data.message || 'Error al registrar equipo');
             }
         } catch (error) {
             console.error(error);
-            alert('Error al conectar con el servidor');
+            alert(error.message || 'Error al registrar equipo');
         }
         setLoading(false);
     };
@@ -251,7 +355,9 @@ const UserDashboard: React.FC = () => {
                 {/* Tabla Vehiculos */}
                 {activeTab === 'vehiculos' && (
                     <div style={{ overflowX: 'auto' }}>
-                        {vehiculos.length === 0 ? (
+                        {loadingVehiculos ? (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando vehículos...</div>
+                        ) : vehiculos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
                                 <p style={{ fontSize: '3rem', margin: 0 }}>🚗</p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay vehículos registrados</p>
@@ -286,7 +392,9 @@ const UserDashboard: React.FC = () => {
                 {/* Tabla Equipos */}
                 {activeTab === 'equipos' && (
                     <div style={{ overflowX: 'auto' }}>
-                        {equipos.length === 0 ? (
+                        {loadingEquipos ? (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando equipos...</div>
+                        ) : equipos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
                                 <p style={{ fontSize: '3rem', margin: 0 }}>💻</p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay equipos registrados</p>
@@ -325,6 +433,15 @@ const UserDashboard: React.FC = () => {
                         <form onSubmit={handleVehiculoSubmit}>
                             <label style={labelStyle}>Placa (máx 10)</label>
                             <input style={inputStyle} type="text" maxLength={10} required value={formVehiculo.placa} onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value })} placeholder="Ej: ABC123" />
+
+                            <label style={labelStyle}>Imagen del Vehículo</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={handleImageSelect}
+                            />
+                            {isOcrLoading && <span style={{ fontSize: '0.8rem', color: '#2563eb' }}>Leyendo placa...</span>}
 
                             <label style={labelStyle}>Tipo de Vehículo</label>
                             <select style={inputStyle} required value={formVehiculo.id_tipo_vehiculo} onChange={e => setFormVehiculo({ ...formVehiculo, id_tipo_vehiculo: e.target.value })}>
@@ -368,6 +485,15 @@ const UserDashboard: React.FC = () => {
                         <form onSubmit={handleEquipoSubmit}>
                             <label style={labelStyle}>Serial</label>
                             <input style={inputStyle} type="text" required value={formEquipo.serial} onChange={e => setFormEquipo({ ...formEquipo, serial: e.target.value })} placeholder="Obligatorio" />
+
+                            <label style={labelStyle}>Imagen del Serial (Opcional)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={handleEquipoImageSelect}
+                            />
+                            {isOcrEquipoLoading && <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Leyendo etiqueta...</span>}
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>

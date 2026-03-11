@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import styles from './loginsuperadmin.module.css';
+import styles from './SuperAdminLogin.module.css';
+import { loginSuperAdmin } from '../../services/authService';
 
-const LoginSuperAdmin: React.FC = () => {
+const SuperAdminLogin: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -26,28 +27,11 @@ const LoginSuperAdmin: React.FC = () => {
         setLoading(true);
 
         try {
-            // Use environment variable for API URL or fallback to localhost
-            const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') + '/admins/login';
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ correo: email, contrasena: password }),
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Inicio de sesión fallido. Por favor verifica tus credenciales.');
-            }
-
-            const data = await response.json();
-            console.log('Login successful:', data);
+            const data = await loginSuperAdmin({ correo: email, contrasena: password });
 
             // Store token and admin data in sessionStorage for tab isolation
-            sessionStorage.setItem('adminToken', data.data.token);
-            sessionStorage.setItem('adminUser', JSON.stringify(data.data.admin));
+            sessionStorage.setItem('authToken', data.token);
+            sessionStorage.setItem('authUser', JSON.stringify(data.admin));
 
             // Redirect to dashboard
             window.location.href = '/superadmin/dashboard';
@@ -113,4 +97,4 @@ const LoginSuperAdmin: React.FC = () => {
     );
 };
 
-export default LoginSuperAdmin;
+export default SuperAdminLogin;

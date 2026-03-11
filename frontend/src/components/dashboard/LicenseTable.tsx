@@ -72,7 +72,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, paginationMeta, onPag
                                 <td>{row.fecha_vencimiento}</td>
                                 <td>
                                     <div className={styles.actions}>
-                                        {row.estado === 'activo' && (
+                                        {row.estado === 'publish' && (
                                             <button
                                                 className={styles.actionBtn}
                                                 onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
@@ -83,7 +83,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, paginationMeta, onPag
                                         {row.estado === 'inactivo' && (
                                             <button
                                                 className={styles.actionBtn}
-                                                onClick={() => onUpdateStatus?.(row.id, 'activo')}
+                                                onClick={() => onUpdateStatus?.(row.id, 'publish')}
                                             >
                                                 Reactivar
                                             </button>

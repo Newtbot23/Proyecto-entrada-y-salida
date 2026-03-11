@@ -17,7 +17,7 @@ const UserLayout: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     useEffect(() => {
-        const userDataString = sessionStorage.getItem('userData');
+        const userDataString = sessionStorage.getItem('authUser');
         if (!userDataString) {
             navigate('/login');
         } else {

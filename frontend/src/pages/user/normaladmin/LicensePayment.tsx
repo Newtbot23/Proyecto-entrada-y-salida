@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../Registration.module.css';
+import { getCurrentLicense, createCheckoutSession } from '../../../services/paymentService';
 
 const LicensePayment: React.FC = () => {
     const navigate = useNavigate();
@@ -11,8 +12,8 @@ const LicensePayment: React.FC = () => {
 
     useEffect(() => {
         const fetchLicenseStatus = async () => {
-            const storedUser = sessionStorage.getItem('userData');
-            const token = sessionStorage.getItem('userToken');
+            const storedUser = sessionStorage.getItem('authUser');
+            const token = sessionStorage.getItem('authToken');
 
             if (!storedUser || !token) {
                 navigate('/login');
@@ -20,23 +21,11 @@ const LicensePayment: React.FC = () => {
             }
 
             try {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-                // Fetch latest license status using the new NIT-based endpoint
-                const response = await fetch(`${API_URL}/licencia-actual`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const result = await getCurrentLicense();
 
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Error al obtener el estado de la licencia');
+                const status = result.estado;
+                const id = result.id;
 
-                const status = result.data.estado;
-                const id = result.data.id;
-
-                // Map logical states if necessary (activo, inactivo, expirado, pendiente)
-                // User mentioned: pendiente, vencida, expirada
                 setLicenseStatus(status);
                 setLicenseId(id);
 
@@ -117,31 +106,20 @@ const LicensePayment: React.FC = () => {
 
                             try {
                                 setLoading(true);
-                                const token = sessionStorage.getItem('userToken');
-                                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-                                const response = await fetch(`${API_URL}/stripe/checkout-session`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({
-                                        licencia_id: licenseId,
-                                        tipo_pago: 'compra' // Defaulting to 'compra' as per requirement, or logic to determine
-                                    })
+                                const data = await createCheckoutSession({
+                                    licencia_id: licenseId,
+                                    tipo_pago: 'compra'
                                 });
-
-                                const data = await response.json();
 
                                 if (data.url) {
                                     window.location.href = data.url;
                                 } else {
                                     console.error('Stripe session creation failed:', data);
-                                    setError('No se pudo iniciar el pago. ' + (data.error || 'Intente nuevamente.'));
+                                    setError('No se pudo iniciar el pago. Intente nuevamente.');
                                     setLoading(false);
                                 }
-                            } catch (e) {
+                            } catch (e: any) {
                                 console.error('Error connecting to payment gateway:', e);
                                 setError('Error de conexión con la pasarela de pagos.');
                                 setLoading(false);

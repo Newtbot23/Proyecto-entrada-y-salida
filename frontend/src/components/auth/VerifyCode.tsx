@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../../config/api';
-import styles from '../../pages/user/Registration.module.css';
+import styles from './AuthFlows.module.css';
 
 /**
  * Componente de verificación de código de recuperación
@@ -140,53 +140,21 @@ const VerifyCode = () => {
         <div className={styles.container}>
             {/* Modal inamovible de bloqueo */}
             {isLocked && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    zIndex: 9999,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    color: 'white',
-                    backdropFilter: 'blur(5px)'
-                }}>
-                    <div style={{
-                        backgroundColor: '#fff',
-                        padding: '2.5rem',
-                        borderRadius: '16px',
-                        color: '#333',
-                        textAlign: 'center',
-                        maxWidth: '400px',
-                        width: '90%',
-                        boxShadow: '0 4px 30px rgba(0,0,0,0.3)'
-                    }}>
-                        <div style={{
-                            width: '64px',
-                            height: '64px',
-                            borderRadius: '50%',
-                            backgroundColor: '#ffebee',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            margin: '0 auto 1.5rem auto'
-                        }}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d32f2f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className={styles.lockOverlay}>
+                    <div className={styles.lockContent}>
+                        <div className={styles.lockIconWrapper}>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
                         </div>
-                        <h2 style={{ color: '#d32f2f', marginBottom: '1rem', marginTop: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                        <h2 className={styles.lockTitle}>
                             Acceso Bloqueado
                         </h2>
-                        <span style={{ fontSize: '4.5rem', display: 'block', marginBottom: '1rem', fontWeight: '800', lineHeight: 1, color: '#d32f2f' }}>
-                            {timeLeft}<span style={{ fontSize: '1.5rem', marginLeft: '4px' }}>s</span>
+                        <span className={styles.lockTime}>
+                            {timeLeft}<span className={styles.lockTimeSuffix}>s</span>
                         </span>
-                        <p style={{ margin: 0, color: '#555', fontSize: '1rem', lineHeight: 1.5 }}>
+                        <p className={styles.lockMessage}>
                             Has superado el límite de intentos permitidos.
                             Por seguridad, espera hasta que el contador llegue a cero para volver a intentarlo.
                         </p>
@@ -218,7 +186,7 @@ const VerifyCode = () => {
                             value={email}
                             readOnly
                             disabled={loading}
-                            style={{ backgroundColor: '#f9fafb', cursor: 'default' }}
+                            className={styles.readonlyInput}
                         />
                     </div>
 
@@ -236,7 +204,7 @@ const VerifyCode = () => {
                             disabled={loading || isLocked}
                             maxLength={6}
                             pattern="[0-9]{6}"
-                            style={{ letterSpacing: '0.5em', textAlign: 'center', fontWeight: 'bold', fontSize: '1.25rem' }}
+                            className={styles.codeInput}
                         />
                     </div>
 
@@ -244,10 +212,10 @@ const VerifyCode = () => {
                         {loading ? 'Verificando...' : 'Verificar Código'}
                     </button>
 
-                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <div className={styles.backLinkContainer}>
                         <a
                             href={`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`}
-                            style={{ color: '#008f39', fontSize: '0.875rem', textDecoration: 'none' }}
+                            className={styles.backLink}
                             onClick={(e) => { e.preventDefault(); navigate(`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`); }}
                         >
                             ¿No recibiste el código? Volver a intentar

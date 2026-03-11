@@ -2,11 +2,10 @@ import React from 'react';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 
 const AdminReportsPage: React.FC = () => {
-    const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+    const userData = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
     const handleLogout = () => {
-        sessionStorage.removeItem('userToken');
-        sessionStorage.removeItem('userData');
+        sessionStorage.clear();
         window.location.replace('/login');
     };
 

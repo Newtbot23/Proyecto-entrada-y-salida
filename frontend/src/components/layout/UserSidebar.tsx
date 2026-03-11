@@ -21,6 +21,7 @@ const UserSidebar: React.FC<SidebarProps> = ({
 
     const menuItems = [
         { label: 'Mi Panel', path: '/user/dashboard', icon: DashboardIcon },
+        { label: 'Historial', path: '/user/historial', icon: DashboardIcon }, // Reusing an icon for now, ideally find a history/time icon
     ];
 
     return (
