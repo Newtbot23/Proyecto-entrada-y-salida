@@ -50,64 +50,13 @@ const UserDashboard: React.FC = () => {
     const [isOcrLoading, setIsOcrLoading] = useState(false);
     const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
 
-    // Fetch initial data
-    const fetchData = async () => {
-        const token = sessionStorage.getItem('userToken');
-        if (!token) {
-            console.error("No token found in sessionStorage");
-            return;
-        }
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-        try {
-            // Catalogs
-            const catRes = await fetch(`${apiUrl}/user/catalogs`, { headers });
-            if (!catRes.ok) throw new Error(`HTTP error! status: ${catRes.status}`);
-            const catData = await catRes.json();
-            if (catData.success) {
-                setTiposVehiculo(catData.data.tipos_vehiculo.map((t: any) => ({ id: t.id, name: t.tipo_vehiculo })));
-                setMarcasEquipo(catData.data.marcas_equipo.map((m: any) => ({ id: m.id, name: m.marca })));
-                setSistemasOperativos(catData.data.sistemas_operativos.map((s: any) => ({ id: s.id, name: s.sistema_operativo })));
-            }
-
-            // Vehiculos & Equipos
-            fetchUserRecords(headers);
-        } catch (error) {
-            console.error("Error fetching data", error);
-        }
-    };
-
-    const fetchUserRecords = async (headers?: any) => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        if (!headers) {
-            const token = sessionStorage.getItem('userToken');
-            if (!token) return;
-            headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-        }
-
-        try {
-            const vehRes = await fetch(`${apiUrl}/user/vehiculos`, { headers });
-            const vehData = await vehRes.json();
-            if (vehData.success) setVehiculos(vehData.data);
-
-            const eqRes = await fetch(`${apiUrl}/user/equipos`, { headers });
-            const eqData = await eqRes.json();
-            if (eqData.success) setEquipos(eqData.data);
-        } catch (error) {
-            console.error("Error fetching user records", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     // --- Manejadores Formularios ---
     const handleVehiculoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const token = sessionStorage.getItem('userToken');
+        const token = sessionStorage.getItem('authToken');
         if (!token) return;
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -133,13 +82,13 @@ const UserDashboard: React.FC = () => {
                 alert('Vehículo registrado exitosamente');
                 setShowVehiculoModal(false);
                 setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
-                fetchUserRecords();
+                queryClient.invalidateQueries({ queryKey: ['userVehiculos'] });
             } else {
                 alert(data.message || 'Error al registrar vehículo');
             }
         } catch (error) {
             console.error(error);
-            alert(error.message || 'Error al registrar vehículo');
+            alert((error as Error).message || 'Error al registrar vehículo');
         }
         setLoading(false);
     };
@@ -151,7 +100,7 @@ const UserDashboard: React.FC = () => {
         setFormVehiculo(prev => ({ ...prev, img_vehiculo: file }));
         setIsOcrLoading(true);
 
-        const token = sessionStorage.getItem('userToken');
+        const token = sessionStorage.getItem('authToken');
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
@@ -194,7 +143,7 @@ const UserDashboard: React.FC = () => {
         setFormEquipo(prev => ({ ...prev, img_serial: file }));
         setIsOcrEquipoLoading(true);
 
-        const token = sessionStorage.getItem('userToken');
+        const token = sessionStorage.getItem('authToken');
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
         try {
@@ -239,7 +188,7 @@ const UserDashboard: React.FC = () => {
     const handleEquipoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const token = sessionStorage.getItem('userToken');
+        const token = sessionStorage.getItem('authToken');
         if (!token) return;
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -265,13 +214,13 @@ const UserDashboard: React.FC = () => {
                 alert('Equipo registrado exitosamente');
                 setShowEquipoModal(false);
                 setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
-                fetchUserRecords();
+                queryClient.invalidateQueries({ queryKey: ['userEquipos'] });
             } else {
                 alert(data.message || 'Error al registrar equipo');
             }
         } catch (error) {
             console.error(error);
-            alert(error.message || 'Error al registrar equipo');
+            alert((error as Error).message || 'Error al registrar equipo');
         }
         setLoading(false);
     };

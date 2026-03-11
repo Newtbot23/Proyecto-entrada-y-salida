@@ -24,7 +24,7 @@ const UserHistory: React.FC = () => {
     const fetchEntradas = async (headers?: any, fecha?: string) => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
         if (!headers) {
-            const token = sessionStorage.getItem('userToken');
+            const token = sessionStorage.getItem('authToken');
             if (!token) return;
             headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         }

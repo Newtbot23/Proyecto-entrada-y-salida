@@ -15,15 +15,22 @@ export interface TableColumn {
 
 export const DynamicTableService = {
     getShortTables: async (): Promise<string[]> => {
-        return await apiClient.get<string[]>('/tablas-cortas');
+        const res: any = await apiClient.get<string[]>('/tablas-cortas');
+        return Array.isArray(res) ? res : (res?.data || []);
     },
 
     getTableSchema: async (table: string): Promise<TableColumn[]> => {
-        return await apiClient.get<TableColumn[]>(`/esquema/${table}`);
+        const res: any = await apiClient.get<TableColumn[]>(`/esquema/${table}`);
+        return Array.isArray(res) ? res : (res?.data || []);
     },
 
     getTableData: async (table: string): Promise<any[]> => {
-        return await apiClient.get<any[]>(`/datos/${table}`);
+        const res: any = await apiClient.get<any[]>(`/datos/${table}`);
+        // Handle pagination object if returned { data: [...], total: ... }
+        if (res && res.data && Array.isArray(res.data)) {
+            return res.data;
+        }
+        return Array.isArray(res) ? res : (res?.data || []);
     },
 
     createRecord: async (table: string, data: any): Promise<any> => {
