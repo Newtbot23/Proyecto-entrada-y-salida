@@ -21,7 +21,7 @@ const RegisterUser: React.FC = () => {
         correo: '',
         contrasena: '',
         // Predeterminados según el requerimiento
-        nit_entidad: '1121222', // This will be ignored by backend if qrToken is present
+        nit_entidad: '', // Will be resolved by backend via token
         id_rol: 2,
     });
 
@@ -44,7 +44,9 @@ const RegisterUser: React.FC = () => {
 
         try {
             if (qrToken) {
-                await registrationService.registerUserWithQr(formData, qrToken);
+                // Remove nit_entidad from payload as it will be decoded from the token in the backend
+                const { nit_entidad, ...userDataWithoutNit } = formData;
+                await registrationService.registerUserWithQr(userDataWithoutNit, qrToken);
             } else {
                 await registrationService.registerUser(formData);
             }

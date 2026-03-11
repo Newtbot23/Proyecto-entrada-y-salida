@@ -55,9 +55,10 @@ class UserDashboardController extends Controller
         }
 
         $equipos = DB::table('equipos')
+            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
             ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
             ->join('sistemas_operativos', 'equipos.id_sistema_operativo', '=', 'sistemas_operativos.id')
-            ->where('equipos.doc', $user->doc)
+            ->where('asignaciones.doc', $user->doc)
             ->select('equipos.*', 'marcas_equipo.marca', 'sistemas_operativos.sistema_operativo as so')
             ->get();
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Usuarios;
+use App\Models\Entidades;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -108,24 +109,49 @@ class UsuariosController extends Controller
     /**
      * Register user with QR Token
      */
-    public function registerWithQr(StoreUsuarioRequest $request): JsonResponse
+    public function registerWithQr(Request $request): JsonResponse
     {
-        try {
-            $token = $request->input('qr_token');
+        // Manual validation since we can't use StoreUsuarioRequest (which requires nit_entidad)
+        $validator = Validator::make($request->all(), [
+            'doc' => 'required|string|unique:usuarios,doc|regex:/^[0-9]{7,10}$/',
+            'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
+            'primer_nombre' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+            'segundo_nombre' => 'nullable|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+            'primer_apellido' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+            'segundo_apellido' => 'nullable|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/',
+            'telefono' => 'required|string|max:13|regex:/^[0-9+\-\s()]+$/',
+            'correo' => 'required|email|max:100|unique:usuarios,correo',
+            'contrasena' => 'required|string|min:6',
+            'token' => 'required|string',
+        ]);
 
-            if (!$token) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token de registro no proporcionado.'
-                ], 400);
-            }
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $token = $request->input('token');
 
             try {
-                $nit_entidad = Crypt::decryptString(urldecode($token));
+                // Decrypt the NIT from the token
+                $nit_entidad = Crypt::decryptString($token);
             } catch (DecryptException $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token de registro inválido o manipulado.'
+                    'message' => 'Token de registro inválido o expirado.'
+                ], 400);
+            }
+
+            // Validate that the entity exists
+            $entidad = Entidades::where('nit', $nit_entidad)->first();
+            if (!$entidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La entidad asociada al token no existe.'
                 ], 400);
             }
 
@@ -140,7 +166,7 @@ class UsuariosController extends Controller
                 'correo' => $request->correo,
                 'contrasena' => Hash::make($request->contrasena),
                 'id_rol' => 2, // Force Regular User role
-                'nit_entidad' => $nit_entidad, // Assigned securely
+                'nit_entidad' => $nit_entidad, // Assigned securely from token
                 'estado' => 'activo',
             ]);
 
