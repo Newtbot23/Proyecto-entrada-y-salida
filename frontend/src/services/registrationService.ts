@@ -82,7 +82,7 @@ export const registrationService = {
      */
     registerUserWithQr: async (userData: any, qrToken: string) => {
         try {
-            const payload = { ...userData, qr_token: qrToken };
+            const payload = { ...userData, token: qrToken };
             const response = await apiClient.post<any, any>('/usuarios/qr-register', payload);
             return response;
         } catch (error) {
