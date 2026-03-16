@@ -18,7 +18,8 @@ class DynamicTableController extends Controller
         'migrations',
         'failed_jobs',
         'roles',
-        'password_reset_tokens'
+        'password_reset_tokens',
+        'old_passwords'
     ];
 
     /**

@@ -224,11 +224,6 @@ class ApiClient {
      */
     async post<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
-            const isFormData = body instanceof FormData;
-            const headers = this.getHeaders(config?.headers);
-            
-            // If it's FormData, browser needs to set Content-Type with boundary automatically
-            if (isFormData) {
             let finalBody: any = body;
             const headers = this.getHeaders(config?.headers);
 
@@ -240,16 +235,15 @@ class ApiClient {
             }
 
             // Si es FormData, dejamos que fetch lo maneje solo (no stringify, no Content-Type manual)
-            const isFormData = finalBody instanceof FormData;
-            if (isFormData) {
-                // Si el transformRequest no lo borró, lo borramos aquí para asegurar el boundary
+            const isFinalBodyFormData = finalBody instanceof FormData;
+            if (isFinalBodyFormData) {
                 delete headers['Content-Type'];
             }
 
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'POST',
                 headers: headers,
-                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
+                body: isFinalBodyFormData ? (finalBody as unknown as BodyInit) : JSON.stringify(finalBody),
                 signal: config?.signal,
             });
 
@@ -281,7 +275,7 @@ class ApiClient {
         try {
             const isFormData = body instanceof FormData;
             const headers = this.getHeaders(config?.headers);
-            
+
             if (isFormData) {
                 delete headers['Content-Type'];
             }
@@ -321,7 +315,7 @@ class ApiClient {
         try {
             const isFormData = body instanceof FormData;
             const headers = this.getHeaders(config?.headers);
-            
+
             if (isFormData) {
                 delete headers['Content-Type'];
             }
@@ -356,26 +350,26 @@ class ApiClient {
      * @param config - Configuración adicional de la petición
      * @returns Respuesta de eliminación
      */
-    async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-        try {
-            const response = await fetch(this.buildUrl(endpoint), {
-                method: 'DELETE',
-                headers: this.getHeaders(config?.headers),
-                signal: config?.signal,
-            });
+    async delete <T>(endpoint: string, config ?: RequestConfig): Promise < T > {
+    try {
+        const response = await fetch(this.buildUrl(endpoint), {
+            method: 'DELETE',
+            headers: this.getHeaders(config?.headers),
+            signal: config?.signal,
+        });
 
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
+        if(!response.ok) {
+    await this.handleErrorResponse(response);
+}
 
-            const data: ApiResponse<T> = await response.json();
-            return data.data as T;
+const data: ApiResponse<T> = await response.json();
+return data.data as T;
         } catch (error) {
-            if (error instanceof Error) {
-                console.error(`DELETE ${endpoint} failed:`, error.message);
-            }
-            throw error;
-        }
+    if (error instanceof Error) {
+        console.error(`DELETE ${endpoint} failed:`, error.message);
+    }
+    throw error;
+}
     }
 }
 
