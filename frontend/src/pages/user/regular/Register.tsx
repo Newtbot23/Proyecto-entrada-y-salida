@@ -10,6 +10,7 @@ const RegisterUser: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
         doc: '',
         id_tip_doc: '1',
@@ -37,6 +38,12 @@ const RegisterUser: React.FC = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -44,9 +51,22 @@ const RegisterUser: React.FC = () => {
 
         try {
             if (qrToken) {
-                // Remove nit_entidad from payload as it will be decoded from the token in the backend
-                const { nit_entidad, ...userDataWithoutNit } = formData;
-                await registrationService.registerUserWithQr(userDataWithoutNit, qrToken);
+                // Build FormData
+                const submitData = new FormData();
+                
+                // Append text fields (excluding nit_entidad as requested before)
+                Object.entries(formData).forEach(([key, value]) => {
+                    if (key !== 'nit_entidad') {
+                        submitData.append(key, value.toString());
+                    }
+                });
+
+                // Append file if exists
+                if (imageFile) {
+                    submitData.append('imagen', imageFile);
+                }
+
+                await registrationService.registerUserWithQr(submitData, qrToken);
             } else {
                 await registrationService.registerUser(formData);
             }
@@ -172,6 +192,21 @@ const RegisterUser: React.FC = () => {
                             onChange={handleChange}
                             required
                         />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label>Foto de Rostro * (Para verificación y acceso)</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            capture="user"
+                            onChange={handleFileChange}
+                            required
+                            style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%', background: 'white' }}
+                        />
+                        <small style={{ color: '#6b7280', display: 'block', marginTop: '4px' }}>
+                            Asegúrate de que tu rostro se vea claramente en la foto.
+                        </small>
                     </div>
 
                     <button type="submit" className={styles.button} disabled={loading}>

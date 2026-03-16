@@ -85,7 +85,7 @@ class NormalAdminAuthController extends Controller
                         'correo' => $user->correo,
                         'id_rol' => $user->id_rol,
                         'nit_entidad' => $user->nit_entidad,
-                        'id_rol' => $user->id_rol,
+                        'codigo_qr' => $user->codigo_qr,
                         'license_id' => $licencia->id,
                         'license_status' => $licencia->estado,
                         'license_expired' => $licenseExpired

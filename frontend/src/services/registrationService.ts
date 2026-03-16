@@ -82,7 +82,18 @@ export const registrationService = {
      */
     registerUserWithQr: async (userData: any, qrToken: string) => {
         try {
-            const payload = { ...userData, token: qrToken };
+            let payload: any;
+
+            if (userData instanceof FormData) {
+                payload = userData;
+                // Only append if it doesn't already exist to prevent duplicates
+                if (!payload.has('token')) {
+                    payload.append('token', qrToken);
+                }
+            } else {
+                payload = { ...userData, token: qrToken };
+            }
+
             const response = await apiClient.post<any, any>('/usuarios/qr-register', payload);
             return response;
         } catch (error) {

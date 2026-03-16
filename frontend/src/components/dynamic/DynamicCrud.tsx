@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { DynamicTableService, type TableColumn } from '../../services/dynamicTableService';
 import { registrationService } from '../../services/registrationService';
 import DynamicForm from './DynamicForm';
 import { Modal } from '../common/Modal';
+import { API_BASE_URL } from '../../config/api';
 
 
 interface DynamicCrudProps {
@@ -98,10 +100,10 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                 // Find primary key
                 const pkColumn = schema.find(col => col.key === 'PRI')?.name || 'id';
                 await DynamicTableService.updateRecord(tableName, editingRecord[pkColumn], formData);
-                alert('Registro actualizado exitosamente');
+                toast.success('Registro actualizado exitosamente');
             } else {
                 await DynamicTableService.createRecord(tableName, formData);
-                alert('Registro creado exitosamente');
+                toast.success('Registro creado exitosamente');
             }
             setEditingRecord(null);
             await loadData();
@@ -273,7 +275,13 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                                 <tr key={row.id || i} style={{ borderBottom: '1px solid #e5e7eb' }}>
                                     {displayColumns.map(col => (
                                         <td key={col.name} style={{ padding: '1rem' }}>
-                                            {typeof row[col.name] === 'object' && row[col.name] !== null
+                                            {col.name === 'imagen' && row[col.name] ? (
+                                                <img 
+                                                    src={`${API_BASE_URL.replace('/api', '')}/storage/${row[col.name]}`} 
+                                                    alt="Imagen" 
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '0.25rem' }} 
+                                                />
+                                            ) : typeof row[col.name] === 'object' && row[col.name] !== null
                                                 ? JSON.stringify(row[col.name])
                                                 : String(row[col.name] || '')}
                                         </td>

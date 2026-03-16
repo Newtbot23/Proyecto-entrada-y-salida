@@ -37,18 +37,35 @@ class PuertasController extends Controller
 
         // Get 'propio' equipment for this user
         $equipos = DB::table('equipos')
+            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
             ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->where('equipos.doc', $doc)
+            ->where('asignaciones.doc', $doc)
             ->where('equipos.tipo_equipo', 'propio')
-            ->select('equipos.*', 'marcas_equipo.marca')
+            ->where('equipos.estado_aprobacion', 'activo')
+            ->select('equipos.*', 'marcas_equipo.marca', 'asignaciones.es_predeterminado')
             ->get();
 
         // Check if user is currently inside (has a record without hora_salida today)
-        $registroAbierto = DB::table('registros')
+        $registroAbierto = \App\Models\Registros::with(['equipos_registrados.equipo.marca'])
             ->where('doc', $doc)
             ->whereDate('fecha', Carbon::today())
             ->whereNull('hora_salida')
             ->first();
+
+        $seriales_adentro = [];
+        $equipos_adentro_data = [];
+        if ($registroAbierto) {
+            foreach ($registroAbierto->equipos_registrados as $er) {
+                $seriales_adentro[] = $er->serial_equipo;
+                $equipos_adentro_data[] = [
+                    'serial' => $er->serial_equipo,
+                    'marca' => $er->equipo->marca->marca ?? 'N/A',
+                    'modelo' => $er->equipo->modelo ?? 'N/A',
+                    'img_serial' => $er->equipo->img_serial ?? null,
+                    'tipo_equipo' => $er->equipo->tipo_equipo ?? 'N/A'
+                ];
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -56,8 +73,11 @@ class PuertasController extends Controller
                 'usuario' => $usuario,
                 'equipos' => $equipos,
                 'estaAdentro' => !!$registroAbierto,
-                'id_registro' => $registroAbierto ? $registroAbierto->id : null,
-                'serial_equipo' => $registroAbierto ? $registroAbierto->serial_equipo : null
+                'registro_activo' => $registroAbierto ? [
+                    'id' => $registroAbierto->id,
+                    'seriales_equipos' => $seriales_adentro,
+                    'equipos_registrados' => $equipos_adentro_data
+                ] : null,
             ]
         ]);
     }
@@ -80,6 +100,7 @@ class PuertasController extends Controller
         $vehiculos = DB::table('vehiculos')
             ->join('usuarios', 'vehiculos.doc', '=', 'usuarios.doc')
             ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
+            ->where('vehiculos.estado_aprobacion', 'activo')
             ->where(function($q) use ($query) {
                 $q->where('vehiculos.placa', 'like', "%$query%")
                   ->orWhere('usuarios.doc', $query);
@@ -101,27 +122,45 @@ class PuertasController extends Controller
 
         // Fetch 'propio' equipment for this user
         $equipos = DB::table('equipos')
+            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
             ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->where('equipos.doc', $doc)
+            ->where('asignaciones.doc', $doc)
             ->where('equipos.tipo_equipo', 'propio')
-            ->select('equipos.*', 'marcas_equipo.marca')
+            ->where('equipos.estado_aprobacion', 'activo')
+            ->select('equipos.*', 'marcas_equipo.marca', 'asignaciones.es_predeterminado')
             ->get();
 
         // Check if any of these vehicles are currently inside 
         // For simplicity, we just check if there's an open record for the user or specific vehicles
         // Let's get open records for this doc
-        $registrosAbiertos = DB::table('registros')
+        $registrosAbiertos = \App\Models\Registros::with(['equipos_registrados.equipo.marca'])
             ->where('doc', $doc)
             ->whereDate('fecha', Carbon::today())
             ->whereNull('hora_salida')
             ->get();
+
+        $registrosMap = $registrosAbiertos->map(function($r) {
+            $r->seriales_equipos = $r->equipos_registrados->pluck('serial_equipo')->toArray();
+            $r->equipos_adentro = $r->equipos_registrados->map(function($er) {
+                return [
+                    'serial' => $er->serial_equipo,
+                    'marca' => $er->equipo->marca->marca ?? 'N/A',
+                    'modelo' => $er->equipo->modelo ?? 'N/A',
+                    'img_serial' => $er->equipo->img_serial ?? null,
+                    'tipo_equipo' => $er->equipo->tipo_equipo ?? 'N/A'
+                ];
+            });
+            unset($r->equipos_registrados);
+            return $r;
+        });
 
         return response()->json([
             'success' => true,
             'data' => [
                 'vehiculos' => $vehiculos,
                 'equipos' => $equipos,
-                'registrosAbiertos' => $registrosAbiertos
+                'registrosAbiertos' => $registrosMap,
+                'registro_activo' => $registrosMap[0] ?? null
             ]
         ]);
     }
@@ -134,7 +173,7 @@ class PuertasController extends Controller
         $request->validate([
             'doc' => 'required',
             'accion' => 'required|in:entrada,salida',
-            'serial_equipo' => 'nullable|string',
+            'seriales_equipos' => 'nullable|array',
             'placa' => 'nullable|string|max:10',
             'id_registro' => 'nullable|integer'
         ]);
@@ -153,18 +192,37 @@ class PuertasController extends Controller
         }
 
         if ($request->accion === 'entrada') {
-            // Create new entry
-            DB::table('registros')->insert([
-                'doc' => $request->doc,
-                'serial_equipo' => $request->serial_equipo ?? null,
-                'placa' => $request->placa ?? null,
-                'fecha' => $now->toDateString(),
-                'hora_entrada' => $now->toTimeString(),
-                'created_at' => $now,
-                'updated_at' => $now
-            ]);
+            try {
+                DB::beginTransaction();
 
-            return response()->json(['success' => true, 'message' => 'Entrada registrada correctamente']);
+                // Create main registry entry
+                $idRegistro = DB::table('registros')->insertGetId([
+                    'doc' => $request->doc,
+                    'placa' => $request->placa ?? null,
+                    'fecha' => $now->toDateString(),
+                    'hora_entrada' => $now->toTimeString(),
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]);
+
+                // Insert associated equipments
+                if (!empty($request->seriales_equipos)) {
+                    foreach ($request->seriales_equipos as $serial) {
+                        DB::table('registros_equipos')->insert([
+                            'id_registro' => $idRegistro,
+                            'serial_equipo' => $serial,
+                            'created_at' => $now,
+                            'updated_at' => $now
+                        ]);
+                    }
+                }
+
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Entrada registrada correctamente']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Error al registrar entrada', 'error' => $e->getMessage()], 500);
+            }
         } else {
             // Update existing entry (exit)
             if (!$request->id_registro) {

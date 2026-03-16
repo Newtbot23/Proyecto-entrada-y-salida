@@ -224,6 +224,11 @@ class ApiClient {
      */
     async post<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            const isFormData = body instanceof FormData;
+            const headers = this.getHeaders(config?.headers);
+            
+            // If it's FormData, browser needs to set Content-Type with boundary automatically
+            if (isFormData) {
             let finalBody: any = body;
             const headers = this.getHeaders(config?.headers);
 
@@ -244,7 +249,7 @@ class ApiClient {
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'POST',
                 headers: headers,
-                body: isFormData ? (finalBody as any) : JSON.stringify(finalBody),
+                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
                 signal: config?.signal,
             });
 
@@ -274,10 +279,17 @@ class ApiClient {
      */
     async put<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            const isFormData = body instanceof FormData;
+            const headers = this.getHeaders(config?.headers);
+            
+            if (isFormData) {
+                delete headers['Content-Type'];
+            }
+
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'PUT',
-                headers: this.getHeaders(config?.headers),
-                body: JSON.stringify(body),
+                headers: headers,
+                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
                 signal: config?.signal,
             });
 
@@ -307,10 +319,17 @@ class ApiClient {
      */
     async patch<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            const isFormData = body instanceof FormData;
+            const headers = this.getHeaders(config?.headers);
+            
+            if (isFormData) {
+                delete headers['Content-Type'];
+            }
+
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'PATCH',
-                headers: this.getHeaders(config?.headers),
-                body: JSON.stringify(body),
+                headers: headers,
+                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
                 signal: config?.signal,
             });
 

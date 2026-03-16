@@ -27,8 +27,13 @@ class Equipos extends Model
         'lote_importacion'
     ];
 
-    public function usuario()
+    public function marca()
     {
-        return $this->belongsTo(Usuarios::class, 'doc', 'doc');
+        return $this->belongsTo(MarcasEquipo::class, 'id_marca');
+    }
+
+    public function sistema_operativo()
+    {
+        return $this->belongsTo(SistemasOperativos::class, 'id_sistema_operativo');
     }
 }

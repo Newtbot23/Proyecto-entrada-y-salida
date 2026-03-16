@@ -29,9 +29,11 @@ import NormalAdminLayout from './components/layout/NormalAdminLayout';
 import UserLayout from './components/layout/UserLayout';
 import UserDashboard from './pages/user/regular/UserDashboard';
 import UserHistory from './pages/user/regular/UserHistory';
+import UserBarcode from './pages/user/regular/UserBarcode';
 import DynamicCrud from './components/dynamic/DynamicCrud';
 import ReportePersona from './pages/user/normaladmin/ReportePersona';
 import ReporteDiario from './pages/user/normaladmin/ReporteDiario';
+import AprobacionesActivos from './pages/user/normaladmin/AprobacionesActivos';
 import FichasCreate from './pages/user/normaladmin/fichas/FichasCreate';
 import FichasAssign from './pages/user/normaladmin/fichas/FichasAssign';
 import FichasList from './pages/user/normaladmin/fichas/FichasList';
@@ -41,10 +43,12 @@ import GestionLotes from './pages/user/normaladmin/equipos/GestionLotes';
 import HistorialAsignaciones from './pages/user/normaladmin/equipos/HistorialAsignaciones';
 
 import { AuthProvider } from './context/AuthContext';
+import { Toaster } from 'sonner';
 
 function App() {
   return (
     <AuthProvider>
+      <Toaster richColors position="top-right" />
       <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={<PublicDashboardPage />} />
@@ -69,6 +73,7 @@ function App() {
           <Route path="/user/normaladmin/tables/:tableName" element={<DynamicCrud />} />
           <Route path="/user/normaladmin/reportes/persona" element={<ReportePersona />} />
           <Route path="/user/normaladmin/reportes/diario" element={<ReporteDiario />} />
+          <Route path="/user/normaladmin/aprobaciones" element={<AprobacionesActivos />} />
           <Route path="/user/normaladmin/fichas/crear" element={<FichasCreate />} />
           <Route path="/user/normaladmin/fichas/asignar" element={<FichasAssign />} />
           <Route path="/user/normaladmin/fichas/lista" element={<FichasList />} />
@@ -82,6 +87,7 @@ function App() {
         <Route element={<UserLayout />}>
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/historial" element={<UserHistory />} />
+          <Route path="/user/codigo" element={<UserBarcode />} />
         </Route>
 
         <Route path="/license-payment" element={<LicensePayment />} />

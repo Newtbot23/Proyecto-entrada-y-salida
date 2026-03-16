@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCatalogs, getUserVehiculos, getUserEquipos, storeVehiculo, storeEquipo } from '../../../services/userDashboardService';
+import { getCatalogs, getUserVehiculos, getUserEquipos, toggleAssetStatus, checkActiveSession, setDefaultAsset } from '../../../services/userDashboardService';
+
+const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 import type { Vehiculo, Equipo } from '../../../services/userDashboardService';
 
 interface User {
@@ -43,9 +45,16 @@ const UserDashboard: React.FC = () => {
         queryFn: getUserEquipos,
     });
 
+    // Query para Aviso de Salida Pendiente
+    const { data: sessionInfo } = useQuery({
+        queryKey: ['activeSession'],
+        queryFn: checkActiveSession,
+        refetchInterval: 60000 * 5, // Re-verificar cada 5 minutos
+    });
+
     // Estados formularioss
-    const [formVehiculo, setFormVehiculo] = useState<Vehiculo & { img_vehiculo?: File | null }>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
-    const [formEquipo, setFormEquipo] = useState<Equipo & { img_serial?: File | null }>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
+    const [formVehiculo, setFormVehiculo] = useState<Vehiculo & { foto_general?: File | null, foto_detalle?: File | null }>({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', foto_general: null, foto_detalle: null });
+    const [formEquipo, setFormEquipo] = useState<Equipo & { foto_general?: File | null, foto_detalle?: File | null }>({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', foto_general: null, foto_detalle: null });
     const [loading, setLoading] = useState(false);
     const [isOcrLoading, setIsOcrLoading] = useState(false);
     const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
@@ -68,20 +77,26 @@ const UserDashboard: React.FC = () => {
             formData.append('modelo', formVehiculo.modelo);
             formData.append('color', formVehiculo.color);
             if (formVehiculo.descripcion) formData.append('descripcion', formVehiculo.descripcion);
-            if (formVehiculo.img_vehiculo) {
-                formData.append('img_vehiculo', formVehiculo.img_vehiculo);
+            if (formVehiculo.foto_general) {
+                formData.append('foto_general', formVehiculo.foto_general);
+            }
+            if (formVehiculo.foto_detalle) {
+                formData.append('foto_detalle', formVehiculo.foto_detalle);
             }
 
             const res = await fetch(`${apiUrl}/user/vehiculos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Vehículo registrado exitosamente');
                 setShowVehiculoModal(false);
-                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', img_vehiculo: null });
+                setFormVehiculo({ placa: '', id_tipo_vehiculo: '', marca: '', modelo: '', color: '', descripcion: '', foto_general: null, foto_detalle: null });
                 queryClient.invalidateQueries({ queryKey: ['userVehiculos'] });
             } else {
                 alert(data.message || 'Error al registrar vehículo');
@@ -93,11 +108,16 @@ const UserDashboard: React.FC = () => {
         setLoading(false);
     };
 
-    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'general' | 'detalle') => {
         const file = e.target.files?.[0];
         if (!file) return;
+        
+        if (type === 'general') {
+            setFormVehiculo(prev => ({ ...prev, foto_general: file }));
+            return;
+        }
 
-        setFormVehiculo(prev => ({ ...prev, img_vehiculo: file }));
+        setFormVehiculo(prev => ({ ...prev, foto_detalle: file }));
         setIsOcrLoading(true);
 
         const token = sessionStorage.getItem('authToken');
@@ -109,7 +129,10 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/ocr/read-plate`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
 
@@ -136,12 +159,18 @@ const UserDashboard: React.FC = () => {
         }
     };
 
-    const handleEquipoImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleEquipoImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'general' | 'detalle') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setFormEquipo(prev => ({ ...prev, img_serial: file }));
+        if (type === 'general') {
+            setFormEquipo(prev => ({ ...prev, foto_general: file }));
+            return;
+        }
+
+        setFormEquipo(prev => ({ ...prev, foto_detalle: file }));
         setIsOcrEquipoLoading(true);
+        
 
         const token = sessionStorage.getItem('authToken');
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -152,7 +181,10 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/ocr/read-serial`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
 
@@ -200,20 +232,26 @@ const UserDashboard: React.FC = () => {
             formData.append('tipo_equipo_desc', formEquipo.tipo_equipo_desc || '');
             if (formEquipo.caracteristicas) formData.append('caracteristicas', formEquipo.caracteristicas);
             if (formEquipo.id_sistema_operativo) formData.append('id_sistema_operativo', formEquipo.id_sistema_operativo);
-            if (formEquipo.img_serial) {
-                formData.append('img_serial', formEquipo.img_serial);
+            if (formEquipo.foto_general) {
+                formData.append('foto_general', formEquipo.foto_general);
+            }
+            if (formEquipo.foto_detalle) {
+                formData.append('foto_detalle', formEquipo.foto_detalle);
             }
 
             const res = await fetch(`${apiUrl}/user/equipos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
             const data = await res.json();
             if (data.success) {
                 alert('Equipo registrado exitosamente');
                 setShowEquipoModal(false);
-                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', img_serial: null });
+                setFormEquipo({ serial: '', id_marca: '', modelo: '', tipo_equipo_desc: '', caracteristicas: '', id_sistema_operativo: '', foto_general: null, foto_detalle: null });
                 queryClient.invalidateQueries({ queryKey: ['userEquipos'] });
             } else {
                 alert(data.message || 'Error al registrar equipo');
@@ -223,6 +261,61 @@ const UserDashboard: React.FC = () => {
             alert((error as Error).message || 'Error al registrar equipo');
         }
         setLoading(false);
+    };
+
+    const handleToggleStatus = async (tipo: 'vehiculo' | 'equipo', id: string, estadoActual: string) => {
+        const confirmMsg = estadoActual === 'activo' 
+            ? '¿Estás seguro de inhabilitar este activo? No aparecerá en los controles de acceso.' 
+            : '¿Deseas solicitar la reactivación de este activo?';
+        
+        if (!window.confirm(confirmMsg)) return;
+
+        setLoading(true);
+        try {
+            const res = await toggleAssetStatus(tipo, id);
+            if (res.success) {
+                alert(res.message);
+                queryClient.invalidateQueries({ queryKey: tipo === 'vehiculo' ? ['userVehiculos'] : ['userEquipos'] });
+            } else {
+                alert(res.message || 'Error al cambiar el estado');
+            }
+        } catch (error) {
+            alert('Error en el servidor al intentar cambiar el estado');
+        }
+        setLoading(false);
+    };
+
+    const handleSetDefault = async (tipo: 'vehiculo' | 'equipo', id: string) => {
+        const queryKey = tipo === 'vehiculo' ? ['userVehiculos'] : ['userEquipos'];
+
+        // Paso 1 (Respaldo): Guardar copia del estado actual
+        const previousData = queryClient.getQueryData(queryKey);
+
+        // Paso 2 (Actualización Inmediata): Actualizar el estado local de React inmediatamente
+        queryClient.setQueryData(queryKey, (old: any[] | undefined) => {
+            if (!old) return [];
+            return old.map((item: any) => {
+                const itemId = tipo === 'vehiculo' ? item.placa : item.serial;
+                return {
+                    ...item,
+                    es_predeterminado: itemId === id ? 1 : 0
+                };
+            });
+        });
+
+        // Paso 3 (Petición Asíncrona): Llamada a la API en segundo plano
+        try {
+            const res = await setDefaultAsset(tipo, id);
+            if (!res.success) {
+                throw new Error(res.message || 'Error al actualizar el servidor');
+            }
+            // Opcional: invalidar para sincronizar con el estado real del servidor si es necesario
+            // queryClient.invalidateQueries({ queryKey });
+        } catch (error) {
+            // Paso 4 (Manejo de Errores - Rollback): Alerta y reversión
+            alert((error as any)?.message || 'No se pudo establecer el activo como predeterminado');
+            queryClient.setQueryData(queryKey, previousData);
+        }
     };
 
     // --- Estilos Base ---
@@ -238,6 +331,29 @@ const UserDashboard: React.FC = () => {
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
                 ¡Bienvenido, {user.nombre}!
             </h2>
+
+            {/* Aviso de Salida Olvidada */}
+            {sessionInfo?.warning && (
+                <div style={{ 
+                    background: '#fff7ed', 
+                    border: '1px solid #fdba74', 
+                    borderRadius: '0.75rem', 
+                    padding: '1.25rem', 
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}>
+                    <div style={{ fontSize: '1.75rem' }}>🚨</div>
+                    <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, color: '#9a3412', fontWeight: '700', fontSize: '1.05rem' }}>¿Olvidaste registrar tu salida?</h4>
+                        <p style={{ margin: '0.25rem 0 0', color: '#c2410c', fontSize: '0.9rem' }}>
+                            Detectamos que ingresaste hace aproximadamente <strong>{sessionInfo.horas_transcurridas} horas</strong> y aún no has registrado tu salida del centro comercial.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Datos Personales */}
             <div style={cardStyle}>
@@ -315,23 +431,82 @@ const UserDashboard: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                                 <thead style={theadStyle}>
                                     <tr>
+                                        <th style={thTdStyle}>Activo</th>
+                                        <th style={thTdStyle}>Estado</th>
                                         <th style={thTdStyle}>Placa</th>
                                         <th style={thTdStyle}>Tipo</th>
                                         <th style={thTdStyle}>Marca</th>
                                         <th style={thTdStyle}>Modelo</th>
                                         <th style={thTdStyle}>Color</th>
+                                        <th style={thTdStyle}>Predeterminado</th>
+                                        <th style={thTdStyle}>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {vehiculos.map((v, idx) => (
+                                    {vehiculos.map((v, idx) => {
+                                        const images = v.img_vehiculo ? v.img_vehiculo.split('|') : [];
+                                        return (
                                         <tr key={v.placa || idx} style={{ transition: 'background 0.1s' }} onMouseOver={e => e.currentTarget.style.background = '#f9fafb'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                                            <td style={thTdStyle}>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    {images.map((img: string, i: number) => (
+                                                        <img 
+                                                            key={i}
+                                                            src={`${STORAGE_URL}/${img}`} 
+                                                            alt={`Vehículo ${i}`} 
+                                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }} 
+                                                            onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
+                                                        />
+                                                    ))}
+                                                    {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
+                                                </div>
+                                            </td>
+                                            <td style={thTdStyle}>
+                                                {v.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
+                                                {v.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
+                                                {v.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                {!v.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
+                                            </td>
                                             <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{v.placa}</td>
                                             <td style={thTdStyle}>{v.tipo_vehiculo || v.tipo}</td>
                                             <td style={thTdStyle}>{v.marca}</td>
                                             <td style={thTdStyle}>{v.modelo}</td>
                                             <td style={thTdStyle}>{v.color}</td>
+                                            <td style={{ ...thTdStyle, textAlign: 'center' }}>
+                                                <button
+                                                    onClick={() => !v.es_predeterminado && handleSetDefault('vehiculo', v.placa)}
+                                                    style={{ background: 'none', border: 'none', cursor: v.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: v.es_predeterminado ? '#f59e0b' : '#d1d5db' }}
+                                                    title={v.es_predeterminado ? 'Vehículo predeterminado' : 'Marcar como predeterminado'}
+                                                >
+                                                    {v.es_predeterminado ? '★' : '☆'}
+                                                </button>
+                                            </td>
+                                            <td style={thTdStyle}>
+                                                {v.estado_aprobacion === 'activo' && (
+                                                    <button 
+                                                        onClick={() => handleToggleStatus('vehiculo', v.placa, 'activo')}
+                                                        disabled={loading}
+                                                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                    >
+                                                        🚫 Inhabilitar
+                                                    </button>
+                                                )}
+                                                {v.estado_aprobacion === 'inactivo' && (
+                                                    <button 
+                                                        onClick={() => handleToggleStatus('vehiculo', v.placa, 'inactivo')}
+                                                        disabled={loading}
+                                                        style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                    >
+                                                        🔄 Reactivar
+                                                    </button>
+                                                )}
+                                                {v.estado_aprobacion === 'pendiente' && (
+                                                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>En revisión...</span>
+                                                )}
+                                            </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}
@@ -352,21 +527,80 @@ const UserDashboard: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                                 <thead style={theadStyle}>
                                     <tr>
+                                        <th style={thTdStyle}>Activo</th>
+                                        <th style={thTdStyle}>Estado</th>
                                         <th style={thTdStyle}>Serial</th>
                                         <th style={thTdStyle}>Marca</th>
                                         <th style={thTdStyle}>Modelo</th>
                                         <th style={thTdStyle}>Sistema Op.</th>
+                                        <th style={thTdStyle}>Predeterminado</th>
+                                        <th style={thTdStyle}>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {equipos.map((e, idx) => (
+                                    {equipos.map((e, idx) => {
+                                        const images = e.img_serial ? e.img_serial.split('|') : [];
+                                        return (
                                         <tr key={e.serial || idx} style={{ transition: 'background 0.1s' }} onMouseOver={ev => ev.currentTarget.style.background = '#f9fafb'} onMouseOut={ev => ev.currentTarget.style.background = 'transparent'}>
+                                            <td style={thTdStyle}>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    {images.map((img: string, i: number) => (
+                                                        <img 
+                                                            key={i}
+                                                            src={`${STORAGE_URL}/${img}`} 
+                                                            alt={`Equipo ${i}`} 
+                                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }} 
+                                                            onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
+                                                        />
+                                                    ))}
+                                                    {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
+                                                </div>
+                                            </td>
+                                            <td style={thTdStyle}>
+                                                {e.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
+                                                {e.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
+                                                {e.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                {!e.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
+                                            </td>
                                             <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{e.serial}</td>
                                             <td style={thTdStyle}>{e.marca}</td>
                                             <td style={thTdStyle}>{e.modelo}</td>
                                             <td style={thTdStyle}>{e.so}</td>
+                                            <td style={{ ...thTdStyle, textAlign: 'center' }}>
+                                                <button
+                                                    onClick={() => !e.es_predeterminado && handleSetDefault('equipo', e.serial)}
+                                                    style={{ background: 'none', border: 'none', cursor: e.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: e.es_predeterminado ? '#10b981' : '#d1d5db' }}
+                                                    title={e.es_predeterminado ? 'Equipo predeterminado' : 'Marcar como predeterminado'}
+                                                >
+                                                    {e.es_predeterminado ? '★' : '☆'}
+                                                </button>
+                                            </td>
+                                            <td style={thTdStyle}>
+                                                {e.estado_aprobacion === 'activo' && (
+                                                    <button 
+                                                        onClick={() => handleToggleStatus('equipo', e.serial, 'activo')}
+                                                        disabled={loading}
+                                                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                    >
+                                                        🚫 Inhabilitar
+                                                    </button>
+                                                )}
+                                                {e.estado_aprobacion === 'inactivo' && (
+                                                    <button 
+                                                        onClick={() => handleToggleStatus('equipo', e.serial, 'inactivo')}
+                                                        disabled={loading}
+                                                        style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                    >
+                                                        🔄 Reactivar
+                                                    </button>
+                                                )}
+                                                {e.estado_aprobacion === 'pendiente' && (
+                                                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>En revisión...</span>
+                                                )}
+                                            </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}
@@ -383,13 +617,21 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Placa (máx 10)</label>
                             <input style={inputStyle} type="text" maxLength={10} required value={formVehiculo.placa} onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value })} placeholder="Ej: ABC123" />
 
-                            <label style={labelStyle}>Imagen del Vehículo</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                style={{ ...inputStyle, padding: '0.4rem' }}
-                                onChange={handleImageSelect}
-                            />
+                             <label style={labelStyle}>Foto General del Vehículo</label>
+                             <input
+                                 type="file"
+                                 accept="image/*"
+                                 style={{ ...inputStyle, padding: '0.4rem' }}
+                                 onChange={(e) => handleImageSelect(e, 'general')}
+                             />
+
+                             <label style={labelStyle}>Foto de la Placa (OCR)</label>
+                             <input
+                                 type="file"
+                                 accept="image/*"
+                                 style={{ ...inputStyle, padding: '0.4rem' }}
+                                 onChange={(e) => handleImageSelect(e, 'detalle')}
+                             />
                             {isOcrLoading && <span style={{ fontSize: '0.8rem', color: '#2563eb' }}>Leyendo placa...</span>}
 
                             <label style={labelStyle}>Tipo de Vehículo</label>
@@ -435,13 +677,21 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Serial</label>
                             <input style={inputStyle} type="text" required value={formEquipo.serial} onChange={e => setFormEquipo({ ...formEquipo, serial: e.target.value })} placeholder="Obligatorio" />
 
-                            <label style={labelStyle}>Imagen del Serial (Opcional)</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                style={{ ...inputStyle, padding: '0.4rem' }}
-                                onChange={handleEquipoImageSelect}
-                            />
+                             <label style={labelStyle}>Foto General del Equipo</label>
+                             <input
+                                 type="file"
+                                 accept="image/*"
+                                 style={{ ...inputStyle, padding: '0.4rem' }}
+                                 onChange={(e) => handleEquipoImageSelect(e, 'general')}
+                             />
+
+                             <label style={labelStyle}>Foto del Serial (OCR)</label>
+                             <input
+                                 type="file"
+                                 accept="image/*"
+                                 style={{ ...inputStyle, padding: '0.4rem' }}
+                                 onChange={(e) => handleEquipoImageSelect(e, 'detalle')}
+                             />
                             {isOcrEquipoLoading && <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Leyendo etiqueta...</span>}
 
                             <div style={{ display: 'flex', gap: '1rem' }}>

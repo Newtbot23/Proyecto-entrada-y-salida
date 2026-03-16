@@ -69,7 +69,8 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
     if (userRole === 1) {
         menuItems.push(
             { label: 'Panel', path: '/dashboard', icon: DashboardIcon },
-            { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon }
+            { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon },
+            { label: 'Aprobaciones', path: '/user/normaladmin/aprobaciones', icon: ReportIcon } // Reusing ReportIcon since BellIcon doesn't exist yet
         );
     } else if (userRole === 3) {
         menuItems.push(

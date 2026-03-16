@@ -8,6 +8,10 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TipoDocController;
 use App\Http\Controllers\Api\FichaController;
 
+Route::get('/login', function () {
+    return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+})->name('login');
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -73,6 +77,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/usuarios/{doc}/estado', [App\Http\Controllers\Api\UsuariosController::class, 'toggleEstado']);
     Route::get('/usuarios/qr-registro', [App\Http\Controllers\Api\UsuariosController::class, 'generateQr']);
 
+    // Asset Approvals
+    Route::get('/admin/activos-pendientes', [App\Http\Controllers\Api\AprobacionesActivosController::class, 'getPendientes']);
+    Route::patch('/admin/activos/{tipo}/{id}/estado', [App\Http\Controllers\Api\AprobacionesActivosController::class, 'updateEstado']);
+
     // Dashboard & Stats
     Route::get('/dashboard/stats', [App\Http\Controllers\Api\DashboardController::class, 'stats']);
     Route::get('/normal-admin/stats', [App\Http\Controllers\Api\DashboardController::class, 'normalAdminStats']);
@@ -94,10 +102,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
     Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
     Route::get('/user/entradas', [UserDashboardController::class, 'getEntradas']);
+    Route::get('/user/check-active-session', [UserDashboardController::class, 'checkActiveSession']);
     Route::post('/user/vehiculos', [UserDashboardController::class, 'storeVehiculo']);
     Route::post('/user/equipos', [UserDashboardController::class, 'storeEquipo']);
+    Route::patch('/user/activos/{tipo}/{id}/toggle-estado', [UserDashboardController::class, 'toggleEstado']);
+    Route::patch('/user/activos/{tipo}/{id}/set-default', [UserDashboardController::class, 'setDefaultAsset']);
     Route::post('/ocr/read-plate', [UserDashboardController::class, 'readPlate']);
     Route::post('/ocr/read-serial', [UserDashboardController::class, 'readSerial']);
+    Route::get('/user/barcode-base64', [App\Http\Controllers\Api\UsuariosController::class, 'getBarcodeBase64']);
 
     // Dynamic Tables
     Route::get('/tablas-cortas', [DynamicTableController::class, 'getShortTables']);
@@ -112,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/entities/{nit}', [ReportController::class, 'downloadEntity']);
     Route::get('/reports/person', [ReportController::class, 'getPersonReport']);
     Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
+    Route::get('/user/history/export-pdf', [ReportController::class, 'downloadUserHistory']);
 
     // Fichas Management
     Route::get('/fichas/catalogs', [FichaController::class, 'getCatalogs']);
