@@ -123,6 +123,7 @@ class UsuariosController extends Controller
             'correo' => 'required|email|max:100|unique:usuarios,correo',
             'contrasena' => 'required|string|min:6',
             'token' => 'required|string',
+            'imagen' => 'required|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -155,6 +156,65 @@ class UsuariosController extends Controller
                 ], 400);
             }
 
+            // --- 1. PROCESAR IMAGEN Y DETECCIÓN FACIAL ---
+            $imagePath = $request->file('imagen')->getPathname();
+            $base64Image = base64_encode(file_get_contents($imagePath));
+
+            $apiKey = env('GOOGLE_VISION_API_KEY');
+            if (!$apiKey) {
+                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
+            }
+
+            $visionUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
+
+            $payload = [
+                'requests' => [
+                    [
+                        'image' => [
+                            'content' => $base64Image
+                        ],
+                        'features' => [
+                            [
+                                'type' => 'FACE_DETECTION'
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $response = Http::post($visionUrl, $payload);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $responses = $result['responses'] ?? [];
+                
+                // Verificar si se detectaron rostros
+                if (empty($responses[0]['faceAnnotations'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La imagen no parece contener un rostro humano válido. Por favor, sube una foto clara de tu rostro.'
+                    ], 400); // Bad Request
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al comunicarse con el servicio de detección facial.'
+                ], 500);
+            }
+
+            // Guardar imagen válida
+            $storedImagePath = $request->file('imagen')->store('usuarios/fotos', 'public');
+
+            // --- 2. GENERAR CÓDIGO DE BARRAS ---
+            $barcodeGenerator = new \Picqer\Barcode\BarcodeGeneratorSVG();
+            // Generar barcode formato CODE_128 usando el documento del usuario
+            $barcodeFormat = $barcodeGenerator::TYPE_CODE_128;
+            $barcodeData = $barcodeGenerator->getBarcode($request->doc, $barcodeFormat);
+            
+            $barcodeFileName = 'usuarios/barcodes/' . $request->doc . '_' . time() . '.svg';
+            \Illuminate\Support\Facades\Storage::disk('public')->put($barcodeFileName, $barcodeData);
+
+            // --- 3. CREAR USUARIO EN BD ---
             $user = Usuarios::create([
                 'doc' => $request->doc,
                 'id_tip_doc' => $request->id_tip_doc,
@@ -164,6 +224,8 @@ class UsuariosController extends Controller
                 'segundo_apellido' => $request->segundo_apellido ?? null,
                 'telefono' => $request->telefono,
                 'correo' => $request->correo,
+                'imagen' => $storedImagePath,
+                'codigo_qr' => $barcodeFileName, // Se guarda en 'codigo_qr' temporalmente según requerimiento
                 'contrasena' => Hash::make($request->contrasena),
                 'id_rol' => 2, // Force Regular User role
                 'nit_entidad' => $nit_entidad, // Assigned securely from token
@@ -228,5 +290,36 @@ class UsuariosController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Obtiene el código de barras en formato base64 para evitar problemas de CORS en el frontend (PDF).
+     */
+    public function getBarcodeBase64(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || !$user->codigo_qr) {
+            return response()->json(['error' => 'No hay código de barras asignado'], 404);
+        }
+
+        $path = storage_path('app/public/' . $user->codigo_qr);
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'El archivo no existe en el disco'], 404);
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $fileContent = file_get_contents($path);
+        
+        $mimeType = 'image/' . $extension;
+        if ($extension === 'svg') {
+            $mimeType = 'image/svg+xml';
+        }
+
+        $base64 = 'data:' . $mimeType . ';base64,' . base64_encode($fileContent);
+
+        return response()->json([
+            'success' => true,
+            'base64' => $base64
+        ]);
     }
 }

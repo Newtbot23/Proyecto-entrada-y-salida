@@ -4,11 +4,13 @@ import UserSidebar from './UserSidebar';
 import UserHeader from './UserHeader';
 
 interface User {
-    id: number;
+    id?: number | string;
+    doc?: string;
     nombre: string;
     correo: string;
-    id_entidad: number;
+    id_entidad?: number;
     id_rol: number;
+    codigo_qr?: string;
 }
 
 const UserLayout: React.FC = () => {

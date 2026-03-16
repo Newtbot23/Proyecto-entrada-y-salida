@@ -8,7 +8,7 @@ const RegistroPersonasView: React.FC = () => {
             overrideTitle="Registro Completo de Personas"
             immutableFields={['nit_entidad', 'id_rol', 'contrasena']}
             hideCreateForm={true}
-            hiddenColumns={['contrasena', 'id_rol', 'nit_entidad']}
+            hiddenColumns={['contrasena', 'id_rol', 'nit_entidad', 'codigo_qr']}
         />
     );
 };

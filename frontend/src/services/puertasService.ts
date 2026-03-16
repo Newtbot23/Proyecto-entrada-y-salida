@@ -19,10 +19,15 @@ export interface PersonaSearchResult {
         marca: string;
         modelo: string;
         tipo_equipo: string;
+        img_serial?: string;
+        es_predeterminado?: boolean | number;
     }[];
     estaAdentro: boolean;
-    id_registro: number | null;
-    serial_equipo: string | null;
+    registro_activo?: {
+        id: number;
+        seriales_equipos: string[];
+        equipos_registrados: any[];
+    } | null;
 }
 
 export interface VehiculoSearchResult {
@@ -34,25 +39,43 @@ export interface VehiculoSearchResult {
         color: string;
         doc: string;
         usuario_nombre: string;
+        img_vehiculo?: string;
+        es_predeterminado?: boolean | number;
     }[];
     equipos: {
         serial: string;
         marca: string;
         modelo: string;
         tipo_equipo: string;
+        img_serial?: string;
+        es_predeterminado?: boolean | number;
     }[];
     registrosAbiertos: {
         id: number;
         doc: string;
-        serial_equipo: string | null;
+        seriales_equipos: string[];
+        equipos_adentro?: {
+            serial: string;
+            marca: string;
+            modelo: string;
+            tipo_equipo: string;
+            img_serial?: string;
+        }[];
         placa: string | null;
     }[];
+    registro_activo?: {
+        id: number;
+        doc: string;
+        seriales_equipos: string[];
+        equipos_adentro?: any[];
+        placa: string | null;
+    } | null;
 }
 
 export interface RegistrarActividadPayload {
     doc: string;
     accion: 'entrada' | 'salida';
-    serial_equipo?: string | null;
+    seriales_equipos?: string[] | null;
     placa?: string;
     id_registro?: number | null;
 }

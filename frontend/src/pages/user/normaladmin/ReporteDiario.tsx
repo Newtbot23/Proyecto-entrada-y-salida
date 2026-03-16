@@ -11,7 +11,7 @@ interface RegistroDiario {
     hora_entrada: string;
     hora_salida: string | null;
     placa?: string;
-    serial_equipo?: string;
+    seriales_equipos?: string;
 }
 
 const ReporteDiario: React.FC = () => {
@@ -74,7 +74,7 @@ const ReporteDiario: React.FC = () => {
             record.hora_entrada,
             record.hora_salida || 'Aún adentro',
             record.placa || '-',
-            record.serial_equipo || '-'
+            record.seriales_equipos || '-'
         ]);
 
         // If we want to include vehicles/equipments in the daily report PDF, we adjust columns
@@ -170,9 +170,9 @@ const ReporteDiario: React.FC = () => {
                                         ) : '-'}
                                     </td>
                                     <td style={{ padding: '1rem' }}>
-                                        {record.serial_equipo ? (
+                                        {record.seriales_equipos ? (
                                             <span style={{ backgroundColor: '#fdf6e3', color: '#b45309', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.875rem' }}>
-                                                {record.serial_equipo}
+                                                {record.seriales_equipos}
                                             </span>
                                         ) : '-'}
                                     </td>

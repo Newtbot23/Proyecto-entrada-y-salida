@@ -106,23 +106,18 @@ class ReportController extends Controller
                 ->orderBy('registros.hora_entrada', 'desc');
 
             if ($includeExtras) {
-                $registrosQuery->leftJoin('vehiculos', 'registros.placa', '=', 'vehiculos.placa')
-                               ->leftJoin('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
-                               ->leftJoin('equipos', 'registros.serial_equipo', '=', 'equipos.serial')
-                               ->leftJoin('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-                               ->select(
-                                   'registros.*',
-                                   'vehiculos.placa as vehiculo_placa',
-                                   'tipos_vehiculo.tipo_vehiculo',
-                                   'equipos.serial as equipo_serial',
-                                   'equipos.tipo_equipo',
-                                   'marcas_equipo.marca as equipo_marca'
-                               );
+                $registros = $registrosQuery->get()->map(function($r) {
+                    $r->equipos = DB::table('registros_equipos')
+                        ->join('equipos', 'registros_equipos.serial_equipo', '=', 'equipos.serial')
+                        ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
+                        ->where('registros_equipos.id_registro', $r->id)
+                        ->select('equipos.serial', 'equipos.modelo', 'marcas_equipo.marca')
+                        ->get();
+                    return $r;
+                });
             } else {
-                $registrosQuery->select('registros.id', 'registros.doc', 'registros.fecha', 'registros.hora_entrada', 'registros.hora_salida');
+                $registros = $registrosQuery->get();
             }
-
-            $registros = $registrosQuery->get();
 
             return response()->json([
                 'success' => true,
@@ -144,16 +139,25 @@ class ReportController extends Controller
             $date = $request->query('date', Carbon::today()->toDateString());
             $nit = $request->user()->nit_entidad;
 
-            $registros = DB::table('registros')
-                ->join('usuarios', 'registros.doc', '=', 'usuarios.doc')
-                ->where('usuarios.nit_entidad', $nit)
-                ->whereDate('registros.fecha', $date)
-                ->select(
-                    'registros.*',
-                    DB::raw("TRIM(CONCAT_WS(' ', usuarios.primer_nombre, usuarios.segundo_nombre, usuarios.primer_apellido, usuarios.segundo_apellido)) as usuario_nombre")
-                )
-                ->orderBy('registros.hora_entrada', 'desc')
-                ->get();
+            $registros = \App\Models\Registros::with(['equipos_registrados', 'usuario'])
+                ->whereDate('fecha', $date)
+                ->whereHas('usuario', function($q) use ($nit) {
+                    $q->where('nit_entidad', $nit);
+                })
+                ->orderBy('hora_entrada', 'desc')
+                ->get()
+                ->map(function($r) {
+                    return [
+                        'id' => $r->id,
+                        'doc' => $r->doc,
+                        'usuario_nombre' => trim($r->usuario->primer_nombre . ' ' . $r->usuario->segundo_nombre . ' ' . $r->usuario->primer_apellido . ' ' . $r->usuario->segundo_apellido),
+                        'fecha' => $r->fecha,
+                        'hora_entrada' => $r->hora_entrada,
+                        'hora_salida' => $r->hora_salida,
+                        'placa' => $r->placa,
+                        'seriales_equipos' => $r->equipos_registrados->pluck('serial_equipo')->join(', ') ?: '-'
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -164,6 +168,70 @@ class ReportController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error getDailyReport: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al obtener el reporte diario', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function downloadUserHistory(Request $request)
+    {
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+            }
+
+            // Si viene una fecha 'YYYY-MM-DD', extraemos mes y año. 
+            // Si no, usamos el mes y año actuales.
+            $dateInput = $request->query('date');
+            if ($dateInput) {
+                $carbonDate = Carbon::parse($dateInput);
+                $month = $carbonDate->month;
+                $year = $carbonDate->year;
+            } else {
+                $month = $request->query('month', Carbon::now()->month);
+                $year = $request->query('year', Carbon::now()->year);
+            }
+
+            $registros = DB::table('registros')
+                ->leftJoin('vehiculos', 'registros.placa', '=', 'vehiculos.placa')
+                ->where('registros.doc', $user->doc)
+                ->whereMonth('registros.fecha', $month)
+                ->whereYear('registros.fecha', $year)
+                ->select(
+                    'registros.id',
+                    'registros.fecha',
+                    'registros.hora_entrada',
+                    'registros.hora_salida',
+                    'registros.placa',
+                    'vehiculos.marca as vehiculo_marca',
+                    'vehiculos.modelo as vehiculo_modelo'
+                )
+                ->orderBy('registros.fecha', 'asc')
+                ->orderBy('registros.hora_entrada', 'asc')
+                ->get()
+                ->map(function($r) {
+                    $r->equipos = DB::table('registros_equipos')
+                        ->join('equipos', 'registros_equipos.serial_equipo', '=', 'equipos.serial')
+                        ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
+                        ->where('registros_equipos.id_registro', $r->id)
+                        ->select('equipos.serial', 'equipos.modelo', 'marcas_equipo.marca')
+                        ->get();
+                    return $r;
+                });
+
+            $monthName = Carbon::createFromDate($year, $month, 1)->locale('es')->monthName;
+            $data = [
+                'user' => $user,
+                'registros' => $registros,
+                'month' => ucfirst($monthName),
+                'year' => $year
+            ];
+
+            $pdf = Pdf::loadView('reports.user_history', $data);
+            return $pdf->download("historial_{$monthName}_{$year}.pdf");
+
+        } catch (\Exception $e) {
+            \Log::error('Error downloadUserHistory: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al generar el PDF', 'error' => $e->getMessage()], 500);
         }
     }
 }
