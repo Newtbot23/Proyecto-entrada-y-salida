@@ -1,0 +1,350 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: #6b7280;
+}
+
+.selectorCard {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 500px;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.select {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background-color: white;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 143, 57, 0.1);
+}
+
+/* ─── Dashboard ────────────────────────────────────────────────────────── */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* ─── Animaciones ───────────────────────────────────────────────────────── */
+
+/*
+ * ✅ ESTRATEGIA SEGURA PARA DND:
+ * Nunca se anima transform en contenedores que el DND gestiona.
+ * El panel derecho usa opacity + margin para su entrada.
+ * El panel izquierdo usa un overlay absoluto que se desvanece.
+ */
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    margin-right: -24px; /* desplazamiento sutil sin transform */
+  }
+  to {
+    opacity: 1;
+    margin-right: 0;
+  }
+}
+
+/* Clase que activa la entrada de la columna derecha completa */
+.fadeInRight {
+  animation: fadeInRight 0.35s ease-out 0.2s both;
+}
+
+.column {
+  background: #fdfdfd;
+  border: 2px dashed var(--color-border);
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 600px;
+  /* ✅ Sin overflow:hidden: no recortar la tarjeta flotante del DND */
+}
+
+/* ─── Overlay pattern (panel izquierdo) ─────────────────────────────────── */
+
+.droppableWrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+}
+
+.columnOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #fdfdfd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  /* ✅ Solo opacity en la transición — nunca transform */
+  transition: opacity 0.3s ease;
+}
+
+.columnOverlay span {
+  font-size: 2rem;
+  font-style: normal;
+}
+
+.column h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.listContainer {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  min-height: 100px;
+}
+
+.userCard {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  cursor: grab;
+  /* ✅ Solo propiedades seguras — NUNCA transform ni position */
+  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.userCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  /* ✅ Sin transform:translateY — rompería el stacking context del DND */
+}
+
+.userCard:active {
+  cursor: grabbing;
+}
+
+.userName {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-main);
+}
+
+.userDoc {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.isDragging {
+  background-color: var(--color-bg-page);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  opacity: 0.9;
+}
+
+.placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-dim);
+  font-style: italic;
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* ─── Hint estado inicial (columna izquierda sin ficha) ─────────────────── */
+
+.columnHint {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.columnHint span {
+  font-size: 2rem;
+}
+
+.error {
+  color: var(--color-danger);
+  padding: 1rem;
+  background: #fef2f2;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* ─── Botón Guardar ─────────────────────────────────────────────────────── */
+
+.btnSave {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.2s;
+  align-self: flex-start;
+}
+
+.btnSave:hover:not(:disabled) {
+  background-color: var(--color-primary-dark, #006b2b);
+  transform: translateY(-1px);
+}
+
+.btnSave:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btnSave:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Banner de éxito ───────────────────────────────────────────────────── */
+
+.success {
+  color: #15803d;
+  padding: 1rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* ─── Buscador local ────────────────────────────────────────────────────── */
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Sin margin-top: el gap del .column ya lo separa del h2 */
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.65rem;
+  font-size: 0.85rem;
+  pointer-events: none;
+  user-select: none;
+  color: var(--color-text-muted);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.55rem 2.2rem 0.55rem 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: white;
+  color: var(--color-text-main);
+  /* ✅ Solo propiedades seguras — sin transform */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 143, 57, 0.1);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-dim, #9ca3af);
+}
+
+.searchClear {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.searchClear:hover {
+  background-color: var(--color-border);
+  color: var(--color-text-main);
+}

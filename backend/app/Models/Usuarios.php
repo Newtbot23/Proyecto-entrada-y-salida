@@ -85,4 +85,11 @@ class Usuarios extends Authenticatable
     {
         return $this->hasOne(LicenciasSistema::class, 'nit_entidad', 'nit_entidad');
     }
+
+    public function fichas()
+    {
+        return $this->belongsToMany(Fichas::class, 'detalle_ficha_usuarios', 'doc', 'id_ficha')
+                    ->withPivot('id', 'tipo_participante')
+                    ->withTimestamps();
+    }
 }
