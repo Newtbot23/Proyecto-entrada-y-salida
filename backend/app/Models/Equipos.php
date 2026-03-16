@@ -13,6 +13,7 @@ class Equipos extends Model
 
     protected $fillable = [
         'serial',
+        'categoria_equipo',
         'tipo_equipo',
         'placa_sena',
         'id_marca',
@@ -20,7 +21,10 @@ class Equipos extends Model
         'modelo',
         'tipo_equipo_desc',
         'caracteristicas',
-        'id_sistema_operativo'
+        'id_sistema_operativo',
+        'img_serial',
+        'doc',
+        'lote_importacion'
     ];
 
     public function marca()

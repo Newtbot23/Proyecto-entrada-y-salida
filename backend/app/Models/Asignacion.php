@@ -4,11 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Usuarios;
-use App\Models\Equipos;
-use App\Models\Fichas;
 
-class Asignaciones extends Model
+class Asignacion extends Model
 {
     use HasFactory;
 
@@ -27,7 +24,7 @@ class Asignaciones extends Model
      */
     public function usuario()
     {
-        return $this->belongsTo(Usuarios::class, 'doc', 'doc');
+        return $this->belongsTo(User::class, 'doc', 'doc');
     }
 
     /**
@@ -43,6 +40,6 @@ class Asignaciones extends Model
      */
     public function ambiente()
     {
-        return $this->belongsTo(Fichas::class, 'numero_ambiente', 'numero_ambiente');
+        return $this->belongsTo(Ficha::class, 'numero_ambiente', 'numero_ambiente');
     }
 }

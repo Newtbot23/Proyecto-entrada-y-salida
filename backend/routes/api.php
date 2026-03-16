@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\UserDashboardController;
 use App\Http\Controllers\Api\DynamicTableController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TipoDocController;
+use App\Http\Controllers\Api\FichaController;
 
 Route::get('/login', function () {
     return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
@@ -125,8 +126,34 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/daily', [ReportController::class, 'getDailyReport']);
     Route::get('/user/history/export-pdf', [ReportController::class, 'downloadUserHistory']);
 
+    // Fichas Management
+    Route::get('/fichas/catalogs', [FichaController::class, 'getCatalogs']);
+    Route::get('/fichas/sin-usuarios', [FichaController::class, 'getFichasSinUsuarios']);
+    Route::get('/usuarios/asignables', [FichaController::class, 'getUsuariosAsignables']);
+    Route::get('/fichas/buscar/{numero}', [FichaController::class, 'buscarPorNumero']);
+    Route::get('/fichas/{id}/usuarios-detallados', [FichaController::class, 'getUsuariosDeFicha']);
+    Route::get('/fichas', [FichaController::class, 'index']);
+    Route::post('/fichas', [FichaController::class, 'store']);
+    Route::get('/fichas/{id}/usuarios', [FichaController::class, 'getUsuarios']);
+    Route::post('/fichas/{id}/asignar', [FichaController::class, 'asignarUsuarios']);
+    Route::patch('/fichas/detalle/{detalle_id}', [FichaController::class, 'actualizarRolParticipante']);
+    Route::patch('/fichas/{id}/usuarios/{doc}/rol', [FichaController::class, 'actualizarRolPorFichaYUsuario']);
+    Route::patch('/fichas/{id}/estado', [FichaController::class, 'cambiarEstado']);
+
     // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);
     Route::get('/puertas/search-vehiculo', [App\Http\Controllers\Api\PuertasController::class, 'searchVehiculo']);
     Route::post('/puertas/registrar-actividad', [App\Http\Controllers\Api\PuertasController::class, 'registrarActividad']);
+
+    // Equipos Management
+    Route::get('/equipos/catalogs', [App\Http\Controllers\Api\EquipoController::class, 'getCatalogs']);
+    Route::post('/equipos', [App\Http\Controllers\Api\EquipoController::class, 'store']);
+    Route::post('/equipos/importar', [App\Http\Controllers\Api\EquipoController::class, 'importarCsv']);
+    Route::get('/equipos/lotes', [App\Http\Controllers\Api\EquipoController::class, 'getLotes']);
+    Route::put('/equipos/lotes/renombrar', [App\Http\Controllers\Api\EquipoController::class, 'renombrarLote']);
+    Route::put('/equipos/{id}/mover-lote', [App\Http\Controllers\Api\EquipoController::class, 'moverEquipoLote']);
+    Route::get('/equipos/por-lote', [App\Http\Controllers\Api\EquipoController::class, 'getEquiposByLote']);
+    // Asignaciones Management
+    Route::post('/asignaciones/masivas', [App\Http\Controllers\Api\AsignacionesController::class, 'asignarMasivamente']);
+    Route::get('/asignaciones/historial', [App\Http\Controllers\Api\AsignacionesController::class, 'obtenerHistorial']);
 });

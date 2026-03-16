@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             AdminsSeeder::class,
             SuperAdminSeeder::class,
             PlanesLicenciaSeeder::class,
+            ProgramasSeeder::class,
             CatalogsSeeder::class,
         ]);
     }

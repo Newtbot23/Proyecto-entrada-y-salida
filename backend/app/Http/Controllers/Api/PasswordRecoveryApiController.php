@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Rules\NotRecentPassword;
 
 /**
  * API Controller for Password Recovery
@@ -182,17 +183,36 @@ class PasswordRecoveryApiController extends Controller
     public function resetPassword(Request $request)
     {
         try {
+            // Pre-validación ligera para obtener el usuario antes de aplicar
+            // la regla de historial de contraseñas (necesitamos su doc y hash actual)
             $request->validate([
                 'email' => 'required|email',
-                'code' => 'required|string|size:6',
-                'password' => 'required|min:8|confirmed',
-                'type' => 'sometimes|in:usuario,superadmin'
+                'code'  => 'required|string|size:6',
+                'type'  => 'sometimes|in:usuario,superadmin',
             ]);
 
-            $type = $request->input('type', 'usuario');
+            $type        = $request->input('type', 'usuario');
             $isSuperAdmin = $type === 'superadmin';
-            $model = $isSuperAdmin ? Admins::class : Usuarios::class;
-            $userType = $isSuperAdmin ? 'admins' : 'usuarios';
+            $model       = $isSuperAdmin ? Admins::class : Usuarios::class;
+            $userType    = $isSuperAdmin ? 'admins' : 'usuarios';
+
+            // Recuperar el usuario para poder pasarle su doc y hash actual a la regla
+            $userForRule = $model::where('correo', $request->email)->first();
+
+            // Construir la regla de historial solo para usuarios (la tabla old_passwords
+            // es gestionada por el trigger sobre la tabla `usuarios`)
+            $passwordRules = ['required', 'min:8', 'confirmed'];
+            if (!$isSuperAdmin && $userForRule) {
+                $passwordRules[] = new NotRecentPassword(
+                    $userForRule->doc,
+                    $userForRule->contrasena
+                );
+            }
+
+            // Validación completa incluyendo la regla de historial
+            $request->validate([
+                'password' => $passwordRules,
+            ]);
 
             // Verify code is still valid
             $record = DB::table('password_reset_codes')

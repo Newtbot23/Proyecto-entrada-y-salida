@@ -45,6 +45,7 @@ interface ApiResponse<T> {
 interface RequestConfig {
     headers?: Record<string, string>;
     signal?: AbortSignal;
+    transformRequest?: Array<(data: any, headers: Record<string, any>) => any>;
 }
 
 // ============================================================================
@@ -228,6 +229,20 @@ class ApiClient {
             
             // If it's FormData, browser needs to set Content-Type with boundary automatically
             if (isFormData) {
+            let finalBody: any = body;
+            const headers = this.getHeaders(config?.headers);
+
+            // Soporte para transformRequest (estilo Axios)
+            if (config?.transformRequest) {
+                config.transformRequest.forEach(fn => {
+                    finalBody = fn(finalBody, headers);
+                });
+            }
+
+            // Si es FormData, dejamos que fetch lo maneje solo (no stringify, no Content-Type manual)
+            const isFormData = finalBody instanceof FormData;
+            if (isFormData) {
+                // Si el transformRequest no lo borró, lo borramos aquí para asegurar el boundary
                 delete headers['Content-Type'];
             }
 

@@ -34,6 +34,13 @@ import DynamicCrud from './components/dynamic/DynamicCrud';
 import ReportePersona from './pages/user/normaladmin/ReportePersona';
 import ReporteDiario from './pages/user/normaladmin/ReporteDiario';
 import AprobacionesActivos from './pages/user/normaladmin/AprobacionesActivos';
+import FichasCreate from './pages/user/normaladmin/fichas/FichasCreate';
+import FichasAssign from './pages/user/normaladmin/fichas/FichasAssign';
+import FichasList from './pages/user/normaladmin/fichas/FichasList';
+import RegistrarEquipos from './pages/user/normaladmin/equipos/RegistrarEquipos';
+import AsignarEquipos from './pages/user/normaladmin/equipos/AsignarEquipos';
+import GestionLotes from './pages/user/normaladmin/equipos/GestionLotes';
+import HistorialAsignaciones from './pages/user/normaladmin/equipos/HistorialAsignaciones';
 
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'sonner';
@@ -67,6 +74,13 @@ function App() {
           <Route path="/user/normaladmin/reportes/persona" element={<ReportePersona />} />
           <Route path="/user/normaladmin/reportes/diario" element={<ReporteDiario />} />
           <Route path="/user/normaladmin/aprobaciones" element={<AprobacionesActivos />} />
+          <Route path="/user/normaladmin/fichas/crear" element={<FichasCreate />} />
+          <Route path="/user/normaladmin/fichas/asignar" element={<FichasAssign />} />
+          <Route path="/user/normaladmin/fichas/lista" element={<FichasList />} />
+          <Route path="/user/normaladmin/equipos/registrar" element={<RegistrarEquipos />} />
+          <Route path="/user/normaladmin/equipos/asignar" element={<AsignarEquipos />} />
+          <Route path="/user/normaladmin/equipos/gestion-lotes" element={<GestionLotes />} />
+          <Route path="/user/normaladmin/equipos/historial" element={<HistorialAsignaciones />} />
         </Route>
 
         {/* Regular User Flow */}

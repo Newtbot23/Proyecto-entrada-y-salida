@@ -1,10 +1,14 @@
 <?php
+ 
+ namespace App\Models;
+ 
+ use Illuminate\Database\Eloquent\Model;
+ 
+ class Programas extends Model
+ {
+    protected $primaryKey = 'id';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class Programas extends Model
-{
-    //
-}
+    protected $fillable = ['id', 'programa'];
+ }
