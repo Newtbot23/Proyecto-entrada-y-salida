@@ -1,11 +1,31 @@
-import React from 'react';
-import { useAuth } from '../../../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useAuth, type User } from '../../../context/AuthContext';
 import styles from './UserBarcode.module.css';
 import { apiClient, API_BASE_URL } from '../../../config/api';
 import { jsPDF } from 'jspdf';
 
 const UserBarcode: React.FC = () => {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Refetch user data on mount to ensure barcode path is fresh
+    useEffect(() => {
+        const refreshUser = async () => {
+            try {
+                // Fetch the freshest profile data from backend
+                const freshUserData = await apiClient.get<User>('/user');
+                if (freshUserData) {
+                    setUser(freshUserData);
+                }
+            } catch (error) {
+                console.error('Error revalidating user profile:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        refreshUser();
+    }, []); // Run once on mount
 
     // The barcode path from DB typically looks like 'usuarios/barcodes/123_456.svg'
     const barcodeUrl = user?.codigo_qr ? `${API_BASE_URL.replace('/api', '')}/storage/${user.codigo_qr}` : null;
@@ -90,6 +110,21 @@ const UserBarcode: React.FC = () => {
 
         doc.save(`Codigo_Acceso_${user.id || 'usuario'}.pdf`);
     };
+
+    if (isLoading) {
+        return (
+            <div className={styles.barcodeContainer}>
+                <div className={styles.card}>
+                    <div className={styles.skeletonTitle}></div>
+                    <div className={styles.skeletonText}></div>
+                    <div className={styles.barcodeWrapper}>
+                        <div className={styles.spinner}></div>
+                        <p className={styles.loadingText}>Cargando credencial...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.barcodeContainer}>

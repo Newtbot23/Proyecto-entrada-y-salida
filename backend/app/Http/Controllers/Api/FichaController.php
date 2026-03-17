@@ -38,9 +38,11 @@ class FichaController extends Controller
     public function getFichasSinUsuarios()
     {
         try {
-            // Fichas que no tienen usuarios asociados en la tabla pivote
-            $fichas = Fichas::doesntHave('usuarios')
-                ->with('programa:id,programa')
+            // Traer TODAS las fichas ordenadas: primero las vacías, luego por número
+            $fichas = Fichas::with('programa:id,programa')
+                ->withCount('usuarios')
+                ->orderBy('usuarios_count', 'asc')
+                ->orderBy('numero_ficha', 'asc')
                 ->get();
 
             return response()->json([
@@ -50,7 +52,7 @@ class FichaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener fichas sin usuarios',
+                'message' => 'Error al obtener lista de fichas',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -319,9 +321,17 @@ class FichaController extends Controller
         try {
             $ficha = Fichas::findOrFail($id);
 
-            // Obtenemos los usuarios con los datos del pivote
+            // Obtenemos los usuarios con los datos del pivote para conocer el rol (aprendiz/instructor)
             $usuarios = $ficha->usuarios()
-                ->select('usuarios.doc', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')
+                ->select(
+                    'usuarios.doc', 
+                    'primer_nombre', 
+                    'segundo_nombre', 
+                    'primer_apellido', 
+                    'segundo_apellido',
+                    'detalle_ficha_usuarios.tipo_participante',
+                    'detalle_ficha_usuarios.id as detalle_id'
+                )
                 ->get();
 
             return response()->json([
@@ -341,5 +351,60 @@ class FichaController extends Controller
         $request->validate(['estado' => 'required|in:Lectiva,Practica,Finalizada']);
         DB::table('fichas')->where('id', $id)->update(['estado' => $request->estado]);
         return response()->json(['message' => 'Estado actualizado exitosamente']);
+    }
+
+    public function desvincularUsuario($id, $doc)
+    {
+        try {
+            $detalle = DetalleFichaUsuarios::where('id_ficha', $id)
+                ->where('doc', $doc)
+                ->firstOrFail();
+
+            // Validación de Seguridad: No se puede desvincular a un instructor directamente
+            if ($detalle->tipo_participante === 'instructor') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede remover a un instructor activo. Cámbiele el rol a aprendiz primero en Gestión de Usuarios.'
+                ], 403);
+            }
+
+            $detalle->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario desvinculado exitosamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al desvincular usuario',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateHoraLimite(Request $request, $id)
+    {
+        $request->validate([
+            'hora_limite_llegada' => 'required|date_format:H:i'
+        ]);
+
+        try {
+            $ficha = Fichas::findOrFail($id);
+            $ficha->update([
+                'hora_limite_llegada' => $request->hora_limite_llegada
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hora límite actualizada'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar hora límite',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
