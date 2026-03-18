@@ -11,6 +11,7 @@ interface Usuario {
     segundo_nombre?: string;
     primer_apellido: string;
     segundo_apellido?: string;
+    tipo_participante?: 'aprendiz' | 'instructor'; // Rol en la ficha
 }
 
 const FichasAssign: React.FC = () => {
@@ -21,6 +22,10 @@ const FichasAssign: React.FC = () => {
     const [cartUsers, setCartUsers] = useState<Usuario[]>([]);
     const [successMsg, setSuccessMsg] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
+    
+    // ComboBox Fichas
+    const [fichaSearch, setFichaSearch] = useState<string>('');
+    const [isFichaDropdownOpen, setIsFichaDropdownOpen] = useState(false);
 
     // ── Queries ───────────────────────────────────────────────
     const {
@@ -71,8 +76,32 @@ const FichasAssign: React.FC = () => {
     });
 
     // ── Handlers ─────────────────────────────────────────────
-    const handleFichaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedFichaId(e.target.value);
+    const handleSelectFicha = async (ficha: any) => {
+        setSelectedFichaId(String(ficha.id));
+        setFichaSearch(String(ficha.numero_ficha));
+        setIsFichaDropdownOpen(false);
+        setCartUsers([]); // Reset temporal
+
+        try {
+            // Cargar usuarios actuales de la ficha
+            const currentUsers = await FichasService.getUsuariosDeFicha(ficha.id);
+            setCartUsers(currentUsers);
+
+            // Filtrar los usuarios disponibles para quitar los que ya están en la ficha
+            if (assignableUsersData) {
+                const currentDocs = new Set(currentUsers.map((u: any) => u.doc));
+                setAvailableUsers(assignableUsersData.filter((u: any) => !currentDocs.has(u.doc)));
+            }
+        } catch (error) {
+            console.error('Error al cargar integrantes de la ficha:', error);
+        }
+    };
+
+    const handleClearFicha = () => {
+        setSelectedFichaId('');
+        setFichaSearch('');
+        setCartUsers([]);
+        if (assignableUsersData) setAvailableUsers(assignableUsersData);
     };
 
     const handleDragEnd = (result: DropResult) => {
@@ -167,6 +196,11 @@ const FichasAssign: React.FC = () => {
                 .includes(searchTerm.toLowerCase())
     );
 
+    // Filtrado de Fichas para el ComboBox (Búsqueda por número)
+    const filteredFichas = availableFichas?.filter((f: any) => 
+        String(f.numero_ficha).includes(fichaSearch)
+    ) || [];
+
     return (
         <div className={styles.container}>
             <header className={styles.header}>
@@ -200,36 +234,65 @@ const FichasAssign: React.FC = () => {
                     <div className={styles.selectorCard}>
                         <div className={styles.formGroup}>
                             <label className={styles.label}>
-                                Fichas disponibles (sin usuarios)
+                                Buscar Ficha (Número)
                             </label>
-                            <select
-                                className={styles.select}
-                                value={selectedFichaId}
-                                onChange={handleFichaChange}
-                            >
-                                <option value="">
-                                    -- Selecciona una ficha --
-                                </option>
-                                {availableFichas?.map((ficha: any) => (
-                                    <option key={ficha.id} value={ficha.id}>
-                                        {ficha.numero_ficha} -{' '}
-                                        {ficha.programa?.programa}
-                                    </option>
-                                ))}
-                            </select>
+                            
+                            <div className={styles.comboBoxContainer}>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        type="text"
+                                        className={styles.select}
+                                        placeholder="Ej: 2711815..."
+                                        value={fichaSearch}
+                                        onChange={(e) => {
+                                            setFichaSearch(e.target.value);
+                                            setIsFichaDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsFichaDropdownOpen(true)}
+                                    />
+                                    {selectedFichaId && (
+                                        <button className={styles.btnClear} onClick={handleClearFicha}>✕</button>
+                                    )}
+                                </div>
+
+                                {isFichaDropdownOpen && (
+                                    <div className={styles.dropdown}>
+                                        {filteredFichas.length > 0 ? (
+                                            filteredFichas.map((ficha: any) => (
+                                                <div 
+                                                    key={ficha.id} 
+                                                    className={styles.dropdownItem}
+                                                    onClick={() => handleSelectFicha(ficha)}
+                                                >
+                                                    <span className={styles.fichaNum}>Ficha: {ficha.numero_ficha}</span>
+                                                    <span className={styles.fichaProg}>- {ficha.programa?.programa}</span>
+                                                    <span className={styles.fichaCount}> (Usuarios: {ficha.usuarios_count ?? 0})</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className={styles.noResults}>No se encontraron fichas</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Botón Guardar — visible solo si hay ficha Y usuarios en el carrito */}
                         {selectedFichaId && cartUsers.length > 0 && (
-                            <button
-                                className={styles.btnSave}
-                                onClick={handleSave}
-                                disabled={!canSave}
-                            >
-                                {mutation.isPending
-                                    ? 'Guardando...'
-                                    : `Guardar Asignación (${cartUsers.length} usuarios)`}
-                            </button>
+                                    <button
+                                        className={styles.btnSave}
+                                        onClick={handleSave}
+                                        disabled={!canSave}
+                                    >
+                                        {mutation.isPending ? (
+                                            <span>Guardando...</span>
+                                        ) : (
+                                            <>
+                                                <span className={styles.btnTitle}>Guardar Asignación</span>
+                                                <span className={styles.btnSubtitle}>({cartUsers.length} usuarios)</span>
+                                            </>
+                                        )}
+                                    </button>
                         )}
                     </div>
 
@@ -275,24 +338,34 @@ const FichasAssign: React.FC = () => {
                                                         key={String(user.doc)}
                                                         draggableId={String(user.doc)}
                                                         index={index}
+                                                        isDragDisabled={user.tipo_participante === 'instructor'}
                                                     >
                                                         {(
                                                             providedDrag: any,
                                                             snapshotDrag: any
                                                         ) => (
                                                             <div
-                                                                className={`${styles.userCard} ${snapshotDrag.isDragging ? styles.isDragging : ''}`}
+                                                                className={`${styles.userCard} 
+                                                                    ${snapshotDrag.isDragging ? styles.isDragging : ''} 
+                                                                    ${user.tipo_participante === 'instructor' ? styles.isLocked : ''}`
+                                                                }
                                                                 ref={providedDrag.innerRef}
                                                                 {...providedDrag.draggableProps}
                                                                 {...providedDrag.dragHandleProps}
                                                             >
-                                                                <span className={styles.userName}>
-                                                                    {user.primer_nombre}{' '}
-                                                                    {user.primer_apellido}
-                                                                </span>
-                                                                <span className={styles.userDoc}>
-                                                                    CC: {user.doc}
-                                                                </span>
+                                                                <div className={styles.userInfo}>
+                                                                    <span className={styles.userName}>
+                                                                        {user.tipo_participante === 'instructor' && '🔒 '}
+                                                                        {user.primer_nombre}{' '}
+                                                                        {user.primer_apellido}
+                                                                    </span>
+                                                                    <span className={styles.userDoc}>
+                                                                        CC: {user.doc}
+                                                                    </span>
+                                                                </div>
+                                                                {user.tipo_participante === 'instructor' && (
+                                                                    <span className={styles.badgeInstructor}>Instructor</span>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </Draggable>

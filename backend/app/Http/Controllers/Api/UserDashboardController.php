@@ -552,4 +552,43 @@ class UserDashboardController extends Controller
             ], 500);
         }
     }
+
+    public function checkActiveSession(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $registroActivo = \App\Models\Registros::where('doc', $user->doc)
+            ->whereNull('hora_salida')
+            ->orderBy('fecha', 'desc')
+            ->orderBy('hora_entrada', 'desc')
+            ->first();
+
+        if (!$registroActivo) {
+            return response()->json([
+                'warning' => false
+            ]);
+        }
+
+        try {
+            $entrada = \Carbon\Carbon::parse($registroActivo->fecha . ' ' . $registroActivo->hora_entrada);
+            $ahora = \Carbon\Carbon::now();
+            
+            // Calculamos la diferencia en minutos y la pasamos a horas decimales
+            $minutosTranscurridos = $ahora->diffInMinutes($entrada);
+            $totalHoras = abs($minutosTranscurridos) / 60;
+
+            return response()->json([
+                'warning' => $totalHoras > 6.5,
+                'horas_transcurridas' => round($totalHoras, 1)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'warning' => false,
+                'message' => 'Error al calcular tiempo de sesión'
+            ]);
+        }
+    }
 }

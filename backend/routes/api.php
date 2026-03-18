@@ -138,6 +138,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fichas/{id}/asignar', [FichaController::class, 'asignarUsuarios']);
     Route::patch('/fichas/detalle/{detalle_id}', [FichaController::class, 'actualizarRolParticipante']);
     Route::patch('/fichas/{id}/usuarios/{doc}/rol', [FichaController::class, 'actualizarRolPorFichaYUsuario']);
+    Route::delete('/fichas/{id}/usuarios/{doc}', [FichaController::class, 'desvincularUsuario']);
+    Route::patch('/fichas/{id}/hora-limite', [FichaController::class, 'updateHoraLimite']);
     Route::patch('/fichas/{id}/estado', [FichaController::class, 'cambiarEstado']);
 
     // Puertas Access Control
