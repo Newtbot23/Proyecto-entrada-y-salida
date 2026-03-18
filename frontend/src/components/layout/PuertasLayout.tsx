@@ -50,11 +50,13 @@ const PuertasLayout: React.FC = () => {
         marginLeft: isSidebarCollapsed ? '80px' : '260px',
         transition: 'margin-left 0.3s',
         minHeight: '100vh',
-        backgroundColor: '#f3f4f6'
+        backgroundColor: 'transparent'
     };
 
     return (
         <div>
+            <div className="app-bg-container"></div>
+            <div className="app-bg-overlay"></div>
             <NormalAdminSidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
             <main style={contentStyle}>
                 <NormalAdminHeader />

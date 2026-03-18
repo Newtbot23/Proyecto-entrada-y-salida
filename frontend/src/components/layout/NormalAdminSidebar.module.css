@@ -1,8 +1,8 @@
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
-    background-color: var(--color-bg-card);
-    border-right: 1px solid var(--color-border);
+    background-color: #001A33; /* Dark midnight blue */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -19,7 +19,7 @@
 
 .logoArea {
     padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -31,7 +31,7 @@
 .logoText {
     font-size: var(--font-size-xl);
     font-weight: 700;
-    color: var(--color-primary);
+    color: #FFFFFF;
     transition: opacity 0.2s;
 }
 
@@ -39,7 +39,7 @@
     display: none;
     font-size: var(--font-size-xl);
     font-weight: 700;
-    color: var(--color-primary);
+    color: #FFFFFF;
 }
 
 .sidebar.collapsed .logoText {
@@ -76,7 +76,7 @@
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md) var(--spacing-lg);
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     font-weight: 500;
     transition: all 0.2s;
@@ -87,15 +87,14 @@
 }
 
 .navLink:hover {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.05);
-    /* very light green */
+    color: #FFFFFF;
+    background-color: #1D3D5E;
 }
 
 .active {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.1);
-    border-left-color: var(--color-primary);
+    color: #FFFFFF !important;
+    background-color: #1D3D5E;
+    border-left-color: #39A900; /* SENA Green accent */
 }
 
 .navIcon {
@@ -131,9 +130,9 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background-color: var(--color-bg-page);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
+    background-color: #1D3D5E;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -181,7 +180,7 @@
     background: none;
     border: none;
     border-left: 3px solid transparent;
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.7);
     font-family: inherit;
     font-size: inherit;
     font-weight: 500;
@@ -193,21 +192,21 @@
 }
 
 .accordionHeader:hover {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.05);
+    color: #FFFFFF;
+    background-color: #1D3D5E;
 }
 
 .accordionHeader.active {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.1);
-    border-left-color: var(--color-primary);
+    color: #FFFFFF;
+    background-color: #1D3D5E;
+    border-left-color: #39A900;
 }
 
 .accordionContent {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
-    background-color: rgba(0, 143, 57, 0.02);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .accordionContent.open {
@@ -227,7 +226,7 @@
 .accordionLink {
     display: block;
     padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) 56px;
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
     font-size: 0.9rem;
     transition: all 0.2s;
@@ -236,13 +235,13 @@
 }
 
 .accordionLink:hover {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.05);
+    color: #FFFFFF;
+    background-color: #1D3D5E;
 }
 
 .accordionLink.active {
-    color: var(--color-primary);
-    background-color: rgba(0, 143, 57, 0.08);
+    color: #FFFFFF;
+    background-color: #1D3D5E;
     font-weight: 600;
 }
 

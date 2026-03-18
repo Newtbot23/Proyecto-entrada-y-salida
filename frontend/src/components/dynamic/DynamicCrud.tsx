@@ -14,6 +14,7 @@ interface DynamicCrudProps {
     overrideTitle?: string;
     hideCreateForm?: boolean;
     hiddenColumns?: string[];
+    hiddenFormFields?: string[];
 }
 
 const DynamicCrud: React.FC<DynamicCrudProps> = ({
@@ -21,7 +22,8 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     immutableFields = [],
     overrideTitle,
     hideCreateForm = false,
-    hiddenColumns = []
+    hiddenColumns = [],
+    hiddenFormFields = []
 }) => {
     const { tableName: urlTableName } = useParams<{ tableName: string }>();
     const tableName = propTableName || urlTableName;
@@ -38,6 +40,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 5;
     const [editingRecord, setEditingRecord] = useState<any | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // QR State
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -106,6 +109,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                 toast.success('Registro creado exitosamente');
             }
             setEditingRecord(null);
+            setIsCreateModalOpen(false);
             await loadData();
         } catch (err: any) {
             console.error(err);
@@ -208,7 +212,36 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                         Generar/Mostrar QR de Registro
                     </button>
                 )}
+                {tableName === 'usuarios' && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', height: 'fit-content', fontWeight: 'bold' }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }}>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Crear Usuario
+                    </button>
+                )}
             </div>
+
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title={`Crear Usuario`}
+            >
+                <DynamicForm
+                    schema={schema}
+                    onSubmit={handleFormSubmit}
+                    isLoading={actionLoading}
+                    initialData={null}
+                    title=""
+                    onCancel={() => setIsCreateModalOpen(false)}
+                    immutableFields={[]}
+                    hiddenFields={hiddenFormFields}
+                    serverErrors={serverValidationErrors}
+                />
+            </Modal>
 
             <Modal
                 isOpen={isQrModalOpen}
@@ -242,6 +275,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                     title="" // Title is handled by the Modal
                     onCancel={handleCancelEdit}
                     immutableFields={immutableFields}
+                    hiddenFields={hiddenFormFields}
                     serverErrors={serverValidationErrors}
                 />
             </Modal>

@@ -152,7 +152,7 @@ const PersonasDashboard: React.FC = () => {
                         {/* Equipos Propios */}
                         {searchResult.equipos.length > 0 && (!searchResult.registro_activo || (searchResult.registro_activo && searchResult.registro_activo.seriales_equipos.length > 0)) ? (
                             <div style={{ marginTop: '1.5rem' }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '0.75rem' }}>💻 {searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem' }}>💻 {searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
                                     {searchResult.equipos
                                         .filter(eq => !searchResult.registro_activo || searchResult.registro_activo.seriales_equipos.includes(eq.serial))
@@ -194,8 +194,8 @@ const PersonasDashboard: React.FC = () => {
                                                         )}
                                                         <div>
                                                             <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
-                                                            <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#6b7280', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
-                                                            <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>{eq.tipo_equipo}</p>
+                                                            <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                            <p style={{ fontSize: '0.85rem', color: '#374151', margin: 0 }}>{eq.tipo_equipo}</p>
                                                         </div>
                                                     </div>
                                                 </div>

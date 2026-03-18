@@ -202,7 +202,7 @@ const VehiculosDashboard: React.FC = () => {
                 <div className={styles.resultSection}>
                     <div className={styles.card}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {searchResult.vehiculos
                                     .filter(vehiculo => !estaAdentro || (searchResult.registrosAbiertos.some(r => r.placa === vehiculo.placa)))
@@ -235,8 +235,8 @@ const VehiculosDashboard: React.FC = () => {
                                                     )}
                                                     <div>
                                                         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>{vehiculo.placa}</h3>
-                                                        <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
-                                                        <p style={{ fontSize: '0.85rem', color: '#4b5563', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
+                                                        <p style={{ fontSize: '0.9rem', color: '#374151', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
+                                                        <p style={{ fontSize: '0.85rem', color: '#1f2937', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
                                                     </div>
                                                 </div>
                                                 <div style={{ textAlign: 'right' }}>
@@ -306,7 +306,7 @@ const VehiculosDashboard: React.FC = () => {
                                                                     )}
                                                                     <div>
                                                                         <p style={{ fontWeight: 'bold', margin: 0, fontSize: '0.9rem', color: '#111827' }}>{eq.marca}</p>
-                                                                        <p style={{ fontSize: '0.8rem', color: '#4b5563', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                                        <p style={{ fontSize: '0.8rem', color: '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
