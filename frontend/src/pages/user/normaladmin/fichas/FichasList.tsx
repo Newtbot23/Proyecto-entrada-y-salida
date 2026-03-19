@@ -120,7 +120,7 @@ const FichasList: React.FC = () => {
                     <label className={styles.label}>Seleccionar Ficha</label>
                     <div className={styles.comboboxWrapper} ref={comboboxRef}>
                         <div className={styles.comboboxInputWrapper}>
-                            <span className={styles.inputIcon}>🔍</span>
+                            <span className={styles.inputIcon}></span>
                             <input
                                 type="text"
                                 className={styles.input}
@@ -252,7 +252,7 @@ const FichasList: React.FC = () => {
                         </table>
                     ) : (
                         <div className={styles.noResults}>
-                            <span>📂</span>
+                            <span></span>
                             <p>Esta ficha aún no tiene usuarios asignados.</p>
                         </div>
                     )}
@@ -261,7 +261,7 @@ const FichasList: React.FC = () => {
 
             {!activeFicha && (
                 <div className={styles.noResults}>
-                    <span>🔎</span>
+                    <span></span>
                     <p>Busca y selecciona una ficha para comenzar la gestión.</p>
                 </div>
             )}

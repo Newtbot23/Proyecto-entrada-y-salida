@@ -67,7 +67,7 @@ const FichasAssign: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['usuariosAsignables'] });
 
             // Mensaje de éxito y reset del tablero
-            setSuccessMsg('✅ ¡Usuarios asignados exitosamente a la ficha!');
+            setSuccessMsg('¡Usuarios asignados exitosamente a la ficha!');
             setSelectedFichaId('');
             setCartUsers([]);
 
@@ -326,7 +326,7 @@ const FichasAssign: React.FC = () => {
                                             pointerEvents: selectedFichaId ? 'none' : 'auto',
                                         }}
                                     >
-                                        <span>👆</span>
+                                        <span></span>
                                         <p>Selecciona una ficha arriba para comenzar a asignar usuarios</p>
                                     </div>
 
@@ -360,7 +360,7 @@ const FichasAssign: React.FC = () => {
                                                             >
                                                                 <div className={styles.userInfo}>
                                                                     <span className={styles.userName}>
-                                                                        {user.tipo_participante === 'instructor' && '🔒 '}
+                                                                        {user.tipo_participante === 'instructor' && ''}
                                                                         {user.primer_nombre}{' '}
                                                                         {user.primer_apellido}
                                                                     </span>
@@ -401,7 +401,7 @@ const FichasAssign: React.FC = () => {
 
                                     {/* ── Buscador local ── */}
                                     <div className={styles.searchWrapper}>
-                                        <span className={styles.searchIcon}>🔍</span>
+                                        <span className={styles.searchIcon}></span>
                                         <input
                                             type="text"
                                             className={styles.searchInput}
@@ -458,7 +458,7 @@ const FichasAssign: React.FC = () => {
                                                                     </div>
                                                                     {user.es_instructor_previo && (
                                                                         <span className={styles.badgeInstructorPrevio} title="Este usuario ya es instructor en otras fichas">
-                                                                            💼 Instructor
+                                                                            Instructor
                                                                         </span>
                                                                     )}
                                                                 </div>

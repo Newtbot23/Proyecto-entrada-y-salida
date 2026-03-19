@@ -197,7 +197,7 @@ const VehiculosDashboard: React.FC = () => {
                 <div className={styles.resultSection}>
                     <div className={styles.card}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>{estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {searchResult.vehiculos
                                     .filter(vehiculo => !estaAdentro || (searchResult.registrosAbiertos.some(r => r.placa === vehiculo.placa)))
@@ -310,11 +310,11 @@ const VehiculosDashboard: React.FC = () => {
                                 <div className={styles.actionButtons}>
                                     {!estaAdentro ? (
                                         <button onClick={() => handleRegisterAction('entrada')} className={styles.entryBtn} disabled={loading}>
-                                            📥 Registrar Ingreso de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
+                                            Registrar Ingreso de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
                                         </button>
                                     ) : (
                                         <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                            📤 Registrar Salida de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
+                                            Registrar Salida de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
                                         </button>
                                     )}
                                 </div>

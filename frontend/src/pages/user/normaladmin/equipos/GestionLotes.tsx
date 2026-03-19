@@ -196,7 +196,7 @@ const GestionLotes: React.FC = () => {
                 {!selectedLote && (
                     <div className={styles.overlay}>
                         <div className={styles.overlayContent}>
-                            <span>📦</span>
+                            <span></span>
                             <p>Selecciona un lote en la parte superior para administrar sus equipos</p>
                         </div>
                     </div>

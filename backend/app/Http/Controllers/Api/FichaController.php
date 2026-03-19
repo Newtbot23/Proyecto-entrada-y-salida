@@ -192,24 +192,24 @@ class FichaController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request, $id) {
-                // Eliminar asignaciones previas de esta ficha para evitar duplicados
-                DetalleFichaUsuarios::where('id_ficha', $id)->delete();
+            $ficha = Fichas::findOrFail($id);
+            
+            // Paso A: Obtener roles actuales para preservarlos
+            $rolesActuales = DB::table('detalle_ficha_usuarios')
+                ->where('id_ficha', $id)
+                ->pluck('tipo_participante', 'doc')
+                ->toArray();
 
-                // Insertar los nuevos registros forzando tipo_participante = 'aprendiz'
-                $data = [];
-                foreach ($request->usuarios as $doc) {
-                    $data[] = [
-                        'id_ficha'          => $id,
-                        'doc'               => $doc,
-                        'tipo_participante' => 'aprendiz',
-                        'created_at'        => now(),
-                        'updated_at'        => now(),
-                    ];
-                }
+            // Paso B: Construir el array asociativo para el sync
+            $datosSincronizacion = [];
+            foreach ($request->usuarios as $doc) {
+                // Si el usuario ya existe, mantenemos su rol. Si es nuevo, es 'aprendiz'.
+                $rol = $rolesActuales[$doc] ?? 'aprendiz';
+                $datosSincronizacion[$doc] = ['tipo_participante' => $rol];
+            }
 
-                DetalleFichaUsuarios::insert($data);
-            });
+            // Paso C: Ejecutar la sincronización
+            $ficha->usuarios()->sync($datosSincronizacion);
 
             return response()->json([
                 'success' => true,
