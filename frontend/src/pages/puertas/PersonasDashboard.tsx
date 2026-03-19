@@ -1,73 +1,89 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { searchPersona, registrarActividad } from '../../services/puertasService';
+import { toast } from 'sonner';
+import { useSpeech } from '../../hooks/useSpeech';
 import type { PersonaSearchResult } from '../../services/puertasService';
 import styles from './PersonasDashboard.module.css';
 
-interface User {
-    doc: string;
-    nombre: string;
-    rol?: string;
-}
+const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
-interface Equipo {
-    serial: string;
-    marca: string;
-    modelo: string;
-    tipo_equipo: string;
-}
-
-interface SearchData {
-    usuario: User;
-    equipos: Equipo[];
-    estaAdentro: boolean;
-    id_registro: number | null;
-    serial_equipo: string | null;
-}
+// Unused types removed
 
 const PersonasDashboard: React.FC = () => {
-    const { user } = useOutletContext<{ user: User }>();
+    const { leerEnVozAlta, formatTextForSpeech } = useSpeech();
     const [searchDoc, setSearchDoc] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchResult, setSearchResult] = useState<PersonaSearchResult | null>(null);
-    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-    const [selectedEquipo, setSelectedEquipo] = useState<string | null>(null);
+    const [selectedEquipos, setSelectedEquipos] = useState<string[]>([]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchDoc) return;
         setLoading(true);
         setSearchResult(null);
-        setMessage(null);
-        setSelectedEquipo(null);
-
-        const token = sessionStorage.getItem('authToken');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
         try {
-            const res = await fetch(`${apiUrl}/puertas/search-persona?doc=${searchDoc}`, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await res.json();
+            const data = await searchPersona(searchDoc);
+            setSearchResult(data);
 
-            if (data.success) {
-                setSearchResult(data.data);
-                // Si la persona ya está adentro y entró con un equipo, preseleccionarlo visualmente
-                if (data.data.estaAdentro && data.data.serial_equipo) {
-                    setSelectedEquipo(data.data.serial_equipo);
-                }
-            } else {
-                setMessage({ text: data.message || 'Usuario no encontrado', type: 'error' });
+            // CASO A: EL USUARIO YA ESTÁ EN SEDE (Salida)
+            if (data.registro_activo) {
+                const serialesIngresados = data.registro_activo.seriales_equipos;
+                setSelectedEquipos(serialesIngresados);
+                
+                // Feedback auditivo prioritario para salida
+                leerEnVozAlta(`Usuario en sede: ${data.usuario.nombre}. Registrado con ${serialesIngresados.length} equipos.`);
+                
+                setLoading(false);
+                return; // DETENER ejecución
             }
+
+            // CASO B: EL USUARIO ESTÁ FUERA (Entrada)
+            const predeterminados = data.equipos
+                .filter(eq => eq.es_predeterminado)
+                .map(eq => eq.serial);
+
+            if (predeterminados.length > 0) {
+                setSelectedEquipos(predeterminados);
+            } else if (data.equipos.length === 1) {
+                // Si solo tiene uno, lo marcamos por defecto aunque no sea "predeterminado"
+                setSelectedEquipos([data.equipos[0].serial]);
+            } else {
+                setSelectedEquipos([]);
+            }
+
+            // Auditory feedback para entrada
+            let mensajeVoz = `Usuario encontrado: ${data.usuario.nombre}. `;
+            if (predeterminados.length > 0) {
+                const seriales = predeterminados.map(s => formatTextForSpeech(s)).join(", ");
+                mensajeVoz += `con equipo serial ${seriales}.`;
+            } else if (data.equipos.length === 1) {
+                mensajeVoz += `con equipo serial ${formatTextForSpeech(data.equipos[0].serial)}.`;
+            } else {
+                mensajeVoz += "sin equipos seleccionados.";
+            }
+            leerEnVozAlta(mensajeVoz);
+
         } catch (error: any) {
             console.error(error);
-            setMessage({ text: error.message || 'Usuario no encontrado', type: 'error' });
+            toast.error(error.message || 'Usuario no encontrado');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleToggleEquipo = (serial: string) => {
+        // Solo permitir toggle si no está adentro (en modo entrada)
+        if (searchResult?.registro_activo) return;
+        
+        setSelectedEquipos(prev => {
+            const isSelected = prev.includes(serial);
+            if (isSelected) {
+                leerEnVozAlta(`Equipo deseleccionado`);
+            } else {
+                leerEnVozAlta(`Equipo seleccionado. Serial ${formatTextForSpeech(serial)}`);
+            }
+            return isSelected ? prev.filter(s => s !== serial) : [...prev, serial];
+        });
     };
 
     const handleRegisterAction = async (accion: 'entrada' | 'salida') => {
@@ -78,16 +94,25 @@ const PersonasDashboard: React.FC = () => {
             const result = await registrarActividad({
                 doc: searchResult.usuario.doc,
                 accion,
-                serial_equipo: selectedEquipo,
-                id_registro: searchResult.id_registro
+                seriales_equipos: selectedEquipos,
+                id_registro: searchResult.registro_activo?.id
             });
-            setMessage({ text: result.message, type: 'success' });
+            toast.success(result.message);
+            
+            // Voz
+            const msg = searchResult.estaAdentro ? 'Salida' : 'Entrada';
+            let extraVoz = '';
+            if (selectedEquipos.length > 0) {
+                extraVoz = ` con ${selectedEquipos.length} equipos.`;
+            }
+            leerEnVozAlta(`${msg} autorizada para ${searchResult.usuario.nombre}${extraVoz}`);
+
             setSearchResult(null);
             setSearchDoc('');
-            setSelectedEquipo(null);
+            setSelectedEquipos([]);
         } catch (error: any) {
             console.error(error);
-            setMessage({ text: error.message || 'Error al registrar actividad', type: 'error' });
+            toast.error(error.message || 'Error al registrar actividad');
         } finally {
             setLoading(false);
         }
@@ -114,12 +139,6 @@ const PersonasDashboard: React.FC = () => {
                 </form>
             </div>
 
-            {message && (
-                <div className={`${styles.message} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
-                    {message.text}
-                </div>
-            )}
-
             {searchResult && (
                 <div className={styles.resultSection}>
                     <div className={styles.card}>
@@ -137,18 +156,18 @@ const PersonasDashboard: React.FC = () => {
                         </div>
 
                         {/* Equipos Propios */}
-                        {searchResult.equipos.length > 0 && (!searchResult.estaAdentro || (searchResult.estaAdentro && searchResult.serial_equipo)) ? (
+                        {searchResult.equipos.length > 0 && (!searchResult.registro_activo || (searchResult.registro_activo && searchResult.registro_activo.seriales_equipos.length > 0)) ? (
                             <div style={{ marginTop: '1.5rem' }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '0.75rem' }}>💻 {searchResult.estaAdentro ? 'Equipo Vinculado a la Entrada' : 'Seleccionar Equipo (Opcional)'}</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem' }}>💻 {searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
+                                <div className={styles.equipmentGrid}>
                                     {searchResult.equipos
-                                        .filter(eq => !searchResult.estaAdentro || eq.serial === searchResult.serial_equipo)
+                                        .filter(eq => !searchResult.registro_activo || searchResult.registro_activo.seriales_equipos.includes(eq.serial))
                                         .map(eq => {
-                                            const isSelected = selectedEquipo === eq.serial;
+                                            const isSelected = selectedEquipos.includes(eq.serial);
                                             return (
                                                 <div
                                                     key={eq.serial}
-                                                    onClick={() => !searchResult.estaAdentro && setSelectedEquipo(isSelected ? null : eq.serial)}
+                                                    onClick={() => !searchResult.estaAdentro && handleToggleEquipo(eq.serial)}
                                                     style={{
                                                         padding: '1rem',
                                                         border: `2px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`,
@@ -171,9 +190,20 @@ const PersonasDashboard: React.FC = () => {
                                                             {isSelected && <span style={{ color: 'white', fontSize: '0.75rem' }}>✓</span>}
                                                         </div>
                                                     )}
-                                                    <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
-                                                    <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#6b7280', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
-                                                    <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>{eq.tipo_equipo}</p>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        {eq.img_serial && (
+                                                            <img 
+                                                                src={`${STORAGE_URL}/${eq.img_serial.split('|')[0]}`} 
+                                                                alt="Equipo" 
+                                                                style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }} 
+                                                            />
+                                                        )}
+                                                        <div>
+                                                            <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
+                                                            <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                            <p style={{ fontSize: '0.85rem', color: '#374151', margin: 0 }}>{eq.tipo_equipo}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -186,11 +216,11 @@ const PersonasDashboard: React.FC = () => {
                         <div className={styles.actionButtons}>
                             {!searchResult.estaAdentro ? (
                                 <button onClick={() => handleRegisterAction('entrada')} className={styles.entryBtn} disabled={loading}>
-                                    📥 Confirmar Entrada {selectedEquipo ? '(Con Equipo)' : ''}
+                                    📥 Confirmar Entrada {selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}
                                 </button>
                             ) : (
                                 <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                    📤 Confirmar Salida {searchResult.serial_equipo ? ' (Incluye Equipo)' : ''}
+                                    📤 Confirmar Salida {selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}
                                 </button>
                             )}
                         </div>

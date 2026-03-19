@@ -82,10 +82,12 @@ const NormalAdminDashboard: React.FC = () => {
     const isCollapsedClass = isSidebarCollapsed ? styles.mainContentCollapsed : '';
 
     return (
-        <div className={styles.dashboardLayout}>
+        <div className={styles.dashboardLayout} style={{ backgroundColor: 'transparent' }}>
+            <div className="app-bg-container"></div>
+            <div className="app-bg-overlay"></div>
             <ExpirationModal isOpen={isLicenseExpired} />
             <NormalAdminSidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-            <main className={`${styles.mainContent} ${isCollapsedClass}`}>
+            <main className={`${styles.mainContent} ${isCollapsedClass}`} style={{ backgroundColor: 'transparent' }}>
                 <NormalAdminHeader />
 
                 <div className={styles.contentWrapper}>

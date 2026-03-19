@@ -16,6 +16,7 @@ interface Registro {
     equipo_serial?: string;
     tipo_equipo?: string;
     equipo_marca?: string;
+    equipos?: any[];
 }
 
 interface Usuario {
@@ -79,7 +80,7 @@ const ReportePersona: React.FC = () => {
 
         // Table Data
         const tableColumn = includeExtras
-            ? ["Fecha", "Ingreso", "Salida", "Vehículo (Placa)", "Equipo (Serial)"]
+            ? ["Fecha", "Ingreso", "Salida", "Vehículo (Placa)", "Equipos"]
             : ["Fecha", "Hora Ingreso", "Hora Salida"];
 
         const tableRows = records.map(record => {
@@ -91,11 +92,13 @@ const ReportePersona: React.FC = () => {
 
             if (includeExtras) {
                 const placaVal = record.placa || record.vehiculo_placa;
-                const equipoVal = record.serial_equipo || record.equipo_serial;
-
                 const vehiculo = placaVal ? `${placaVal} ${record.tipo_vehiculo ? '(' + record.tipo_vehiculo + ')' : ''}`.trim() : 'N/A';
-                const equipo = equipoVal ? `${equipoVal} ${record.equipo_marca ? '(' + record.equipo_marca + ')' : ''}`.trim() : 'N/A';
-                return [...baseData, vehiculo, equipo];
+                
+                const equiposInfo = record.equipos && record.equipos.length > 0 
+                    ? record.equipos.map(e => `${e.serial} (${e.marca})`).join(', ')
+                    : 'N/A';
+                    
+                return [...baseData, vehiculo, equiposInfo];
             }
 
             return baseData;
@@ -179,10 +182,10 @@ const ReportePersona: React.FC = () => {
                 <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem' }}>Datos de la Persona</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                        <div><span style={{ color: '#6b7280', display: 'block', fontSize: '0.875rem' }}>Nombre</span><strong style={{ fontSize: '1.125rem' }}>{user.nombre}</strong></div>
-                        <div><span style={{ color: '#6b7280', display: 'block', fontSize: '0.875rem' }}>Documento</span><strong style={{ fontSize: '1.125rem' }}>{user.doc}</strong></div>
-                        <div><span style={{ color: '#6b7280', display: 'block', fontSize: '0.875rem' }}>Correo</span><strong style={{ fontSize: '1.125rem' }}>{user.correo || '-'}</strong></div>
-                        <div><span style={{ color: '#6b7280', display: 'block', fontSize: '0.875rem' }}>Teléfono</span><strong style={{ fontSize: '1.125rem' }}>{user.telefono || '-'}</strong></div>
+                        <div><span style={{ color: '#374151', display: 'block', fontSize: '0.875rem' }}>Nombre</span><strong style={{ fontSize: '1.125rem' }}>{user.nombre}</strong></div>
+                        <div><span style={{ color: '#374151', display: 'block', fontSize: '0.875rem' }}>Documento</span><strong style={{ fontSize: '1.125rem' }}>{user.doc}</strong></div>
+                        <div><span style={{ color: '#374151', display: 'block', fontSize: '0.875rem' }}>Correo</span><strong style={{ fontSize: '1.125rem' }}>{user.correo || '-'}</strong></div>
+                        <div><span style={{ color: '#374151', display: 'block', fontSize: '0.875rem' }}>Teléfono</span><strong style={{ fontSize: '1.125rem' }}>{user.telefono || '-'}</strong></div>
                     </div>
                 </div>
             )}
@@ -192,13 +195,13 @@ const ReportePersona: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                                <th style={{ padding: '0.75rem 1rem', color: '#4b5563' }}>Fecha</th>
-                                <th style={{ padding: '0.75rem 1rem', color: '#4b5563' }}>Hora Ingreso</th>
-                                <th style={{ padding: '0.75rem 1rem', color: '#4b5563' }}>Hora Salida</th>
+                                <th style={{ padding: '0.75rem 1rem', color: '#111827' }}>Fecha</th>
+                                <th style={{ padding: '0.75rem 1rem', color: '#111827' }}>Hora Ingreso</th>
+                                <th style={{ padding: '0.75rem 1rem', color: '#111827' }}>Hora Salida</th>
                                 {includeExtras && (
                                     <>
-                                        <th style={{ padding: '0.75rem 1rem', color: '#4b5563' }}>Vehículo</th>
-                                        <th style={{ padding: '0.75rem 1rem', color: '#4b5563' }}>Equipo</th>
+                                        <th style={{ padding: '0.75rem 1rem', color: '#111827' }}>Vehículo</th>
+                                        <th style={{ padding: '0.75rem 1rem', color: '#111827' }}>Equipo</th>
                                     </>
                                 )}
                             </tr>
@@ -221,10 +224,14 @@ const ReportePersona: React.FC = () => {
                                                 ) : '-'}
                                             </td>
                                             <td style={{ padding: '1rem' }}>
-                                                {record.serial_equipo || record.equipo_serial ? (
-                                                    <span style={{ backgroundColor: '#fdf6e3', color: '#b45309', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.875rem' }}>
-                                                        {record.serial_equipo || record.equipo_serial} {record.equipo_marca ? `(${record.equipo_marca})` : ''}
-                                                    </span>
+                                                {record.equipos && record.equipos.length > 0 ? (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                                                        {record.equipos.map((eq: any, idx: number) => (
+                                                            <span key={idx} style={{ backgroundColor: '#fdf6e3', color: '#b45309', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.875rem' }}>
+                                                                {eq.serial} ({eq.marca})
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 ) : '-'}
                                             </td>
                                         </>
@@ -236,7 +243,7 @@ const ReportePersona: React.FC = () => {
                 </div>
             ) : (
                 !loading && user && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', padding: '2rem 0' }}>
+                    <p style={{ textAlign: 'center', color: '#374151', padding: '2rem 0' }}>
                         Esta persona no tiene registros en el sistema.
                     </p>
                 )

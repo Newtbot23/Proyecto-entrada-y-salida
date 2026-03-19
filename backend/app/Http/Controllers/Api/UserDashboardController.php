@@ -39,6 +39,7 @@ class UserDashboardController extends Controller
             ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
             ->where('vehiculos.doc', $user->doc)
             ->select('vehiculos.*', 'tipos_vehiculo.tipo_vehiculo')
+            ->orderBy('es_predeterminado', 'desc')
             ->get();
 
         return response()->json([
@@ -55,10 +56,13 @@ class UserDashboardController extends Controller
         }
 
         $equipos = DB::table('equipos')
+            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
             ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
             ->join('sistemas_operativos', 'equipos.id_sistema_operativo', '=', 'sistemas_operativos.id')
-            ->where('equipos.doc', $user->doc)
-            ->select('equipos.*', 'marcas_equipo.marca', 'sistemas_operativos.sistema_operativo as so')
+            ->where('asignaciones.doc', $user->doc)
+            ->select('equipos.*', 'marcas_equipo.marca', 'sistemas_operativos.sistema_operativo as so', 'asignaciones.es_predeterminado')
+            ->distinct()
+            ->orderBy('asignaciones.es_predeterminado', 'desc')
             ->get();
 
         return response()->json([
@@ -74,36 +78,39 @@ class UserDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
 
-        $query = DB::table('registros')
-            ->leftJoin('vehiculos', 'registros.placa', '=', 'vehiculos.placa')
-            ->leftJoin('equipos', 'registros.serial_equipo', '=', 'equipos.serial')
-            ->leftJoin('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->where('registros.doc', $user->doc);
+        $query = \App\Models\Registros::where('doc', $user->doc);
 
         if ($request->has('fecha') && !empty($request->fecha)) {
-            $query->whereDate('registros.fecha', $request->fecha);
+            $query->whereDate('fecha', $request->fecha);
         } else {
             // Default to last 5 entries if no date filter is provided
             $query->limit(5);
         }
 
         $entradas = $query
-            ->select(
-                'registros.id',
-                'registros.fecha',
-                'registros.hora_entrada',
-                'registros.hora_salida',
-                'registros.placa',
-                'registros.serial_equipo',
-                'vehiculos.marca as vehiculo_marca',
-                'vehiculos.modelo as vehiculo_modelo',
-                'vehiculos.color as vehiculo_color',
-                'equipos.modelo as equipo_modelo',
-                'marcas_equipo.marca as equipo_marca'
-            )
-            ->orderBy('registros.fecha', 'desc')
-            ->orderBy('registros.hora_entrada', 'desc')
-            ->get();
+            ->with(['equipos_registrados.equipo.marca', 'vehiculo'])
+            ->orderBy('fecha', 'desc')
+            ->orderBy('hora_entrada', 'desc')
+            ->get()
+            ->map(function($r) {
+                return [
+                    'id' => $r->id,
+                    'fecha' => $r->fecha,
+                    'hora_entrada' => $r->hora_entrada,
+                    'hora_salida' => $r->hora_salida,
+                    'placa' => $r->placa,
+                    'vehiculo_marca' => $r->vehiculo->marca ?? null,
+                    'vehiculo_modelo' => $r->vehiculo->modelo ?? null,
+                    'vehiculo_color' => $r->vehiculo->color ?? null,
+                    'equipos' => $r->equipos_registrados->map(function($re) {
+                        return [
+                            'serial' => $re->serial_equipo,
+                            'modelo' => $re->equipo->modelo ?? 'N/A',
+                            'marca' => $re->equipo->marca->marca ?? 'N/A'
+                        ];
+                    })
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -293,13 +300,25 @@ class UserDashboardController extends Controller
             'modelo' => 'required|string|max:100',
             'color' => 'required|string|max:50',
             'descripcion' => 'nullable|string',
-            'img_vehiculo' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
+            'foto_general' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'foto_detalle' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
-            $imgPath = null;
-            if ($request->hasFile('img_vehiculo')) {
-                $imgPath = $request->file('img_vehiculo')->store('vehiculos', 'public');
+            $pathGeneral = null;
+            $pathDetalle = null;
+
+            if ($request->hasFile('foto_general')) {
+                $pathGeneral = $request->file('foto_general')->store('vehiculos', 'public');
+            }
+            if ($request->hasFile('foto_detalle')) {
+                $pathDetalle = $request->file('foto_detalle')->store('vehiculos', 'public');
+            }
+
+            // Concatenar rutas con pipe |
+            $rutaFinal = $pathGeneral;
+            if ($pathDetalle) {
+                $rutaFinal = $rutaGeneral = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
             }
 
             DB::table('vehiculos')->insert([
@@ -310,7 +329,7 @@ class UserDashboardController extends Controller
                 'modelo' => $request->modelo,
                 'color' => $request->color,
                 'descripcion' => $request->descripcion ?? '',
-                'img_vehiculo' => $imgPath,
+                'img_vehiculo' => $rutaFinal,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -342,13 +361,25 @@ class UserDashboardController extends Controller
             'tipo_equipo_desc' => 'required|string|max:200',
             'caracteristicas' => 'nullable|string',
             'id_sistema_operativo' => 'required|integer',
-            'img_serial' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
+            'foto_general' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'foto_detalle' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
-            $imgPath = null;
-            if ($request->hasFile('img_serial')) {
-                $imgPath = $request->file('img_serial')->store('equipos', 'public');
+            $pathGeneral = null;
+            $pathDetalle = null;
+
+            if ($request->hasFile('foto_general')) {
+                $pathGeneral = $request->file('foto_general')->store('equipos', 'public');
+            }
+            if ($request->hasFile('foto_detalle')) {
+                $pathDetalle = $request->file('foto_detalle')->store('equipos', 'public');
+            }
+
+            // Concatenar rutas con pipe |
+            $rutaFinal = $pathGeneral;
+            if ($pathDetalle) {
+                $rutaFinal = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
             }
 
             DB::table('equipos')->insert([
@@ -357,12 +388,21 @@ class UserDashboardController extends Controller
                 'placa_sena' => 'N/A', // Placa sena defaults to N/A for propio
                 'id_marca' => $request->id_marca,
                 'estado' => 'no_asignado',
+                'estado_aprobacion' => 'pendiente',
                 'modelo' => $request->modelo,
                 'tipo_equipo_desc' => $request->tipo_equipo_desc,
                 'caracteristicas' => $request->caracteristicas ?? '',
                 'id_sistema_operativo' => $request->id_sistema_operativo,
-                'img_serial' => $imgPath,
+                'img_serial' => $rutaFinal,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('asignaciones')->insert([
                 'doc' => $user->doc,
+                'serial_equipo' => $request->serial,
+                'numero_ambiente' => null,
+                'estado' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -377,6 +417,178 @@ class UserDashboardController extends Controller
                 'message' => 'Error al registrar equipo',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function toggleEstado(Request $request, $tipo, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        try {
+            if ($tipo === 'vehiculo') {
+                $item = DB::table('vehiculos')
+                    ->where('placa', $id)
+                    ->where('doc', $user->doc)
+                    ->first();
+
+                if (!$item) {
+                    return response()->json(['success' => false, 'message' => 'Vehículo no encontrado'], 404);
+                }
+
+                $nuevoEstado = $item->estado_aprobacion === 'activo' ? 'inactivo' : 'pendiente';
+
+                DB::table('vehiculos')
+                    ->where('placa', $id)
+                    ->update(['estado_aprobacion' => $nuevoEstado, 'updated_at' => now()]);
+
+            } elseif ($tipo === 'equipo') {
+                // Para equipos, validamos que el usuario tenga la asignación
+                $item = DB::table('equipos')
+                    ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
+                    ->where('equipos.serial', $id)
+                    ->where('asignaciones.doc', $user->doc)
+                    ->select('equipos.*')
+                    ->first();
+
+                if (!$item) {
+                    return response()->json(['success' => false, 'message' => 'Equipo no encontrado'], 404);
+                }
+
+                $nuevoEstado = $item->estado_aprobacion === 'activo' ? 'inactivo' : 'pendiente';
+
+                DB::table('equipos')
+                    ->where('serial', $id)
+                    ->update(['estado_aprobacion' => $nuevoEstado, 'updated_at' => now()]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Tipo de activo no válido'], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'nuevo_estado' => $nuevoEstado
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el estado',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function setDefaultAsset(Request $request, $tipo, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            if ($tipo === 'vehiculo') {
+                // Check ownership
+                $exists = DB::table('vehiculos')
+                    ->where('placa', $id)
+                    ->where('doc', $user->doc)
+                    ->exists();
+
+                if (!$exists) {
+                    return response()->json(['success' => false, 'message' => 'Vehículo no encontrado o no pertenece al usuario'], 404);
+                }
+
+                // Reset all for this user
+                DB::table('vehiculos')
+                    ->where('doc', $user->doc)
+                    ->update(['es_predeterminado' => 0]);
+
+                // Set new default
+                DB::table('vehiculos')
+                    ->where('placa', $id)
+                    ->update(['es_predeterminado' => 1]);
+
+            } elseif ($tipo === 'equipo') {
+                // Check ownership in asignaciones
+                $exists = DB::table('asignaciones')
+                    ->where('serial_equipo', $id)
+                    ->where('doc', $user->doc)
+                    ->exists();
+
+                if (!$exists) {
+                    return response()->json(['success' => false, 'message' => 'Equipo no encontrado o no asignado al usuario'], 404);
+                }
+
+                // Reset all for this user
+                DB::table('asignaciones')
+                    ->where('doc', $user->doc)
+                    ->update(['es_predeterminado' => 0]);
+
+                // Set new default
+                DB::table('asignaciones')
+                    ->where('serial_equipo', $id)
+                    ->update(['es_predeterminado' => 1]);
+
+            } else {
+                return response()->json(['success' => false, 'message' => 'Tipo de activo no válido'], 400);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activo predeterminado actualizado con éxito'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al establecer el activo predeterminado',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function checkActiveSession(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+        }
+
+        $registroActivo = \App\Models\Registros::where('doc', $user->doc)
+            ->whereNull('hora_salida')
+            ->orderBy('fecha', 'desc')
+            ->orderBy('hora_entrada', 'desc')
+            ->first();
+
+        if (!$registroActivo) {
+            return response()->json([
+                'warning' => false
+            ]);
+        }
+
+        try {
+            $entrada = \Carbon\Carbon::parse($registroActivo->fecha . ' ' . $registroActivo->hora_entrada);
+            $ahora = \Carbon\Carbon::now();
+            
+            // Calculamos la diferencia en minutos y la pasamos a horas decimales
+            $minutosTranscurridos = $ahora->diffInMinutes($entrada);
+            $totalHoras = abs($minutosTranscurridos) / 60;
+
+            return response()->json([
+                'warning' => $totalHoras > 6.5,
+                'horas_transcurridas' => round($totalHoras, 1)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'warning' => false,
+                'message' => 'Error al calcular tiempo de sesión'
+            ]);
         }
     }
 }

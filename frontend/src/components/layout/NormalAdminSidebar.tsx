@@ -8,7 +8,8 @@ import {
     InstitutionIcon,
     ReportIcon,
     ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    DevicesIcon
 } from '../common/Icons';
 
 interface SidebarProps {
@@ -45,6 +46,8 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
     const [shortTables, setShortTables] = useState<string[]>([]);
     const [isOtrosOpen, setIsOtrosOpen] = useState(false);
     const [isReportesOpen, setIsReportesOpen] = useState(false);
+    const [isFichasOpen, setIsFichasOpen] = useState(false);
+    const [isEquiposOpen, setIsEquiposOpen] = useState(false);
 
     useEffect(() => {
         const fetchShortTables = async () => {
@@ -66,7 +69,8 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
     if (userRole === 1) {
         menuItems.push(
             { label: 'Panel', path: '/dashboard', icon: DashboardIcon },
-            { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon }
+            { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon },
+            { label: 'Aprobaciones', path: '/user/normaladmin/aprobaciones', icon: ReportIcon } // Reusing ReportIcon since BellIcon doesn't exist yet
         );
     } else if (userRole === 3) {
         menuItems.push(
@@ -101,6 +105,124 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                             </Link>
                         </li>
                     ))}
+
+                    {/* "Fichas" Accordion Item - Only for Admin */}
+                    {userRole === 1 && (
+                        <li className={styles.navItem}>
+                            <button
+                                className={`${styles.accordionHeader} ${isFichasOpen || activePath.includes('/fichas/') ? styles.active : ''}`}
+                                onClick={() => setIsFichasOpen(!isFichasOpen)}
+                                title={isCollapsed ? "Fichas" : ""}
+                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span className={styles.navIcon}>
+                                        <InstitutionIcon /> {/* Reusing InstitutionIcon or similar */}
+                                    </span>
+                                    {!isCollapsed && <span className={styles.navLabel}>Fichas</span>}
+                                </div>
+                                {!isCollapsed && (
+                                    <span className={`${styles.chevronIcon} ${isFichasOpen ? styles.rotated : ''}`}>
+                                        <ChevronRightIcon width={16} height={16} />
+                                    </span>
+                                )}
+                            </button>
+
+                            {!isCollapsed && (
+                                <div className={`${styles.accordionContent} ${isFichasOpen || activePath.includes('/fichas/') ? styles.open : ''}`}>
+                                    <ul className={styles.accordionList}>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/fichas/crear"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/crear' ? styles.active : ''}`}
+                                            >
+                                                Crear Ficha
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/fichas/asignar"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/asignar' ? styles.active : ''}`}
+                                            >
+                                                Asignar Usuarios
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/fichas/lista"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/lista' ? styles.active : ''}`}
+                                            >
+                                                Listar y Gestionar
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                        </li>
+                    )}
+
+                    {/* "Equipos" Accordion Item - Only for Admin */}
+                    {userRole === 1 && (
+                        <li className={styles.navItem}>
+                            <button
+                                className={`${styles.accordionHeader} ${isEquiposOpen || activePath.includes('/equipos/') ? styles.active : ''}`}
+                                onClick={() => setIsEquiposOpen(!isEquiposOpen)}
+                                title={isCollapsed ? "Equipos" : ""}
+                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span className={styles.navIcon}>
+                                        <DevicesIcon />
+                                    </span>
+                                    {!isCollapsed && <span className={styles.navLabel}>Equipos</span>}
+                                </div>
+                                {!isCollapsed && (
+                                    <span className={`${styles.chevronIcon} ${isEquiposOpen ? styles.rotated : ''}`}>
+                                        <ChevronRightIcon width={16} height={16} />
+                                    </span>
+                                )}
+                            </button>
+
+                            {!isCollapsed && (
+                                <div className={`${styles.accordionContent} ${isEquiposOpen || activePath.includes('/equipos/') ? styles.open : ''}`}>
+                                    <ul className={styles.accordionList}>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/equipos/registrar"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/registrar' ? styles.active : ''}`}
+                                            >
+                                                Registrar Equipos
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/equipos/asignar"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/asignar' ? styles.active : ''}`}
+                                            >
+                                                Asignar Equipos
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/equipos/historial"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/historial' ? styles.active : ''}`}
+                                            >
+                                                Historial de Asignaciones
+                                            </Link>
+                                        </li>
+                                        <li className={styles.accordionItem}>
+                                            <Link
+                                                to="/user/normaladmin/equipos/gestion-lotes"
+                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/gestion-lotes' ? styles.active : ''}`}
+                                            >
+                                                Gestión de Lotes
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                        </li>
+                    )}
 
                     {/* "Reportes" Accordion Item - Only for Admin */}
                     {userRole === 1 && (

@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import { useNavigate } from 'react-router-dom';
 
 export interface User {
-    doc: string;
+    id?: number | string;
+    doc?: string;
     nombre: string;
     rol: string;
     id_rol: number;
     correo: string;
+    codigo_qr?: string;
+    tipo_participante?: string;
+    es_instructor?: boolean;
 }
 
 interface AuthContextType {

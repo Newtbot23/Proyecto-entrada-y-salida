@@ -45,6 +45,7 @@ interface ApiResponse<T> {
 interface RequestConfig {
     headers?: Record<string, string>;
     signal?: AbortSignal;
+    transformRequest?: Array<(data: any, headers: Record<string, any>) => any>;
 }
 
 // ============================================================================
@@ -223,10 +224,26 @@ class ApiClient {
      */
     async post<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            let finalBody: any = body;
+            const headers = this.getHeaders(config?.headers);
+
+            // Soporte para transformRequest (estilo Axios)
+            if (config?.transformRequest) {
+                config.transformRequest.forEach(fn => {
+                    finalBody = fn(finalBody, headers);
+                });
+            }
+
+            // Si es FormData, dejamos que fetch lo maneje solo (no stringify, no Content-Type manual)
+            const isFinalBodyFormData = finalBody instanceof FormData;
+            if (isFinalBodyFormData) {
+                delete headers['Content-Type'];
+            }
+
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'POST',
-                headers: this.getHeaders(config?.headers),
-                body: JSON.stringify(body),
+                headers: headers,
+                body: isFinalBodyFormData ? (finalBody as unknown as BodyInit) : JSON.stringify(finalBody),
                 signal: config?.signal,
             });
 
@@ -256,10 +273,17 @@ class ApiClient {
      */
     async put<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            const isFormData = body instanceof FormData;
+            const headers = this.getHeaders(config?.headers);
+
+            if (isFormData) {
+                delete headers['Content-Type'];
+            }
+
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'PUT',
-                headers: this.getHeaders(config?.headers),
-                body: JSON.stringify(body),
+                headers: headers,
+                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
                 signal: config?.signal,
             });
 
@@ -289,10 +313,17 @@ class ApiClient {
      */
     async patch<T, B = any>(endpoint: string, body: B, config?: RequestConfig): Promise<T> {
         try {
+            const isFormData = body instanceof FormData;
+            const headers = this.getHeaders(config?.headers);
+
+            if (isFormData) {
+                delete headers['Content-Type'];
+            }
+
             const response = await fetch(this.buildUrl(endpoint), {
                 method: 'PATCH',
-                headers: this.getHeaders(config?.headers),
-                body: JSON.stringify(body),
+                headers: headers,
+                body: isFormData ? (body as unknown as BodyInit) : JSON.stringify(body),
                 signal: config?.signal,
             });
 
@@ -319,26 +350,26 @@ class ApiClient {
      * @param config - Configuración adicional de la petición
      * @returns Respuesta de eliminación
      */
-    async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-        try {
-            const response = await fetch(this.buildUrl(endpoint), {
-                method: 'DELETE',
-                headers: this.getHeaders(config?.headers),
-                signal: config?.signal,
-            });
+    async delete <T>(endpoint: string, config ?: RequestConfig): Promise < T > {
+    try {
+        const response = await fetch(this.buildUrl(endpoint), {
+            method: 'DELETE',
+            headers: this.getHeaders(config?.headers),
+            signal: config?.signal,
+        });
 
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
+        if(!response.ok) {
+    await this.handleErrorResponse(response);
+}
 
-            const data: ApiResponse<T> = await response.json();
-            return data.data as T;
+const data: ApiResponse<T> = await response.json();
+return data.data as T;
         } catch (error) {
-            if (error instanceof Error) {
-                console.error(`DELETE ${endpoint} failed:`, error.message);
-            }
-            throw error;
-        }
+    if (error instanceof Error) {
+        console.error(`DELETE ${endpoint} failed:`, error.message);
+    }
+    throw error;
+}
     }
 }
 

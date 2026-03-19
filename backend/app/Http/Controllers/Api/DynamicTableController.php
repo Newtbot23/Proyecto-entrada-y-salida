@@ -18,7 +18,8 @@ class DynamicTableController extends Controller
         'migrations',
         'failed_jobs',
         'roles',
-        'password_reset_tokens'
+        'password_reset_tokens',
+        'old_passwords'
     ];
 
     /**
@@ -209,6 +210,31 @@ class DynamicTableController extends Controller
 
             $dataToInsert = $request->all();
 
+            // --- INICIO LÓGICA ESPECÍFICA PARA USUARIOS ---
+            if ($table === 'usuarios') {
+                if ($request->hasFile('imagen')) {
+                    $dataToInsert['imagen'] = $request->file('imagen')->store('usuarios/fotos', 'public');
+                }
+
+                if (isset($dataToInsert['contrasena'])) {
+                    $dataToInsert['contrasena'] = \Illuminate\Support\Facades\Hash::make($dataToInsert['contrasena']);
+                }
+
+                // Generar código de barras usando el documento (doc)
+                if (isset($dataToInsert['doc'])) {
+                    try {
+                        $barcodeGenerator = new \Picqer\Barcode\BarcodeGeneratorSVG();
+                        $barcodeData = $barcodeGenerator->getBarcode($dataToInsert['doc'], $barcodeGenerator::TYPE_CODE_128);
+                        $barcodeFileName = 'usuarios/barcodes/' . $dataToInsert['doc'] . '_' . time() . '.svg';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($barcodeFileName, $barcodeData);
+                        $dataToInsert['codigo_qr'] = $barcodeFileName;
+                    } catch (\Exception $e) {
+                        \Log::error('Error generating barcode in DynamicTable: ' . $e->getMessage());
+                    }
+                }
+            }
+            // --- FIN LÓGICA ESPECÍFICA PARA USUARIOS ---
+
             // Automatically inject nit_entidad if the user is a NormalAdmin and the table has the column
             $user = $request->user();
             if ($user instanceof \App\Models\Usuarios) {
@@ -285,6 +311,21 @@ class DynamicTableController extends Controller
 
             // Exclude fields that shouldn't be updated manually
             $data = $request->except([$primaryKey, 'created_at', 'updated_at', 'nit_entidad']);
+
+            // --- INICIO LÓGICA ESPECÍFICA PARA USUARIOS ---
+            if ($table === 'usuarios') {
+                if ($request->hasFile('imagen')) {
+                    // Delete old image if exists? (Optional, skipping for now to be safe)
+                    $data['imagen'] = $request->file('imagen')->store('usuarios/fotos', 'public');
+                }
+
+                if (!empty($data['contrasena'])) {
+                    $data['contrasena'] = \Illuminate\Support\Facades\Hash::make($data['contrasena']);
+                } else {
+                    unset($data['contrasena']);
+                }
+            }
+            // --- FIN LÓGICA ESPECÍFICA PARA USUARIOS ---
 
             DB::table($table)->where($primaryKey, $id)->update($data);
 

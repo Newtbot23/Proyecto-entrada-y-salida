@@ -100,3 +100,11 @@
     padding: var(--spacing-xl);
     color: var(--color-text-dim);
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .createButton {
+        width: 100%;
+        justify-content: center;
+    }
+}

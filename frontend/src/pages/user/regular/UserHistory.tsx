@@ -6,12 +6,15 @@ interface Registro {
     hora_entrada: string;
     hora_salida?: string;
     placa?: string;
-    serial_equipo?: string;
+    seriales_equipos?: string; // Comma separated or single string
     vehiculo_marca?: string;
     vehiculo_modelo?: string;
     vehiculo_color?: string;
-    equipo_marca?: string;
-    equipo_modelo?: string;
+    equipos?: {
+        serial: string;
+        marca: string;
+        modelo: string;
+    }[];
 }
 
 const UserHistory: React.FC = () => {
@@ -20,6 +23,7 @@ const UserHistory: React.FC = () => {
 
     const [entradas, setEntradas] = useState<Registro[]>([]);
     const [historyDateFilter, setHistoryDateFilter] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const fetchEntradas = async (headers?: any, fecha?: string) => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -32,7 +36,7 @@ const UserHistory: React.FC = () => {
         try {
             let url = `${apiUrl}/user/entradas`;
             if (fecha) url += `?fecha=${fecha}`;
-            
+
             const res = await fetch(url, { headers });
             const data = await res.json();
             if (data.success) {
@@ -53,35 +57,114 @@ const UserHistory: React.FC = () => {
         fetchEntradas(undefined, val);
     };
 
+    const getMonthName = (dateStr: string) => {
+        const date = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+        return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+    };
+
     const cardStyle: React.CSSProperties = { background: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '1.5rem' };
     const inputStyle: React.CSSProperties = { border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.9rem', outline: 'none' };
-    const theadStyle: React.CSSProperties = { background: '#f9fafb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'left' } as const;
+    const theadStyle: React.CSSProperties = { background: '#f9fafb', color: '#374151', fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'left' } as const;
     const thTdStyle: React.CSSProperties = { padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb' };
 
     return (
-        <div style={{ marginTop: '1rem', paddingBottom: '3rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="history-root" style={{ marginTop: '1rem', paddingBottom: '3rem', width: '100%', flex: 1 }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .history-controls-container { flex-direction: column; align-items: stretch !important; gap: 1rem !important; }
+                    .history-filter { flex-direction: column; align-items: stretch !important; }
+                    .history-filter input { width: 100% !important; box-sizing: border-box; }
+                    .history-filter button { width: 100%; }
+                    .pdf-btn { width: 100%; justify-content: center; margin-left: 0 !important; }
+                }
+            `}</style>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
                 Historial de Entradas
             </h2>
 
             <div style={cardStyle}>
-                <div style={{ overflowX: 'auto' }}>
-                    <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filtrar por fecha:</label>
-                        <input 
-                            type="date" 
-                            style={{ ...inputStyle, width: 'auto', padding: '0.4rem 0.75rem' }} 
-                            value={historyDateFilter}
-                            onChange={handleDateFilterChange}
-                        />
-                        {historyDateFilter && (
-                            <button 
+                <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                    <div className="history-controls-container" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div className="history-filter" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filtro Vista:</label>
+                            <input
+                                type="date"
+                                style={{ ...inputStyle, width: 'auto', padding: '0.4rem 0.75rem' }}
+                                value={historyDateFilter}
+                                onChange={handleDateFilterChange}
+                            />
+                            {historyDateFilter && (
+                            <button
                                 onClick={() => handleDateFilterChange({ target: { value: '' } } as any)}
                                 style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}
                             >
-                                Limpiar Filtro
+                                Limpiar
                             </button>
                         )}
+                    </div>
+
+                    <button
+                        className="pdf-btn"
+                        disabled={loading}
+                            onClick={async () => {
+                                setLoading(true);
+                                const token = sessionStorage.getItem('authToken');
+                                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                                let url = `${apiUrl}/user/history/export-pdf`;
+                                if (historyDateFilter) {
+                                    url += `?date=${historyDateFilter}`;
+                                }
+
+                                try {
+                                    const res = await fetch(url, {
+                                        headers: {
+                                            'Authorization': `Bearer ${token}`
+                                        }
+                                    });
+
+                                    if (!res.ok) throw new Error('Error al generar el PDF');
+
+                                    const blob = await res.blob();
+                                    const downloadUrl = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = downloadUrl;
+
+                                    // Set filename from header or fallback
+                                    const monthName = getMonthName(historyDateFilter).replace(/ /g, '_');
+                                    link.setAttribute('download', `historial_${monthName}.pdf`);
+
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.parentNode?.removeChild(link);
+                                    window.URL.revokeObjectURL(downloadUrl);
+                                } catch (error) {
+                                    alert('No se pudo descargar el PDF. Por favor intenta de nuevo.');
+                                    console.error(error);
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            style={{
+                                marginLeft: 'auto',
+                                background: loading ? '#9ca3af' : '#008f39',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '0.375rem',
+                                padding: '0.6rem 1rem',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                transition: 'background 0.2s'
+                            }}
+                            onMouseOver={e => !loading && (e.currentTarget.style.background = '#00702d')}
+                            onMouseOut={e => !loading && (e.currentTarget.style.background = '#008f39')}
+                            title={`Exportar todo el mes de ${getMonthName(historyDateFilter)}`}
+                        >
+                            {loading ? '⏳ Generando...' : `📄 PDF: Mes de ${getMonthName(historyDateFilter)}`}
+                        </button>
                     </div>
                     {entradas.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
@@ -109,17 +192,25 @@ const UserHistory: React.FC = () => {
                                             {ent.placa ? (
                                                 <div>
                                                     <span style={{ fontWeight: '600' }}>{ent.placa}</span>
-                                                    <span style={{ fontSize: '0.8rem', color: '#6b7280', display: 'block' }}>{ent.vehiculo_marca} {ent.vehiculo_modelo} ({ent.vehiculo_color})</span>
+                                                    <span style={{ fontSize: '0.8rem', color: '#374151', display: 'block' }}>{ent.vehiculo_marca} {ent.vehiculo_modelo} ({ent.vehiculo_color})</span>
                                                 </div>
                                             ) : <span style={{ color: '#9ca3af' }}>-</span>}
                                         </td>
                                         <td style={thTdStyle}>
-                                            {ent.serial_equipo ? (
-                                                <div>
-                                                    <span style={{ fontWeight: '600' }}>{ent.serial_equipo}</span>
-                                                    <span style={{ fontSize: '0.8rem', color: '#6b7280', display: 'block' }}>{ent.equipo_marca} {ent.equipo_modelo}</span>
+                                            {ent.equipos && ent.equipos.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                                    {ent.equipos.map((eq, eidx) => (
+                                                        <div key={eidx} style={{ padding: '0.25rem', borderBottom: eidx < ent.equipos!.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                                                            <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{eq.serial}</span>
+                                                            <span style={{ fontSize: '0.75rem', color: '#374151', display: 'block' }}>{eq.marca} {eq.modelo}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ) : <span style={{ color: '#9ca3af' }}>-</span>}
+                                            ) : ent.seriales_equipos ? (
+                                                <span style={{ fontWeight: '600' }}>{ent.seriales_equipos}</span>
+                                            ) : (
+                                                <span style={{ color: '#9ca3af' }}>-</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

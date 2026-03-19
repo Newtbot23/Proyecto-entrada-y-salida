@@ -7,15 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 class Registros extends Model
 {
     protected $table = 'registros';
-    protected $fillable = ['doc', 'serial_equipo', 'fecha', 'hora_entrada', 'hora_salida'];
+    protected $fillable = ['doc', 'placa', 'fecha', 'hora_entrada', 'hora_salida'];
 
     public function usuario()
     {
         return $this->belongsTo(Usuarios::class, 'doc', 'doc');
     }
 
-    public function equipo()
+    public function equipos_registrados()
     {
-        return $this->belongsTo(Equipos::class, 'serial_equipo', 'serial');
+        return $this->hasMany(RegistrosEquipos::class, 'id_registro');
+    }
+
+    public function vehiculo()
+    {
+        return $this->belongsTo(Vehiculos::class, 'placa', 'placa');
     }
 }

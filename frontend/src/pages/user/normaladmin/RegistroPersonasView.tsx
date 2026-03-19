@@ -6,9 +6,10 @@ const RegistroPersonasView: React.FC = () => {
         <DynamicCrud
             tableName="usuarios"
             overrideTitle="Registro Completo de Personas"
-            immutableFields={['nit_entidad', 'id_rol', 'contrasena']}
+            immutableFields={['nit_entidad', 'codigo_qr', 'imagen']}
+            hiddenFormFields={['nit_entidad', 'codigo_qr']}
             hideCreateForm={true}
-            hiddenColumns={['contrasena', 'id_rol', 'nit_entidad']}
+            hiddenColumns={['contrasena', 'id_rol', 'nit_entidad', 'codigo_qr']}
         />
     );
 };

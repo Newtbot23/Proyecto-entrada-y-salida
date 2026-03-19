@@ -19,11 +19,14 @@ export interface Vehiculo {
     placa: string;
     tipo?: string;
     tipo_vehiculo?: string;
-    id_tipo_vehiculo?: string;
+    id_tipo_vehiculo?: string | number;
     marca: string;
     modelo: string;
     color: string;
     descripcion?: string;
+    img_vehiculo?: string;
+    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
+    es_predeterminado?: boolean | number;
 }
 
 export interface Equipo {
@@ -36,6 +39,9 @@ export interface Equipo {
     caracteristicas?: string;
     so?: string;
     id_sistema_operativo?: string;
+    img_serial?: string;
+    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
+    es_predeterminado?: boolean | number;
 }
 
 // ============================================================================
@@ -117,5 +123,44 @@ export const getTiposDoc = async (): Promise<any[]> => {
     } catch (error) {
         console.error('Error fetching tipos doc:', error);
         throw error;
+    }
+};
+
+/**
+ * Establecer un activo como predeterminado
+ */
+export const setDefaultAsset = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<any> => {
+    try {
+        const response = await apiClient.patch<any, any>(`/user/activos/${tipo}/${id}/set-default`, {});
+        return response;
+    } catch (error) {
+        console.error(`Error setting default for ${tipo}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Cambiar el estado de un activo (vehículo o equipo)
+ */
+export const toggleAssetStatus = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<any> => {
+    try {
+        const response = await apiClient.patch<any, any>(`/user/activos/${tipo}/${id}/toggle-estado`, {});
+        return response;
+    } catch (error) {
+        console.error(`Error toggling status for ${tipo}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Verificar si el usuario tiene una sesión activa prolongada (> 6.5h)
+ */
+export const checkActiveSession = async (): Promise<{ warning: boolean, horas_transcurridas?: number }> => {
+    try {
+        const response = await apiClient.get<any>('/user/check-active-session');
+        return response;
+    } catch (error) {
+        console.error('Error checking active session:', error);
+        return { warning: false };
     }
 };

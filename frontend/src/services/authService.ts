@@ -36,6 +36,7 @@ export interface NormalAdminLoginResponse {
         correo: string;
         id_rol: number;
         nit_entidad: string;
+        codigo_qr?: string;
         license_status?: string;
         license_expired?: boolean;
     };
