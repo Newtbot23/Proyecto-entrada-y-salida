@@ -53,11 +53,13 @@ const PersonasDashboard: React.FC = () => {
 
             // Auditory feedback para entrada
             let mensajeVoz = `Usuario encontrado: ${data.usuario.nombre}. `;
-            if (data.equipos && data.equipos.length > 0) {
-                const seriales = data.equipos.map(e => formatTextForSpeech(e.serial)).join(", ");
-                mensajeVoz += `serial ${seriales}.`;
+            if (predeterminados.length > 0) {
+                const seriales = predeterminados.map(s => formatTextForSpeech(s)).join(", ");
+                mensajeVoz += `con equipo serial ${seriales}.`;
+            } else if (data.equipos.length === 1) {
+                mensajeVoz += `con equipo serial ${formatTextForSpeech(data.equipos[0].serial)}.`;
             } else {
-                mensajeVoz += "sin equipos registrados.";
+                mensajeVoz += "sin equipos seleccionados.";
             }
             leerEnVozAlta(mensajeVoz);
 
@@ -73,11 +75,15 @@ const PersonasDashboard: React.FC = () => {
         // Solo permitir toggle si no está adentro (en modo entrada)
         if (searchResult?.registro_activo) return;
         
-        setSelectedEquipos(prev => 
-            prev.includes(serial) 
-                ? prev.filter(s => s !== serial) 
-                : [...prev, serial]
-        );
+        setSelectedEquipos(prev => {
+            const isSelected = prev.includes(serial);
+            if (isSelected) {
+                leerEnVozAlta(`Equipo deseleccionado`);
+            } else {
+                leerEnVozAlta(`Equipo seleccionado. Serial ${formatTextForSpeech(serial)}`);
+            }
+            return isSelected ? prev.filter(s => s !== serial) : [...prev, serial];
+        });
     };
 
     const handleRegisterAction = async (accion: 'entrada' | 'salida') => {
@@ -153,7 +159,7 @@ const PersonasDashboard: React.FC = () => {
                         {searchResult.equipos.length > 0 && (!searchResult.registro_activo || (searchResult.registro_activo && searchResult.registro_activo.seriales_equipos.length > 0)) ? (
                             <div style={{ marginTop: '1.5rem' }}>
                                 <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem' }}>💻 {searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                                <div className={styles.equipmentGrid}>
                                     {searchResult.equipos
                                         .filter(eq => !searchResult.registro_activo || searchResult.registro_activo.seriales_equipos.includes(eq.serial))
                                         .map(eq => {

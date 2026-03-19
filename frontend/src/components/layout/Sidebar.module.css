@@ -174,16 +174,54 @@
 @media (max-width: 768px) {
     .sidebar {
         width: 250px;
-        /* Mobile sidebar is always full width when open */
+        /* Por defecto, isCollapsed es false. Ocultamos el sidebar en false */
         transform: translateX(-100%);
+        overflow: visible; /* Para que se vea el botón que sobresale */
     }
 
-    .sidebar.open {
+    /* Cuando onToggle cambia isCollapsed a true, abrimos el sidebar */
+    .sidebar.collapsed {
         transform: translateX(0);
+        width: 250px; /* Mantener ancho */
+    }
+
+    .sidebar.collapsed .logoText,
+    .sidebar.collapsed .navLabel {
+        display: block;
+        opacity: 1;
+        width: auto;
+    }
+
+    .sidebar.collapsed .navLink {
+        justify-content: flex-start;
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .sidebar.collapsed .logoIcon {
+        display: none;
     }
 
     .toggleBtn {
-        display: none;
-        /* Hide toggle button on mobile */
+        display: flex !important;
+        position: absolute;
+        right: -40px; /* Sobresale 40px a la derecha del sidebar */
+        top: 20px;
+        width: 40px;
+        height: 40px;
+        background-color: #001A33; /* Color oscuro del sidebar */
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 105;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    }
+
+    .sidebar.collapsed .toggleBtn {
+        right: -40px;
+        transform: none;
     }
 }

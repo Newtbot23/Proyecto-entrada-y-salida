@@ -297,6 +297,7 @@
 
     .createButton {
         justify-content: center;
+        width: 100%;
     }
 }
 
@@ -307,6 +308,10 @@
 
     .contentWrapper {
         padding: var(--spacing-md);
+    }
+
+    .plansGrid {
+        grid-template-columns: 1fr;
     }
 
     .tableContainer {

@@ -58,12 +58,63 @@ const UserDashboard: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isOcrLoading, setIsOcrLoading] = useState(false);
     const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
+    const [placaError, setPlacaError] = useState<string>('');
+
+    // --- Efecto de Validación en Tiempo Real ---
+    React.useEffect(() => {
+        const selectedId = (formVehiculo.id_tipo_vehiculo || '').toString();
+        const tipoObj = tiposVehiculo.find(t => t.id.toString() === selectedId);
+        const tipoNombre = tipoObj?.name || '';
+
+        if (tipoNombre.toLowerCase() !== 'bicicleta' && formVehiculo.placa) {
+            const plateUpper = formVehiculo.placa.toUpperCase().replace(/\s+/g, '');
+            if (tipoNombre.toLowerCase() === 'carro' || tipoNombre.toLowerCase() === 'camión' || tipoNombre.toLowerCase() === 'camion') {
+                const carroRegex = /^[A-Z]{3}[0-9]{3}$/;
+                if (!carroRegex.test(plateUpper)) {
+                    setPlacaError('Formato inválido para Carro/Camión: 3 letras y 3 números (Ej: ABC123)');
+                } else {
+                    setPlacaError('');
+                }
+            } else if (tipoNombre.toLowerCase() === 'moto') {
+                const motoRegex = /^[A-Z]{3}[0-9]{2}[A-Z]?$/;
+                if (!motoRegex.test(plateUpper)) {
+                    setPlacaError('Formato inválido para Moto: 3 letras, 2 números y let. opcional (Ej: ABC12 o ABC12D)');
+                } else {
+                    setPlacaError('');
+                }
+            } else {
+                setPlacaError('');
+            }
+        } else {
+            setPlacaError('');
+        }
+    }, [formVehiculo.placa, formVehiculo.id_tipo_vehiculo, tiposVehiculo]);
 
 
 
     // --- Manejadores Formularios ---
     const handleVehiculoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (placaError) {
+            alert('Por favor, corrige los errores en el formulario antes de guardar.');
+            return;
+        }
+
+        // Obtener el nombre del tipo seleccionado (ID -> Nombre)
+        const selectedId = (formVehiculo.id_tipo_vehiculo || '').toString();
+        const tipoObj = tiposVehiculo.find(t => t.id.toString() === selectedId);
+        const tipoNombre = tipoObj?.name || '';
+
+        console.log('Enviando vehículo:', { id: selectedId, nombre: tipoNombre, placa: formVehiculo.placa });
+
+        if (tipoNombre.toLowerCase() !== 'bicicleta') {
+            if (!formVehiculo.placa) {
+                alert('La placa es obligatoria para este tipo de vehículo');
+                return;
+            }
+        }
+
         setLoading(true);
         const token = sessionStorage.getItem('authToken');
         if (!token) return;
@@ -71,8 +122,8 @@ const UserDashboard: React.FC = () => {
 
         try {
             const formData = new FormData();
-            formData.append('placa', formVehiculo.placa);
-            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo);
+            formData.append('placa', formVehiculo.placa.toUpperCase().replace(/\s+/g, ''));
+            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo.toString());
             formData.append('marca', formVehiculo.marca);
             formData.append('modelo', formVehiculo.modelo);
             formData.append('color', formVehiculo.color);
@@ -327,7 +378,21 @@ const UserDashboard: React.FC = () => {
     const modalOverlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 };
 
     return (
-        <div style={{ marginTop: '1rem', paddingBottom: '3rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="dashboard-root" style={{ marginTop: '1rem', paddingBottom: '3rem', width: '100%', flex: 1 }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .user-data-container { flex-direction: column !important; gap: 1rem !important; }
+                    .action-buttons-container { flex-direction: column !important; }
+                    .action-buttons-container button { width: 100% !important; margin-bottom: 0.5rem !important; }
+                    .tabs-container { flex-direction: column !important; border-bottom: none !important; border-left: 2px solid #e5e7eb; }
+                    .tabs-container button { width: 100% !important; text-align: left !important; }
+                    .form-row { flex-direction: column !important; gap: 1rem !important; }
+                    .modal-content { padding: 1rem !important; width: 95% !important; max-height: 85vh !important; }
+                    .modal-footer { flex-direction: column-reverse !important; margin-top: 1rem !important; gap: 0.5rem !important; }
+                    .modal-footer button { width: 100% !important; margin: 0 !important; }
+                    .table-responsive { overflow-x: auto !important; }
+                }
+            `}</style>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
                 ¡Bienvenido, {user.nombre}!
             </h2>
@@ -349,7 +414,7 @@ const UserDashboard: React.FC = () => {
                     <div style={{ flex: 1 }}>
                         <h4 style={{ margin: 0, color: '#9a3412', fontWeight: '700', fontSize: '1.05rem' }}>¿Olvidaste registrar tu salida?</h4>
                         <p style={{ margin: '0.25rem 0 0', color: '#c2410c', fontSize: '0.9rem' }}>
-                            Detectamos que ingresaste hace aproximadamente <strong>{sessionInfo.horas_transcurridas} horas</strong> y aún no has registrado tu salida del centro comercial.
+                            Detectamos que ingresaste hace aproximadamente <strong>{sessionInfo.horas_transcurridas} horas</strong> y aún no has registrado tu salida.
                         </p>
                     </div>
                 </div>
@@ -358,7 +423,7 @@ const UserDashboard: React.FC = () => {
             {/* Datos Personales */}
             <div style={cardStyle}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>Mis Datos Personales</h3>
-                <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
+                <div className="user-data-container" style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
                     <div>
                         <p style={{ color: '#374151', fontSize: '0.85rem' }}>Nombre Completo</p>
                         <p style={{ fontWeight: '600', fontSize: '1.1rem', color: '#111827' }}>{user.nombre}</p>
@@ -381,7 +446,7 @@ const UserDashboard: React.FC = () => {
             </div>
 
             {/* Sección de Acciones */}
-            <div style={{ ...cardStyle, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="action-buttons-container" style={{ ...cardStyle, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button
                     onClick={() => setShowVehiculoModal(true)}
                     style={{ background: '#2563eb', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: '600', border: 'none', cursor: 'pointer', flex: '1 1 auto', boxShadow: '0 2px 4px rgba(37,99,235,0.2)', transition: 'background 0.2s', fontSize: '1rem' }}
@@ -402,7 +467,7 @@ const UserDashboard: React.FC = () => {
 
             {/* Tablas de Registros */}
             <div style={cardStyle}>
-                <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}>
+                <div className="tabs-container" style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}>
                     <button
                         onClick={() => setActiveTab('vehiculos')}
                         style={{ padding: '0.75rem 1.5rem', fontWeight: '600', fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', color: activeTab === 'vehiculos' ? '#2563eb' : '#374151', borderBottom: activeTab === 'vehiculos' ? '3px solid #2563eb' : '3px solid transparent', marginBottom: '-2px' }}
@@ -419,7 +484,7 @@ const UserDashboard: React.FC = () => {
 
                 {/* Tabla Vehiculos */}
                 {activeTab === 'vehiculos' && (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive" style={{ overflowX: 'auto' }}>
                         {loadingVehiculos ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando vehículos...</div>
                         ) : vehiculos.length === 0 ? (
@@ -515,7 +580,7 @@ const UserDashboard: React.FC = () => {
 
                 {/* Tabla Equipos */}
                 {activeTab === 'equipos' && (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive" style={{ overflowX: 'auto' }}>
                         {loadingEquipos ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando equipos...</div>
                         ) : equipos.length === 0 ? (
@@ -611,11 +676,27 @@ const UserDashboard: React.FC = () => {
             {/* Modal Registrar Vehiculo */}
             {showVehiculoModal && (
                 <div style={modalOverlayStyle}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                    <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>Registrar Vehículo</h3>
                         <form onSubmit={handleVehiculoSubmit}>
                             <label style={labelStyle}>Placa (máx 10)</label>
-                            <input style={inputStyle} type="text" maxLength={10} required value={formVehiculo.placa} onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value })} placeholder="Ej: ABC123" />
+                            <input
+                                style={{
+                                    ...inputStyle,
+                                    borderColor: placaError ? '#ef4444' : '#d1d5db',
+                                    outline: placaError ? 'none' : undefined,
+                                    boxShadow: placaError ? '0 0 0 1px #ef4444' : undefined
+                                }}
+                                type="text"
+                                maxLength={10}
+                                required={tiposVehiculo.find(t => t.id.toString() === (formVehiculo.id_tipo_vehiculo || '').toString())?.name?.toLowerCase() !== 'bicicleta'}
+                                value={formVehiculo.placa}
+                                onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value.toUpperCase() })}
+                                placeholder={tiposVehiculo.find(t => t.id.toString() === (formVehiculo.id_tipo_vehiculo || '').toString())?.name?.toLowerCase() === 'bicicleta' ? "Opcional" : "Ej: ABC123"}
+                            />
+                            {placaError && (
+                                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{placaError}</p>
+                            )}
 
                             <label style={labelStyle}>Foto General del Vehículo</label>
                             <input
@@ -642,7 +723,7 @@ const UserDashboard: React.FC = () => {
                                 ))}
                             </select>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={labelStyle}>Marca</label>
                                     <input style={inputStyle} type="text" required value={formVehiculo.marca} onChange={e => setFormVehiculo({ ...formVehiculo, marca: e.target.value })} />
@@ -659,9 +740,9 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Descripción (Opcional)</label>
                             <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={formVehiculo.descripcion} onChange={e => setFormVehiculo({ ...formVehiculo, descripcion: e.target.value })} placeholder="Detalles adicionales..." />
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="button" onClick={() => setShowVehiculoModal(false)} disabled={loading} style={{ padding: '0.6rem 1.2rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '500' }}>Cancelar</button>
-                                <button type="submit" disabled={loading} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading ? '#9ca3af' : '#2563eb', color: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
+                                <button type="submit" disabled={loading || !!placaError} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading || !!placaError ? '#9ca3af' : '#2563eb', color: 'white', borderRadius: '0.375rem', cursor: loading || !!placaError ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
                             </div>
                         </form>
                     </div>
@@ -671,7 +752,7 @@ const UserDashboard: React.FC = () => {
             {/* Modal Registrar Equipo */}
             {showEquipoModal && (
                 <div style={modalOverlayStyle}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                    <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>Registrar Equipo</h3>
                         <form onSubmit={handleEquipoSubmit}>
                             <label style={labelStyle}>Serial</label>
@@ -694,7 +775,7 @@ const UserDashboard: React.FC = () => {
                             />
                             {isOcrEquipoLoading && <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Leyendo etiqueta...</span>}
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={labelStyle}>Marca del Equipo</label>
                                     <select style={inputStyle} required value={formEquipo.id_marca} onChange={e => setFormEquipo({ ...formEquipo, id_marca: e.target.value })}>
@@ -724,7 +805,7 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Características</label>
                             <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={formEquipo.caracteristicas} onChange={e => setFormEquipo({ ...formEquipo, caracteristicas: e.target.value })} placeholder="Color, RAM, Disco Duro, etc..." />
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="button" onClick={() => setShowEquipoModal(false)} disabled={loading} style={{ padding: '0.6rem 1.2rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '500' }}>Cancelar</button>
                                 <button type="submit" disabled={loading} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading ? '#9ca3af' : '#10b981', color: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
                             </div>

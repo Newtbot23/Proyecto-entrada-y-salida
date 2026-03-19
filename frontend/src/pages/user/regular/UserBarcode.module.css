@@ -132,3 +132,34 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .barcodeContainer {
+        padding: 1rem;
+    }
+    
+    .card {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .barcodeWrapper {
+        padding: 1rem;
+    }
+    
+    .title {
+        font-size: 1.25rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+        width: 100%;
+        max-width: 500px; /* matched with card max-width */
+    }
+    
+    .pdfBtn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+

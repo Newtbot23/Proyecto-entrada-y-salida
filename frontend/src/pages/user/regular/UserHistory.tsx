@@ -68,15 +68,24 @@ const UserHistory: React.FC = () => {
     const thTdStyle: React.CSSProperties = { padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb' };
 
     return (
-        <div style={{ marginTop: '1rem', paddingBottom: '3rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="history-root" style={{ marginTop: '1rem', paddingBottom: '3rem', width: '100%', flex: 1 }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .history-controls-container { flex-direction: column; align-items: stretch !important; gap: 1rem !important; }
+                    .history-filter { flex-direction: column; align-items: stretch !important; }
+                    .history-filter input { width: 100% !important; box-sizing: border-box; }
+                    .history-filter button { width: 100%; }
+                    .pdf-btn { width: 100%; justify-content: center; margin-left: 0 !important; }
+                }
+            `}</style>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
                 Historial de Entradas
             </h2>
 
             <div style={cardStyle}>
-                <div style={{ overflowX: 'auto' }}>
-                    <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                    <div className="history-controls-container" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div className="history-filter" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filtro Vista:</label>
                             <input
                                 type="date"
@@ -85,17 +94,18 @@ const UserHistory: React.FC = () => {
                                 onChange={handleDateFilterChange}
                             />
                             {historyDateFilter && (
-                                <button
-                                    onClick={() => handleDateFilterChange({ target: { value: '' } } as any)}
-                                    style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}
-                                >
-                                    Limpiar
-                                </button>
-                            )}
-                        </div>
+                            <button
+                                onClick={() => handleDateFilterChange({ target: { value: '' } } as any)}
+                                style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}
+                            >
+                                Limpiar
+                            </button>
+                        )}
+                    </div>
 
-                        <button
-                            disabled={loading}
+                    <button
+                        className="pdf-btn"
+                        disabled={loading}
                             onClick={async () => {
                                 setLoading(true);
                                 const token = sessionStorage.getItem('authToken');

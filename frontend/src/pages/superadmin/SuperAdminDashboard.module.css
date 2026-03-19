@@ -91,3 +91,21 @@
     border-radius: var(--radius-md);
     font-weight: 600;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filtersContainer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filterGroup, 
+    .filterGroupLarge {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}

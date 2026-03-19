@@ -156,17 +156,55 @@
 @media (max-width: 768px) {
     .sidebar {
         width: 250px;
-        /* Mobile sidebar is always full width when open */
-        transform: translateX(-100%);
+        transform: translateX(-100%) !important;
+        overflow: visible; 
     }
 
-    .sidebar.open {
-        transform: translateX(0);
+    .sidebar.collapsed {
+        transform: translateX(0) !important;
+        width: 250px;
+    }
+
+    .sidebar.collapsed .logoText,
+    .sidebar.collapsed .navLabel,
+    .sidebar.collapsed .accordionHeader span:not(.chevronIcon) {
+        display: block;
+        opacity: 1;
+        width: auto;
+    }
+
+    .sidebar.collapsed .navLink {
+        justify-content: flex-start;
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .sidebar.collapsed .logoIcon {
+        display: none;
     }
 
     .toggleBtn {
-        display: none;
-        /* Hide toggle button on mobile */
+        display: flex !important;
+        position: absolute;
+        right: -40px; 
+        top: 20px;
+        bottom: auto;
+        width: 40px;
+        height: 40px;
+        background-color: #001A33;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 105;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    }
+
+    .sidebar.collapsed .toggleBtn {
+        right: -40px;
+        transform: none;
     }
 }
 
