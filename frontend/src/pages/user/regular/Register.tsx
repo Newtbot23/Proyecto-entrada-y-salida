@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { registrationService } from '../../../services/registrationService';
 import styles from '../Registration.module.css';
+
+const REGEX = {
+    NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+    DOC: /^[0-9]+$/,
+    EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/
+};
 
 const RegisterUser: React.FC = () => {
     const navigate = useNavigate();
@@ -26,6 +33,9 @@ const RegisterUser: React.FC = () => {
         id_rol: 2,
     });
 
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         if (qrToken) {
             // Provide a visual cue or just let the user know they are registering via an invitation link
@@ -33,9 +43,54 @@ const RegisterUser: React.FC = () => {
         }
     }, [qrToken]);
 
+    const validateField = (name: string, value: string) => {
+        let error = '';
+
+        switch (name) {
+            case 'doc':
+                if (!value.trim()) error = 'El número de documento es obligatorio';
+                else if (!REGEX.DOC.test(value)) error = 'El documento solo debe contener números';
+                else if (value.length < 7 || value.length > 10) error = 'Debe tener entre 7 y 10 dígitos';
+                break;
+            case 'primer_nombre':
+            case 'segundo_nombre':
+            case 'primer_apellido':
+            case 'segundo_apellido':
+                if (['primer_nombre', 'primer_apellido'].includes(name) && !value.trim()) {
+                    error = 'Este campo es obligatorio';
+                } else if (value.trim() && !REGEX.NAME.test(value)) {
+                    error = 'Solo debe contener letras y espacios';
+                } else if (value.length > 50) {
+                    error = 'No debe exceder los 50 caracteres';
+                }
+                break;
+            case 'correo':
+                if (!value.trim()) error = 'El correo es obligatorio';
+                else if (!REGEX.EMAIL.test(value)) error = 'Formato de correo inválido';
+                break;
+            case 'telefono':
+                if (!value.trim()) error = 'El teléfono es obligatorio';
+                else if (value.startsWith('+')) error = 'No incluya prefijos como +57';
+                else if (!/^(3[0-9]{9}|60[0-9]{8})$/.test(value)) error = 'Número inválido (10 dígitos, inicia en 3 o 60)';
+                break;
+            case 'contrasena':
+                if (!value.trim()) error = 'La contraseña es obligatoria';
+                else if (!REGEX.PASSWORD.test(value)) error = 'Mínimo 8 caracteres, una mayúscula, una minúscula y un carácter especial';
+                break;
+        }
+
+        setErrors(prev => ({ ...prev, [name]: error }));
+        return error === '';
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            validateField(name, value);
+        }, 500);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +101,23 @@ const RegisterUser: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Final validation
+        let isValid = true;
+        
+        Object.entries(formData).forEach(([key, value]) => {
+            if (!validateField(key, value as string)) {
+                isValid = false;
+            }
+        });
+
+        if (!imageFile) {
+            setError('La foto de rostro es obligatoria');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
         setLoading(true);
         setError(null);
 
@@ -113,7 +185,9 @@ const RegisterUser: React.FC = () => {
                                 value={formData.doc}
                                 onChange={handleChange}
                                 required
+                                className={errors.doc ? styles.inputError : ''}
                             />
+                            {errors.doc && <span className={styles.fieldError}>{errors.doc}</span>}
                         </div>
                     </div>
 
@@ -126,7 +200,9 @@ const RegisterUser: React.FC = () => {
                                 value={formData.primer_nombre}
                                 onChange={handleChange}
                                 required
+                                className={errors.primer_nombre ? styles.inputError : ''}
                             />
+                            {errors.primer_nombre && <span className={styles.fieldError}>{errors.primer_nombre}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Segundo Nombre</label>
@@ -135,7 +211,9 @@ const RegisterUser: React.FC = () => {
                                 name="segundo_nombre"
                                 value={formData.segundo_nombre}
                                 onChange={handleChange}
+                                className={errors.segundo_nombre ? styles.inputError : ''}
                             />
+                            {errors.segundo_nombre && <span className={styles.fieldError}>{errors.segundo_nombre}</span>}
                         </div>
                     </div>
 
@@ -148,7 +226,9 @@ const RegisterUser: React.FC = () => {
                                 value={formData.primer_apellido}
                                 onChange={handleChange}
                                 required
+                                className={errors.primer_apellido ? styles.inputError : ''}
                             />
+                            {errors.primer_apellido && <span className={styles.fieldError}>{errors.primer_apellido}</span>}
                         </div>
                         <div className={styles.formGroup}>
                             <label>Segundo Apellido</label>
@@ -157,7 +237,9 @@ const RegisterUser: React.FC = () => {
                                 name="segundo_apellido"
                                 value={formData.segundo_apellido}
                                 onChange={handleChange}
+                                className={errors.segundo_apellido ? styles.inputError : ''}
                             />
+                            {errors.segundo_apellido && <span className={styles.fieldError}>{errors.segundo_apellido}</span>}
                         </div>
                     </div>
 
@@ -169,7 +251,9 @@ const RegisterUser: React.FC = () => {
                             value={formData.telefono}
                             onChange={handleChange}
                             required
+                            className={errors.telefono ? styles.inputError : ''}
                         />
+                        {errors.telefono && <span className={styles.fieldError}>{errors.telefono}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
@@ -180,7 +264,9 @@ const RegisterUser: React.FC = () => {
                             value={formData.correo}
                             onChange={handleChange}
                             required
+                            className={errors.correo ? styles.inputError : ''}
                         />
+                        {errors.correo && <span className={styles.fieldError}>{errors.correo}</span>}
                     </div>
 
                     <div className={styles.formGroup}>
@@ -191,7 +277,9 @@ const RegisterUser: React.FC = () => {
                             value={formData.contrasena}
                             onChange={handleChange}
                             required
+                            className={errors.contrasena ? styles.inputError : ''}
                         />
+                        {errors.contrasena && <span className={styles.fieldError}>{errors.contrasena}</span>}
                     </div>
 
                     <div className={styles.formGroup}>

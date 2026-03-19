@@ -19,7 +19,7 @@ export interface Vehiculo {
     placa: string;
     tipo?: string;
     tipo_vehiculo?: string;
-    id_tipo_vehiculo?: string;
+    id_tipo_vehiculo?: string | number;
     marca: string;
     modelo: string;
     color: string;

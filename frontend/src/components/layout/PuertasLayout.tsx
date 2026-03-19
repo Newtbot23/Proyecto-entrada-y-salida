@@ -45,18 +45,35 @@ const PuertasLayout: React.FC = () => {
 
     if (!user) return null;
 
-    const contentStyle = {
-        padding: '2rem',
-        marginLeft: isSidebarCollapsed ? '80px' : '260px',
-        transition: 'margin-left 0.3s',
-        minHeight: '100vh',
-        backgroundColor: '#f3f4f6'
-    };
-
     return (
-        <div>
+        <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+            <div className="app-bg-container"></div>
+            <div className="app-bg-overlay"></div>
             <NormalAdminSidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-            <main style={contentStyle}>
+            
+            <style>{`
+                .puertas-layout-main {
+                    flex: 1;
+                    margin-left: ${isSidebarCollapsed ? '80px' : '260px'};
+                    width: calc(100% - ${isSidebarCollapsed ? '80px' : '260px'});
+                    transition: all 0.3s ease-in-out;
+                    min-height: 100vh;
+                    background-color: transparent;
+                    padding: 2rem;
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                }
+                @media (max-width: 768px) {
+                    .puertas-layout-main {
+                        margin-left: 0 !important;
+                        width: 100% !important;
+                        padding: 1rem !important;
+                    }
+                }
+            `}</style>
+
+            <main className="puertas-layout-main">
                 <NormalAdminHeader />
                 <Outlet context={{ user }} />
             </main>

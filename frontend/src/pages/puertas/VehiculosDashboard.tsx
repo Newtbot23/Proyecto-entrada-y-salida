@@ -9,27 +9,6 @@ import styles from './VehiculosDashboard.module.css';
 
 const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
-const btnSearchStyle: React.CSSProperties = {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontWeight: 'bold',
-    border: 'none',
-    cursor: 'pointer'
-};
-
-const btnActionStyle = (color: string): React.CSSProperties => ({
-    backgroundColor: color,
-    color: 'white',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontWeight: 'bold',
-    border: 'none',
-    cursor: 'pointer',
-    width: '100%'
-});
-
 const VehiculosDashboard: React.FC = () => {
     const { leerEnVozAlta, formatTextForSpeech } = useSpeech();
     const [searchQuery, setSearchQuery] = useState('');
@@ -69,9 +48,10 @@ const VehiculosDashboard: React.FC = () => {
             }
 
             // CASO B: EL USUARIO ESTÁ FUERA (Entrada)
+            let defaultVeh = null;
             // 1. Selección de Vehículo
             if (data.vehiculos && data.vehiculos.length > 0) {
-                const defaultVeh = data.vehiculos.find(v => v.es_predeterminado);
+                defaultVeh = data.vehiculos.find(v => v.es_predeterminado);
                 if (defaultVeh) {
                     setSelectedVehiculo(defaultVeh.placa);
                 } else if (data.vehiculos.length === 1) {
@@ -97,17 +77,23 @@ const VehiculosDashboard: React.FC = () => {
 
             // Auditory feedback para entrada
             let mensajeVoz = "Usuario encontrado. ";
-            if (data.vehiculos && data.vehiculos.length > 0) {
-                const placas = data.vehiculos.map(v => formatTextForSpeech(v.placa)).join(", ");
-                mensajeVoz += `Vehículos autorizados: placa ${placas}. `;
-                
-                if (data.equipos && data.equipos.length > 0) {
-                    const seriales = data.equipos.map(e => formatTextForSpeech(e.serial)).join(", ");
-                    mensajeVoz += `y serial ${seriales}.`;
-                }
+            const selectedPlaca = defaultVeh ? defaultVeh.placa : (data.vehiculos.length === 1 ? data.vehiculos[0].placa : null);
+            
+            if (selectedPlaca) {
+                mensajeVoz += `Vehículo seleccionado placa ${formatTextForSpeech(selectedPlaca)}. `;
+            } else if (data.vehiculos && data.vehiculos.length > 0) {
+                mensajeVoz += `Tiene ${data.vehiculos.length} vehículos autorizados. Seleccione uno. `;
             } else {
                 mensajeVoz = "El usuario no tiene vehículos registrados o activos.";
             }
+
+            if (predeterminados.length > 0) {
+                const seriales = predeterminados.map(s => formatTextForSpeech(s)).join(", ");
+                mensajeVoz += `con equipo serial ${seriales}.`;
+            } else if (data.equipos.length === 1) {
+                mensajeVoz += `con equipo serial ${formatTextForSpeech(data.equipos[0].serial)}.`;
+            }
+
             leerEnVozAlta(mensajeVoz);
 
         } catch (error: any) {
@@ -129,12 +115,21 @@ const VehiculosDashboard: React.FC = () => {
         return reg ? reg.id : null;
     };
 
+    const handleSelectVehiculo = (vehiculo: any) => {
+        setSelectedVehiculo(vehiculo.placa);
+        leerEnVozAlta(`Vehículo seleccionado. Placa ${formatTextForSpeech(vehiculo.placa)}`);
+    };
+
     const handleToggleEquipo = (serial: string) => {
-        setSelectedEquipos(prev => 
-            prev.includes(serial) 
-                ? prev.filter(s => s !== serial) 
-                : [...prev, serial]
-        );
+        setSelectedEquipos(prev => {
+            const isSelected = prev.includes(serial);
+            if (isSelected) {
+                leerEnVozAlta(`Equipo deseleccionado`);
+            } else {
+                leerEnVozAlta(`Equipo seleccionado. Serial ${formatTextForSpeech(serial)}`);
+            }
+            return isSelected ? prev.filter(s => s !== serial) : [...prev, serial];
+        });
     };
 
     const handleRegisterAction = async (accion: 'entrada' | 'salida') => {
@@ -192,7 +187,7 @@ const VehiculosDashboard: React.FC = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         disabled={loading}
                     />
-                    <button type="submit" style={btnSearchStyle} disabled={loading}>
+                    <button type="submit" className={styles.searchBtn} disabled={loading}>
                         {loading ? 'Buscando...' : 'Buscar'}
                     </button>
                 </form>
@@ -202,7 +197,7 @@ const VehiculosDashboard: React.FC = () => {
                 <div className={styles.resultSection}>
                     <div className={styles.card}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1rem' }}>🚗 {estaAdentro ? 'Vehículo Ingresado' : 'Seleccionar Vehículo'}</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {searchResult.vehiculos
                                     .filter(vehiculo => !estaAdentro || (searchResult.registrosAbiertos.some(r => r.placa === vehiculo.placa)))
@@ -212,17 +207,12 @@ const VehiculosDashboard: React.FC = () => {
                                         return (
                                             <div
                                                 key={vehiculo.placa}
-                                                onClick={() => !devInside && setSelectedVehiculo(vehiculo.placa)}
+                                                className={styles.vehicleItem}
+                                                onClick={() => !devInside && handleSelectVehiculo(vehiculo)}
                                                 style={{
-                                                    padding: '1rem',
                                                     border: `2px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`,
-                                                    borderRadius: '0.5rem',
                                                     backgroundColor: isSelected ? '#eff6ff' : 'white',
-                                                    cursor: devInside ? 'default' : 'pointer',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    transition: 'all 0.2s ease'
+                                                    cursor: devInside ? 'default' : 'pointer'
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -235,8 +225,8 @@ const VehiculosDashboard: React.FC = () => {
                                                     )}
                                                     <div>
                                                         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>{vehiculo.placa}</h3>
-                                                        <p style={{ fontSize: '0.9rem', color: '#6b7280', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
-                                                        <p style={{ fontSize: '0.85rem', color: '#4b5563', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
+                                                        <p style={{ fontSize: '0.9rem', color: '#374151', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
+                                                        <p style={{ fontSize: '0.85rem', color: '#1f2937', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
                                                     </div>
                                                 </div>
                                                 <div style={{ textAlign: 'right' }}>
@@ -270,7 +260,7 @@ const VehiculosDashboard: React.FC = () => {
                                         </label>
                                         
                                         {traeEquipo && (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                                            <div className={styles.equipmentGrid}>
                                                 {(searchResult.registro_activo ? (searchResult.registro_activo.equipos_adentro || []) : searchResult.equipos).map(eq => {
                                                         const isSelected = selectedEquipos.includes(eq.serial);
                                                         return (
@@ -306,7 +296,7 @@ const VehiculosDashboard: React.FC = () => {
                                                                     )}
                                                                     <div>
                                                                         <p style={{ fontWeight: 'bold', margin: 0, fontSize: '0.9rem', color: '#111827' }}>{eq.marca}</p>
-                                                                        <p style={{ fontSize: '0.8rem', color: '#4b5563', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
+                                                                        <p style={{ fontSize: '0.8rem', color: '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -323,7 +313,7 @@ const VehiculosDashboard: React.FC = () => {
                                             📥 Registrar Ingreso de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
                                         </button>
                                     ) : (
-                                        <button onClick={() => handleRegisterAction('salida')} style={btnActionStyle('#4b5563')} disabled={loading}>
+                                        <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
                                             📤 Registrar Salida de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
                                         </button>
                                     )}

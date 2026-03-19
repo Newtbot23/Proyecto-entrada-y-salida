@@ -45,11 +45,11 @@ class PuertasController extends Controller
             ->select('equipos.*', 'marcas_equipo.marca', 'asignaciones.es_predeterminado')
             ->get();
 
-        // Check if user is currently inside (has a record without hora_salida today)
+        // Check if user is currently inside (has a record without hora_salida, regardless of the date)
         $registroAbierto = \App\Models\Registros::with(['equipos_registrados.equipo.marca'])
             ->where('doc', $doc)
-            ->whereDate('fecha', Carbon::today())
             ->whereNull('hora_salida')
+            ->orderBy('id', 'desc')
             ->first();
 
         $seriales_adentro = [];
@@ -131,12 +131,11 @@ class PuertasController extends Controller
             ->get();
 
         // Check if any of these vehicles are currently inside 
-        // For simplicity, we just check if there's an open record for the user or specific vehicles
-        // Let's get open records for this doc
+        // We look for open records for this user regardless of the date, ordered by newest first
         $registrosAbiertos = \App\Models\Registros::with(['equipos_registrados.equipo.marca'])
             ->where('doc', $doc)
-            ->whereDate('fecha', Carbon::today())
             ->whereNull('hora_salida')
+            ->orderBy('id', 'desc')
             ->get();
 
         $registrosMap = $registrosAbiertos->map(function($r) {

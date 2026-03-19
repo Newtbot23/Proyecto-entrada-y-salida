@@ -197,9 +197,14 @@
         grid-template-columns: 1fr;
     }
 
+    .actionButtons {
+        flex-direction: column;
+    }
+
     .viewBtn,
     .addBtn {
         width: 100%;
+        text-align: center;
         justify-content: center;
     }
 }

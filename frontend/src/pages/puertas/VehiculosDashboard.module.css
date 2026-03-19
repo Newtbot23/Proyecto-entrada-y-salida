@@ -1,5 +1,5 @@
 .container {
-    max-width: 800px;
+    width: 100%;
     margin: 0 auto;
     padding-bottom: var(--spacing-2xl);
 }
@@ -330,5 +330,19 @@
     .statusBadge {
         width: 100%;
         text-align: center;
+        display: block;
+    }
+
+    .equipmentGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .actionButtons {
+        flex-direction: column;
+    }
+
+    .entryBtn,
+    .exitBtn {
+        width: 100%;
     }
 }

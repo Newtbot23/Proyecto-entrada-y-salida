@@ -10,6 +10,7 @@ export interface DynamicFormProps {
     title?: string;
     onCancel?: () => void;
     immutableFields?: string[];
+    hiddenFields?: string[];
     serverErrors?: Record<string, string[]>;
 }
 
@@ -32,6 +33,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     title,
     onCancel,
     immutableFields = [],
+    hiddenFields = [],
     serverErrors = {}
 }) => {
     const [formData, setFormData] = useState<any>({});
@@ -43,6 +45,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             // unless the user specifically wants to change it. But per requirements, we don't edit it.
             const editData = { ...initialData };
             delete editData.password;
+            delete editData.contrasena;
             setFormData(editData);
         } else {
             // Initialize form data with defaults or empty strings
@@ -72,8 +75,16 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        
+        if (type === 'file') {
+            const fileInput = e.target as HTMLInputElement;
+            if (fileInput.files && fileInput.files[0]) {
+                setFormData((prev: any) => ({ ...prev, [name]: fileInput.files![0] }));
+            }
+        } else {
+            setFormData((prev: any) => ({ ...prev, [name]: value }));
+        }
         validateField(name, value);
     };
 
@@ -102,7 +113,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            onSubmit(formData);
+            // Check if there's any file in formData
+            const hasFile = Object.values(formData).some(val => val instanceof File);
+            
+            if (hasFile) {
+                const data = new FormData();
+                Object.entries(formData).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        data.append(key, value as any);
+                    }
+                });
+                onSubmit(data);
+            } else {
+                onSubmit(formData);
+            }
         }
     };
 
@@ -125,7 +149,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             <div className={isShortForm ? styles.horizontalGrid : styles.grid}>
                 {editableColumns.map(col => {
                     const isImmutable = initialData && immutableFields.includes(col.name);
-                    const isPassword = col.name === 'password';
+                    const isPassword = col.name === 'password' || col.name === 'contrasena';
+                    const isHidden = hiddenFields.includes(col.name);
+
+                    if (isHidden) return null;
 
                     // Hide password if editing (usually password management is separate)
                     if (initialData && isPassword) return null;
@@ -167,6 +194,16 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                                     required={col.required && !initialData}
                                     readOnly={isImmutable}
                                     className={`${styles.textarea} ${isImmutable ? styles.readOnly : ''}`}
+                                />
+                            ) : col.name === 'imagen' && !isImmutable ? (
+                                <input
+                                    type="file"
+                                    name={col.name}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    required={col.required && !initialData}
+                                    accept="image/*"
+                                    className={styles.input}
                                 />
                             ) : (
                                 <input

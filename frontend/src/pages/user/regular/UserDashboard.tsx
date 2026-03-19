@@ -58,12 +58,63 @@ const UserDashboard: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isOcrLoading, setIsOcrLoading] = useState(false);
     const [isOcrEquipoLoading, setIsOcrEquipoLoading] = useState(false);
+    const [placaError, setPlacaError] = useState<string>('');
+
+    // --- Efecto de Validación en Tiempo Real ---
+    React.useEffect(() => {
+        const selectedId = (formVehiculo.id_tipo_vehiculo || '').toString();
+        const tipoObj = tiposVehiculo.find(t => t.id.toString() === selectedId);
+        const tipoNombre = tipoObj?.name || '';
+
+        if (tipoNombre.toLowerCase() !== 'bicicleta' && formVehiculo.placa) {
+            const plateUpper = formVehiculo.placa.toUpperCase().replace(/\s+/g, '');
+            if (tipoNombre.toLowerCase() === 'carro' || tipoNombre.toLowerCase() === 'camión' || tipoNombre.toLowerCase() === 'camion') {
+                const carroRegex = /^[A-Z]{3}[0-9]{3}$/;
+                if (!carroRegex.test(plateUpper)) {
+                    setPlacaError('Formato inválido para Carro/Camión: 3 letras y 3 números (Ej: ABC123)');
+                } else {
+                    setPlacaError('');
+                }
+            } else if (tipoNombre.toLowerCase() === 'moto') {
+                const motoRegex = /^[A-Z]{3}[0-9]{2}[A-Z]?$/;
+                if (!motoRegex.test(plateUpper)) {
+                    setPlacaError('Formato inválido para Moto: 3 letras, 2 números y let. opcional (Ej: ABC12 o ABC12D)');
+                } else {
+                    setPlacaError('');
+                }
+            } else {
+                setPlacaError('');
+            }
+        } else {
+            setPlacaError('');
+        }
+    }, [formVehiculo.placa, formVehiculo.id_tipo_vehiculo, tiposVehiculo]);
 
 
 
     // --- Manejadores Formularios ---
     const handleVehiculoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (placaError) {
+            alert('Por favor, corrige los errores en el formulario antes de guardar.');
+            return;
+        }
+
+        // Obtener el nombre del tipo seleccionado (ID -> Nombre)
+        const selectedId = (formVehiculo.id_tipo_vehiculo || '').toString();
+        const tipoObj = tiposVehiculo.find(t => t.id.toString() === selectedId);
+        const tipoNombre = tipoObj?.name || '';
+
+        console.log('Enviando vehículo:', { id: selectedId, nombre: tipoNombre, placa: formVehiculo.placa });
+
+        if (tipoNombre.toLowerCase() !== 'bicicleta') {
+            if (!formVehiculo.placa) {
+                alert('La placa es obligatoria para este tipo de vehículo');
+                return;
+            }
+        }
+
         setLoading(true);
         const token = sessionStorage.getItem('authToken');
         if (!token) return;
@@ -71,8 +122,8 @@ const UserDashboard: React.FC = () => {
 
         try {
             const formData = new FormData();
-            formData.append('placa', formVehiculo.placa);
-            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo);
+            formData.append('placa', formVehiculo.placa.toUpperCase().replace(/\s+/g, ''));
+            if (formVehiculo.id_tipo_vehiculo) formData.append('id_tipo_vehiculo', formVehiculo.id_tipo_vehiculo.toString());
             formData.append('marca', formVehiculo.marca);
             formData.append('modelo', formVehiculo.modelo);
             formData.append('color', formVehiculo.color);
@@ -86,7 +137,7 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/user/vehiculos`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 },
@@ -111,7 +162,7 @@ const UserDashboard: React.FC = () => {
     const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'general' | 'detalle') => {
         const file = e.target.files?.[0];
         if (!file) return;
-        
+
         if (type === 'general') {
             setFormVehiculo(prev => ({ ...prev, foto_general: file }));
             return;
@@ -129,7 +180,7 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/ocr/read-plate`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 },
@@ -170,7 +221,7 @@ const UserDashboard: React.FC = () => {
 
         setFormEquipo(prev => ({ ...prev, foto_detalle: file }));
         setIsOcrEquipoLoading(true);
-        
+
 
         const token = sessionStorage.getItem('authToken');
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -181,7 +232,7 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/ocr/read-serial`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 },
@@ -241,7 +292,7 @@ const UserDashboard: React.FC = () => {
 
             const res = await fetch(`${apiUrl}/user/equipos`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 },
@@ -264,10 +315,10 @@ const UserDashboard: React.FC = () => {
     };
 
     const handleToggleStatus = async (tipo: 'vehiculo' | 'equipo', id: string, estadoActual: string) => {
-        const confirmMsg = estadoActual === 'activo' 
-            ? '¿Estás seguro de inhabilitar este activo? No aparecerá en los controles de acceso.' 
+        const confirmMsg = estadoActual === 'activo'
+            ? '¿Estás seguro de inhabilitar este activo? No aparecerá en los controles de acceso.'
             : '¿Deseas solicitar la reactivación de este activo?';
-        
+
         if (!window.confirm(confirmMsg)) return;
 
         setLoading(true);
@@ -322,23 +373,37 @@ const UserDashboard: React.FC = () => {
     const cardStyle: React.CSSProperties = { background: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '1.5rem' };
     const inputStyle: React.CSSProperties = { width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' };
     const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.85rem', color: '#4b5563', fontWeight: '500', marginBottom: '0.25rem', marginTop: '0.75rem' };
-    const theadStyle: React.CSSProperties = { background: '#f9fafb', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'left' } as const;
+    const theadStyle: React.CSSProperties = { background: '#f9fafb', color: '#374151', fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'left' } as const;
     const thTdStyle: React.CSSProperties = { padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb' };
     const modalOverlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 };
 
     return (
-        <div style={{ marginTop: '1rem', paddingBottom: '3rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="dashboard-root" style={{ marginTop: '1rem', paddingBottom: '3rem', width: '100%', flex: 1 }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .user-data-container { flex-direction: column !important; gap: 1rem !important; }
+                    .action-buttons-container { flex-direction: column !important; }
+                    .action-buttons-container button { width: 100% !important; margin-bottom: 0.5rem !important; }
+                    .tabs-container { flex-direction: column !important; border-bottom: none !important; border-left: 2px solid #e5e7eb; }
+                    .tabs-container button { width: 100% !important; text-align: left !important; }
+                    .form-row { flex-direction: column !important; gap: 1rem !important; }
+                    .modal-content { padding: 1rem !important; width: 95% !important; max-height: 85vh !important; }
+                    .modal-footer { flex-direction: column-reverse !important; margin-top: 1rem !important; gap: 0.5rem !important; }
+                    .modal-footer button { width: 100% !important; margin: 0 !important; }
+                    .table-responsive { overflow-x: auto !important; }
+                }
+            `}</style>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
                 ¡Bienvenido, {user.nombre}!
             </h2>
 
             {/* Aviso de Salida Olvidada */}
             {sessionInfo?.warning && (
-                <div style={{ 
-                    background: '#fff7ed', 
-                    border: '1px solid #fdba74', 
-                    borderRadius: '0.75rem', 
-                    padding: '1.25rem', 
+                <div style={{
+                    background: '#fff7ed',
+                    border: '1px solid #fdba74',
+                    borderRadius: '0.75rem',
+                    padding: '1.25rem',
                     marginBottom: '1.5rem',
                     display: 'flex',
                     alignItems: 'center',
@@ -349,7 +414,7 @@ const UserDashboard: React.FC = () => {
                     <div style={{ flex: 1 }}>
                         <h4 style={{ margin: 0, color: '#9a3412', fontWeight: '700', fontSize: '1.05rem' }}>¿Olvidaste registrar tu salida?</h4>
                         <p style={{ margin: '0.25rem 0 0', color: '#c2410c', fontSize: '0.9rem' }}>
-                            Detectamos que ingresaste hace aproximadamente <strong>{sessionInfo.horas_transcurridas} horas</strong> y aún no has registrado tu salida del centro comercial.
+                            Detectamos que ingresaste hace aproximadamente <strong>{sessionInfo.horas_transcurridas} horas</strong> y aún no has registrado tu salida.
                         </p>
                     </div>
                 </div>
@@ -358,13 +423,13 @@ const UserDashboard: React.FC = () => {
             {/* Datos Personales */}
             <div style={cardStyle}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>Mis Datos Personales</h3>
-                <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
+                <div className="user-data-container" style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
                     <div>
-                        <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Nombre Completo</p>
+                        <p style={{ color: '#374151', fontSize: '0.85rem' }}>Nombre Completo</p>
                         <p style={{ fontWeight: '600', fontSize: '1.1rem', color: '#111827' }}>{user.nombre}</p>
                     </div>
                     <div>
-                        <p style={{ color: '#6b7280', fontSize: '0.85rem' }}>Correo Electrónico</p>
+                        <p style={{ color: '#374151', fontSize: '0.85rem' }}>Correo Electrónico</p>
                         <p style={{ fontWeight: '600', fontSize: '1.1rem', color: '#111827' }}>{user.correo}</p>
                     </div>
                 </div>
@@ -381,7 +446,7 @@ const UserDashboard: React.FC = () => {
             </div>
 
             {/* Sección de Acciones */}
-            <div style={{ ...cardStyle, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="action-buttons-container" style={{ ...cardStyle, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button
                     onClick={() => setShowVehiculoModal(true)}
                     style={{ background: '#2563eb', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: '600', border: 'none', cursor: 'pointer', flex: '1 1 auto', boxShadow: '0 2px 4px rgba(37,99,235,0.2)', transition: 'background 0.2s', fontSize: '1rem' }}
@@ -402,16 +467,16 @@ const UserDashboard: React.FC = () => {
 
             {/* Tablas de Registros */}
             <div style={cardStyle}>
-                <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}>
+                <div className="tabs-container" style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}>
                     <button
                         onClick={() => setActiveTab('vehiculos')}
-                        style={{ padding: '0.75rem 1.5rem', fontWeight: '600', fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', color: activeTab === 'vehiculos' ? '#2563eb' : '#6b7280', borderBottom: activeTab === 'vehiculos' ? '3px solid #2563eb' : '3px solid transparent', marginBottom: '-2px' }}
+                        style={{ padding: '0.75rem 1.5rem', fontWeight: '600', fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', color: activeTab === 'vehiculos' ? '#2563eb' : '#374151', borderBottom: activeTab === 'vehiculos' ? '3px solid #2563eb' : '3px solid transparent', marginBottom: '-2px' }}
                     >
                         Mis Vehículos
                     </button>
                     <button
                         onClick={() => setActiveTab('equipos')}
-                        style={{ padding: '0.75rem 1.5rem', fontWeight: '600', fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', color: activeTab === 'equipos' ? '#10b981' : '#6b7280', borderBottom: activeTab === 'equipos' ? '3px solid #10b981' : '3px solid transparent', marginBottom: '-2px' }}
+                        style={{ padding: '0.75rem 1.5rem', fontWeight: '600', fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer', color: activeTab === 'equipos' ? '#10b981' : '#374151', borderBottom: activeTab === 'equipos' ? '3px solid #10b981' : '3px solid transparent', marginBottom: '-2px' }}
                     >
                         Mis Equipos
                     </button>
@@ -419,7 +484,7 @@ const UserDashboard: React.FC = () => {
 
                 {/* Tabla Vehiculos */}
                 {activeTab === 'vehiculos' && (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive" style={{ overflowX: 'auto' }}>
                         {loadingVehiculos ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando vehículos...</div>
                         ) : vehiculos.length === 0 ? (
@@ -446,65 +511,65 @@ const UserDashboard: React.FC = () => {
                                     {vehiculos.map((v, idx) => {
                                         const images = v.img_vehiculo ? v.img_vehiculo.split('|') : [];
                                         return (
-                                        <tr key={v.placa || idx} style={{ transition: 'background 0.1s' }} onMouseOver={e => e.currentTarget.style.background = '#f9fafb'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                                            <td style={thTdStyle}>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                    {images.map((img: string, i: number) => (
-                                                        <img 
-                                                            key={i}
-                                                            src={`${STORAGE_URL}/${img}`} 
-                                                            alt={`Vehículo ${i}`} 
-                                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }} 
-                                                            onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
-                                                        />
-                                                    ))}
-                                                    {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
-                                                </div>
-                                            </td>
-                                            <td style={thTdStyle}>
-                                                {v.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
-                                                {v.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
-                                                {v.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
-                                                {!v.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
-                                            </td>
-                                            <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{v.placa}</td>
-                                            <td style={thTdStyle}>{v.tipo_vehiculo || v.tipo}</td>
-                                            <td style={thTdStyle}>{v.marca}</td>
-                                            <td style={thTdStyle}>{v.modelo}</td>
-                                            <td style={thTdStyle}>{v.color}</td>
-                                            <td style={{ ...thTdStyle, textAlign: 'center' }}>
-                                                <button
-                                                    onClick={() => !v.es_predeterminado && handleSetDefault('vehiculo', v.placa)}
-                                                    style={{ background: 'none', border: 'none', cursor: v.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: v.es_predeterminado ? '#f59e0b' : '#d1d5db' }}
-                                                    title={v.es_predeterminado ? 'Vehículo predeterminado' : 'Marcar como predeterminado'}
-                                                >
-                                                    {v.es_predeterminado ? '★' : '☆'}
-                                                </button>
-                                            </td>
-                                            <td style={thTdStyle}>
-                                                {v.estado_aprobacion === 'activo' && (
-                                                    <button 
-                                                        onClick={() => handleToggleStatus('vehiculo', v.placa, 'activo')}
-                                                        disabled={loading}
-                                                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                            <tr key={v.placa || idx} style={{ transition: 'background 0.1s' }} onMouseOver={e => e.currentTarget.style.background = '#f9fafb'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                                                <td style={thTdStyle}>
+                                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                                        {images.map((img: string, i: number) => (
+                                                            <img
+                                                                key={i}
+                                                                src={`${STORAGE_URL}/${img}`}
+                                                                alt={`Vehículo ${i}`}
+                                                                style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                                                                onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
+                                                            />
+                                                        ))}
+                                                        {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
+                                                    </div>
+                                                </td>
+                                                <td style={thTdStyle}>
+                                                    {v.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
+                                                    {v.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
+                                                    {v.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                    {!v.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
+                                                </td>
+                                                <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{v.placa}</td>
+                                                <td style={thTdStyle}>{v.tipo_vehiculo || v.tipo}</td>
+                                                <td style={thTdStyle}>{v.marca}</td>
+                                                <td style={thTdStyle}>{v.modelo}</td>
+                                                <td style={thTdStyle}>{v.color}</td>
+                                                <td style={{ ...thTdStyle, textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => !v.es_predeterminado && handleSetDefault('vehiculo', v.placa)}
+                                                        style={{ background: 'none', border: 'none', cursor: v.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: v.es_predeterminado ? '#f59e0b' : '#d1d5db' }}
+                                                        title={v.es_predeterminado ? 'Vehículo predeterminado' : 'Marcar como predeterminado'}
                                                     >
-                                                        🚫 Inhabilitar
+                                                        {v.es_predeterminado ? '★' : '☆'}
                                                     </button>
-                                                )}
-                                                {v.estado_aprobacion === 'inactivo' && (
-                                                    <button 
-                                                        onClick={() => handleToggleStatus('vehiculo', v.placa, 'inactivo')}
-                                                        disabled={loading}
-                                                        style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
-                                                    >
-                                                        🔄 Reactivar
-                                                    </button>
-                                                )}
-                                                {v.estado_aprobacion === 'pendiente' && (
-                                                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>En revisión...</span>
-                                                )}
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td style={thTdStyle}>
+                                                    {v.estado_aprobacion === 'activo' && (
+                                                        <button
+                                                            onClick={() => handleToggleStatus('vehiculo', v.placa, 'activo')}
+                                                            disabled={loading}
+                                                            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                        >
+                                                            🚫 Inhabilitar
+                                                        </button>
+                                                    )}
+                                                    {v.estado_aprobacion === 'inactivo' && (
+                                                        <button
+                                                            onClick={() => handleToggleStatus('vehiculo', v.placa, 'inactivo')}
+                                                            disabled={loading}
+                                                            style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                        >
+                                                            🔄 Reactivar
+                                                        </button>
+                                                    )}
+                                                    {v.estado_aprobacion === 'pendiente' && (
+                                                        <span style={{ fontSize: '0.75rem', color: '#374151', fontStyle: 'italic' }}>En revisión...</span>
+                                                    )}
+                                                </td>
+                                            </tr>
                                         );
                                     })}
                                 </tbody>
@@ -515,7 +580,7 @@ const UserDashboard: React.FC = () => {
 
                 {/* Tabla Equipos */}
                 {activeTab === 'equipos' && (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive" style={{ overflowX: 'auto' }}>
                         {loadingEquipos ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando equipos...</div>
                         ) : equipos.length === 0 ? (
@@ -541,64 +606,64 @@ const UserDashboard: React.FC = () => {
                                     {equipos.map((e, idx) => {
                                         const images = e.img_serial ? e.img_serial.split('|') : [];
                                         return (
-                                        <tr key={e.serial || idx} style={{ transition: 'background 0.1s' }} onMouseOver={ev => ev.currentTarget.style.background = '#f9fafb'} onMouseOut={ev => ev.currentTarget.style.background = 'transparent'}>
-                                            <td style={thTdStyle}>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                    {images.map((img: string, i: number) => (
-                                                        <img 
-                                                            key={i}
-                                                            src={`${STORAGE_URL}/${img}`} 
-                                                            alt={`Equipo ${i}`} 
-                                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }} 
-                                                            onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
-                                                        />
-                                                    ))}
-                                                    {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
-                                                </div>
-                                            </td>
-                                            <td style={thTdStyle}>
-                                                {e.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
-                                                {e.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
-                                                {e.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
-                                                {!e.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
-                                            </td>
-                                            <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{e.serial}</td>
-                                            <td style={thTdStyle}>{e.marca}</td>
-                                            <td style={thTdStyle}>{e.modelo}</td>
-                                            <td style={thTdStyle}>{e.so}</td>
-                                            <td style={{ ...thTdStyle, textAlign: 'center' }}>
-                                                <button
-                                                    onClick={() => !e.es_predeterminado && handleSetDefault('equipo', e.serial)}
-                                                    style={{ background: 'none', border: 'none', cursor: e.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: e.es_predeterminado ? '#10b981' : '#d1d5db' }}
-                                                    title={e.es_predeterminado ? 'Equipo predeterminado' : 'Marcar como predeterminado'}
-                                                >
-                                                    {e.es_predeterminado ? '★' : '☆'}
-                                                </button>
-                                            </td>
-                                            <td style={thTdStyle}>
-                                                {e.estado_aprobacion === 'activo' && (
-                                                    <button 
-                                                        onClick={() => handleToggleStatus('equipo', e.serial, 'activo')}
-                                                        disabled={loading}
-                                                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                            <tr key={e.serial || idx} style={{ transition: 'background 0.1s' }} onMouseOver={ev => ev.currentTarget.style.background = '#f9fafb'} onMouseOut={ev => ev.currentTarget.style.background = 'transparent'}>
+                                                <td style={thTdStyle}>
+                                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                                        {images.map((img: string, i: number) => (
+                                                            <img
+                                                                key={i}
+                                                                src={`${STORAGE_URL}/${img}`}
+                                                                alt={`Equipo ${i}`}
+                                                                style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb', cursor: 'pointer' }}
+                                                                onClick={() => window.open(`${STORAGE_URL}/${img}`, '_blank')}
+                                                            />
+                                                        ))}
+                                                        {images.length === 0 && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Sin foto</span>}
+                                                    </div>
+                                                </td>
+                                                <td style={thTdStyle}>
+                                                    {e.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
+                                                    {e.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
+                                                    {e.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                    {!e.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
+                                                </td>
+                                                <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{e.serial}</td>
+                                                <td style={thTdStyle}>{e.marca}</td>
+                                                <td style={thTdStyle}>{e.modelo}</td>
+                                                <td style={thTdStyle}>{e.so}</td>
+                                                <td style={{ ...thTdStyle, textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => !e.es_predeterminado && handleSetDefault('equipo', e.serial)}
+                                                        style={{ background: 'none', border: 'none', cursor: e.es_predeterminado ? 'default' : 'pointer', fontSize: '1.5rem', color: e.es_predeterminado ? '#10b981' : '#d1d5db' }}
+                                                        title={e.es_predeterminado ? 'Equipo predeterminado' : 'Marcar como predeterminado'}
                                                     >
-                                                        🚫 Inhabilitar
+                                                        {e.es_predeterminado ? '★' : '☆'}
                                                     </button>
-                                                )}
-                                                {e.estado_aprobacion === 'inactivo' && (
-                                                    <button 
-                                                        onClick={() => handleToggleStatus('equipo', e.serial, 'inactivo')}
-                                                        disabled={loading}
-                                                        style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
-                                                    >
-                                                        🔄 Reactivar
-                                                    </button>
-                                                )}
-                                                {e.estado_aprobacion === 'pendiente' && (
-                                                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>En revisión...</span>
-                                                )}
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td style={thTdStyle}>
+                                                    {e.estado_aprobacion === 'activo' && (
+                                                        <button
+                                                            onClick={() => handleToggleStatus('equipo', e.serial, 'activo')}
+                                                            disabled={loading}
+                                                            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                        >
+                                                            🚫 Inhabilitar
+                                                        </button>
+                                                    )}
+                                                    {e.estado_aprobacion === 'inactivo' && (
+                                                        <button
+                                                            onClick={() => handleToggleStatus('equipo', e.serial, 'inactivo')}
+                                                            disabled={loading}
+                                                            style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                                                        >
+                                                            🔄 Reactivar
+                                                        </button>
+                                                    )}
+                                                    {e.estado_aprobacion === 'pendiente' && (
+                                                        <span style={{ fontSize: '0.75rem', color: '#374151', fontStyle: 'italic' }}>En revisión...</span>
+                                                    )}
+                                                </td>
+                                            </tr>
                                         );
                                     })}
                                 </tbody>
@@ -611,27 +676,43 @@ const UserDashboard: React.FC = () => {
             {/* Modal Registrar Vehiculo */}
             {showVehiculoModal && (
                 <div style={modalOverlayStyle}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                    <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>Registrar Vehículo</h3>
                         <form onSubmit={handleVehiculoSubmit}>
                             <label style={labelStyle}>Placa (máx 10)</label>
-                            <input style={inputStyle} type="text" maxLength={10} required value={formVehiculo.placa} onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value })} placeholder="Ej: ABC123" />
+                            <input
+                                style={{
+                                    ...inputStyle,
+                                    borderColor: placaError ? '#ef4444' : '#d1d5db',
+                                    outline: placaError ? 'none' : undefined,
+                                    boxShadow: placaError ? '0 0 0 1px #ef4444' : undefined
+                                }}
+                                type="text"
+                                maxLength={10}
+                                required={tiposVehiculo.find(t => t.id.toString() === (formVehiculo.id_tipo_vehiculo || '').toString())?.name?.toLowerCase() !== 'bicicleta'}
+                                value={formVehiculo.placa}
+                                onChange={e => setFormVehiculo({ ...formVehiculo, placa: e.target.value.toUpperCase() })}
+                                placeholder={tiposVehiculo.find(t => t.id.toString() === (formVehiculo.id_tipo_vehiculo || '').toString())?.name?.toLowerCase() === 'bicicleta' ? "Opcional" : "Ej: ABC123"}
+                            />
+                            {placaError && (
+                                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{placaError}</p>
+                            )}
 
-                             <label style={labelStyle}>Foto General del Vehículo</label>
-                             <input
-                                 type="file"
-                                 accept="image/*"
-                                 style={{ ...inputStyle, padding: '0.4rem' }}
-                                 onChange={(e) => handleImageSelect(e, 'general')}
-                             />
+                            <label style={labelStyle}>Foto General del Vehículo</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={(e) => handleImageSelect(e, 'general')}
+                            />
 
-                             <label style={labelStyle}>Foto de la Placa (OCR)</label>
-                             <input
-                                 type="file"
-                                 accept="image/*"
-                                 style={{ ...inputStyle, padding: '0.4rem' }}
-                                 onChange={(e) => handleImageSelect(e, 'detalle')}
-                             />
+                            <label style={labelStyle}>Foto de la Placa (OCR)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={(e) => handleImageSelect(e, 'detalle')}
+                            />
                             {isOcrLoading && <span style={{ fontSize: '0.8rem', color: '#2563eb' }}>Leyendo placa...</span>}
 
                             <label style={labelStyle}>Tipo de Vehículo</label>
@@ -642,7 +723,7 @@ const UserDashboard: React.FC = () => {
                                 ))}
                             </select>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={labelStyle}>Marca</label>
                                     <input style={inputStyle} type="text" required value={formVehiculo.marca} onChange={e => setFormVehiculo({ ...formVehiculo, marca: e.target.value })} />
@@ -659,9 +740,9 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Descripción (Opcional)</label>
                             <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={formVehiculo.descripcion} onChange={e => setFormVehiculo({ ...formVehiculo, descripcion: e.target.value })} placeholder="Detalles adicionales..." />
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="button" onClick={() => setShowVehiculoModal(false)} disabled={loading} style={{ padding: '0.6rem 1.2rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '500' }}>Cancelar</button>
-                                <button type="submit" disabled={loading} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading ? '#9ca3af' : '#2563eb', color: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
+                                <button type="submit" disabled={loading || !!placaError} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading || !!placaError ? '#9ca3af' : '#2563eb', color: 'white', borderRadius: '0.375rem', cursor: loading || !!placaError ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
                             </div>
                         </form>
                     </div>
@@ -671,30 +752,30 @@ const UserDashboard: React.FC = () => {
             {/* Modal Registrar Equipo */}
             {showEquipoModal && (
                 <div style={modalOverlayStyle}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                    <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>Registrar Equipo</h3>
                         <form onSubmit={handleEquipoSubmit}>
                             <label style={labelStyle}>Serial</label>
                             <input style={inputStyle} type="text" required value={formEquipo.serial} onChange={e => setFormEquipo({ ...formEquipo, serial: e.target.value })} placeholder="Obligatorio" />
 
-                             <label style={labelStyle}>Foto General del Equipo</label>
-                             <input
-                                 type="file"
-                                 accept="image/*"
-                                 style={{ ...inputStyle, padding: '0.4rem' }}
-                                 onChange={(e) => handleEquipoImageSelect(e, 'general')}
-                             />
+                            <label style={labelStyle}>Foto General del Equipo</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={(e) => handleEquipoImageSelect(e, 'general')}
+                            />
 
-                             <label style={labelStyle}>Foto del Serial (OCR)</label>
-                             <input
-                                 type="file"
-                                 accept="image/*"
-                                 style={{ ...inputStyle, padding: '0.4rem' }}
-                                 onChange={(e) => handleEquipoImageSelect(e, 'detalle')}
-                             />
+                            <label style={labelStyle}>Foto del Serial (OCR)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ ...inputStyle, padding: '0.4rem' }}
+                                onChange={(e) => handleEquipoImageSelect(e, 'detalle')}
+                            />
                             {isOcrEquipoLoading && <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Leyendo etiqueta...</span>}
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={labelStyle}>Marca del Equipo</label>
                                     <select style={inputStyle} required value={formEquipo.id_marca} onChange={e => setFormEquipo({ ...formEquipo, id_marca: e.target.value })}>
@@ -724,7 +805,7 @@ const UserDashboard: React.FC = () => {
                             <label style={labelStyle}>Características</label>
                             <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={formEquipo.caracteristicas} onChange={e => setFormEquipo({ ...formEquipo, caracteristicas: e.target.value })} placeholder="Color, RAM, Disco Duro, etc..." />
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="button" onClick={() => setShowEquipoModal(false)} disabled={loading} style={{ padding: '0.6rem 1.2rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '500' }}>Cancelar</button>
                                 <button type="submit" disabled={loading} style={{ padding: '0.6rem 1.2rem', border: 'none', background: loading ? '#9ca3af' : '#10b981', color: 'white', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '600' }}>{loading ? 'Guardando...' : 'Guardar'}</button>
                             </div>
