@@ -9,6 +9,8 @@ export interface User {
     id_rol: number;
     correo: string;
     codigo_qr?: string;
+    tipo_participante?: string;
+    es_instructor?: boolean;
 }
 
 interface AuthContextType {

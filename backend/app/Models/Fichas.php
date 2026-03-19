@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Fichas extends Model
 {
     protected $table = 'fichas';
-    protected $fillable = ['numero_ficha', 'id_programa', 'numero_ambiente', 'id_jornada', 'hora_limite_llegada'];
+    protected $fillable = ['numero_ficha', 'id_programa', 'numero_ambiente', 'id_jornada', 'hora_limite_llegada', 'estado'];
 
     public function programa()
     {

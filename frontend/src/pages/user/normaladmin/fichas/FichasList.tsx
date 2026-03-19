@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { FichasService, updateDetalle, updateFichaEstado } from '../../../../services/fichasService';
 import type { Ficha } from '../../../../services/fichasService';
 import { Modal } from '../../../../components/common/Modal';
@@ -21,7 +22,8 @@ const FichasList: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['fichaUsuarios', activeFicha?.id] });
         },
         onError: (error: any) => {
-            alert(error.message || 'Error al actualizar el rol');
+            console.error("Error al actualizar rol:", error);
+            toast.error(error.message || 'Error al actualizar el rol');
         }
     });
 
@@ -37,10 +39,12 @@ const FichasList: React.FC = () => {
             // 2. Sincronizar con el backend en segundo plano
             queryClient.invalidateQueries({ queryKey: ['allFichas'] });
             queryClient.invalidateQueries({ queryKey: ['fichaUsuarios', activeFicha?.id] });
+            toast.success('Estado de la ficha actualizado');
         },
         onError: (error: any) => {
             console.error("Error al actualizar estado:", error);
-            alert(error.message || 'Error al actualizar el estado');
+            const errorMsg = error.response?.data?.message || error.message || 'Error al actualizar el estado';
+            toast.error(errorMsg);
         }
     });
 
@@ -180,9 +184,9 @@ const FichasList: React.FC = () => {
                                     background: 'white'
                                 }}
                             >
-                                <option value="Lectiva">Lectiva</option>
-                                <option value="Practica">Práctica</option>
-                                <option value="Finalizada">Finalizada</option>
+                                <option value="lectiva">Lectiva</option>
+                                <option value="productiva">Productiva</option>
+                                <option value="finalizada">Finalizada</option>
                             </select>
                         </div>
                     </div>

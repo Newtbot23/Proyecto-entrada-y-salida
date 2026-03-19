@@ -41,6 +41,7 @@ import RegistrarEquipos from './pages/user/normaladmin/equipos/RegistrarEquipos'
 import AsignarEquipos from './pages/user/normaladmin/equipos/AsignarEquipos';
 import GestionLotes from './pages/user/normaladmin/equipos/GestionLotes';
 import HistorialAsignaciones from './pages/user/normaladmin/equipos/HistorialAsignaciones';
+import AsistenciaFicha from './pages/user/instructor/AsistenciaFicha';
 
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'sonner';
@@ -88,6 +89,7 @@ function App() {
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/historial" element={<UserHistory />} />
           <Route path="/user/codigo" element={<UserBarcode />} />
+          <Route path="/user/instructor/asistencia" element={<AsistenciaFicha />} />
         </Route>
 
         <Route path="/license-payment" element={<LicensePayment />} />

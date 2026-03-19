@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DynamicTableController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TipoDocController;
 use App\Http\Controllers\Api\FichaController;
+use App\Models\DetalleFichaUsuarios;
 
 Route::get('/login', function () {
     return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
@@ -52,7 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User Context
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        $isInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+            ->where('tipo_participante', 'instructor')
+            ->exists();
+        $user->es_instructor = $isInstructor;
+        return $user;
     });
 
     // Admins Management
@@ -140,7 +146,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/fichas/{id}/usuarios/{doc}/rol', [FichaController::class, 'actualizarRolPorFichaYUsuario']);
     Route::delete('/fichas/{id}/usuarios/{doc}', [FichaController::class, 'desvincularUsuario']);
     Route::patch('/fichas/{id}/hora-limite', [FichaController::class, 'updateHoraLimite']);
+    Route::get('/instructor/asistencia-base', [FichaController::class, 'getInstructorAsistenciaBase']);
     Route::patch('/fichas/{id}/estado', [FichaController::class, 'cambiarEstado']);
+    Route::get('/instructor/fichas/{fichaId}/asistencia-mensual', [FichaController::class, 'getAsistenciaMensual']);
+    Route::get('/instructor/asistencia-mensual', [FichaController::class, 'getInstructorAsistenciaMensual']);
 
     // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);

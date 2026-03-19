@@ -12,6 +12,7 @@ interface Usuario {
     primer_apellido: string;
     segundo_apellido?: string;
     tipo_participante?: 'aprendiz' | 'instructor'; // Rol en la ficha
+    es_instructor_previo?: boolean;
 }
 
 const FichasAssign: React.FC = () => {
@@ -185,7 +186,7 @@ const FichasAssign: React.FC = () => {
         ((errorFichas || errorUsers) as any)?.message ?? 'Error desconocido';
 
     const canSave =
-        selectedFichaId !== '' && cartUsers.length > 0 && !mutation.isPending;
+        selectedFichaId !== '' && !mutation.isPending;
 
     // Lista filtrada: la columna derecha la renderiza, handleDragEnd la usa para lookup
     const filteredAvailableUsers = availableUsers.filter(
@@ -277,8 +278,8 @@ const FichasAssign: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Botón Guardar — visible solo si hay ficha Y usuarios en el carrito */}
-                        {selectedFichaId && cartUsers.length > 0 && (
+                        {/* Botón Guardar — visible solo si hay ficha seleccionada */}
+                        {selectedFichaId && (
                                     <button
                                         className={styles.btnSave}
                                         onClick={handleSave}
@@ -288,8 +289,12 @@ const FichasAssign: React.FC = () => {
                                             <span>Guardando...</span>
                                         ) : (
                                             <>
-                                                <span className={styles.btnTitle}>Guardar Asignación</span>
-                                                <span className={styles.btnSubtitle}>({cartUsers.length} usuarios)</span>
+                                                <span className={styles.btnTitle}>
+                                                    {cartUsers.length > 0 ? 'Guardar Asignación' : 'Vaciar Ficha'}
+                                                </span>
+                                                <span className={styles.btnSubtitle}>
+                                                    ({cartUsers.length} usuarios)
+                                                </span>
                                             </>
                                         )}
                                     </button>
@@ -442,13 +447,20 @@ const FichasAssign: React.FC = () => {
                                                                     {...providedDrag.draggableProps}
                                                                     {...providedDrag.dragHandleProps}
                                                                 >
-                                                                    <span className={styles.userName}>
-                                                                        {user.primer_nombre}{' '}
-                                                                        {user.primer_apellido}
-                                                                    </span>
-                                                                    <span className={styles.userDoc}>
-                                                                        CC: {user.doc}
-                                                                    </span>
+                                                                    <div className={styles.userInfo}>
+                                                                        <span className={styles.userName}>
+                                                                            {user.primer_nombre}{' '}
+                                                                            {user.primer_apellido}
+                                                                        </span>
+                                                                        <span className={styles.userDoc}>
+                                                                            CC: {user.doc}
+                                                                        </span>
+                                                                    </div>
+                                                                    {user.es_instructor_previo && (
+                                                                        <span className={styles.badgeInstructorPrevio} title="Este usuario ya es instructor en otras fichas">
+                                                                            💼 Instructor
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </Draggable>
