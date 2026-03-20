@@ -163,12 +163,12 @@ const UserHistory: React.FC = () => {
                             onMouseOut={e => !loading && (e.currentTarget.style.background = '#008f39')}
                             title={`Exportar todo el mes de ${getMonthName(historyDateFilter)}`}
                         >
-                            {loading ? '⏳ Generando...' : `📄 PDF: Mes de ${getMonthName(historyDateFilter)}`}
+                            {loading ? 'Generando...' : `PDF: Mes de ${getMonthName(historyDateFilter)}`}
                         </button>
                     </div>
                     {entradas.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
-                            <p style={{ fontSize: '3rem', margin: 0 }}>⏱️</p>
+                            <p style={{ fontSize: '3rem', margin: 0 }}></p>
                             <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay registros de entradas</p>
                         </div>
                     ) : (

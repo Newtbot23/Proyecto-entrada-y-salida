@@ -30,6 +30,7 @@ interface AsistenciaBaseData {
     id_ficha: number;
     numero_ficha: number;
     hora_limite_llegada: string;
+    nombre_programa: string | null;
 }
 
 const COLORS = {
@@ -47,6 +48,7 @@ const COLORS = {
 
 const AsistenciaFicha: React.FC = () => {
     const [idFicha, setIdFicha] = useState<number | null>(null);
+    const [fichaInfo, setFichaInfo] = useState<{ numero: number | null; programa: string | null }>({ numero: null, programa: null });
     const [horaLimite, setHoraLimite] = useState('07:15');
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingBase, setIsLoadingBase] = useState(true);
@@ -64,6 +66,7 @@ const AsistenciaFicha: React.FC = () => {
                 const data = await apiClient.get<AsistenciaBaseData>('/instructor/asistencia-base');
                 if (data) {
                     setIdFicha(data.id_ficha);
+                    setFichaInfo({ numero: data.numero_ficha, programa: data.nombre_programa });
                     if (data.hora_limite_llegada) {
                         setHoraLimite(data.hora_limite_llegada.substring(0, 5));
                     }
@@ -182,7 +185,10 @@ const AsistenciaFicha: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'base-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
                     <h1 style={{ margin: 0, fontSize: '24px', color: COLORS.textMain }}>Asistencia de Instructores</h1>
-                    <p style={{ color: COLORS.textMuted, fontSize: '14px', marginTop: '5px' }}>Ficha: <strong>{idFicha}</strong></p>
+                    <p style={{ color: COLORS.textMuted, fontSize: '14px', marginTop: '5px' }}>
+                        Ficha: <strong>{fichaInfo.numero ?? '...'}</strong>
+                        {fichaInfo.programa && <> / <span>{fichaInfo.programa}</span></>}
+                    </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fff', padding: '10px 15px', borderRadius: '10px', border: `1px solid ${COLORS.grayMedium}` }}>
                     <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textMuted }}>LÍMITE ENTRADA:</span>

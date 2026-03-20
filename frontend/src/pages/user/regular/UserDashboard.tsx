@@ -410,7 +410,7 @@ const UserDashboard: React.FC = () => {
                     gap: '1rem',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}>
-                    <div style={{ fontSize: '1.75rem' }}>🚨</div>
+                    <div style={{ fontSize: '1.75rem' }}></div>
                     <div style={{ flex: 1 }}>
                         <h4 style={{ margin: 0, color: '#9a3412', fontWeight: '700', fontSize: '1.05rem' }}>¿Olvidaste registrar tu salida?</h4>
                         <p style={{ margin: '0.25rem 0 0', color: '#c2410c', fontSize: '0.9rem' }}>
@@ -438,7 +438,7 @@ const UserDashboard: React.FC = () => {
             {/* Nota del Sistema */}
             <div style={{ ...cardStyle, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                 <h4 style={{ color: '#1e40af', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.25rem' }}>ℹ️</span> Nota del Sistema
+                    Nota del Sistema
                 </h4>
                 <p style={{ color: '#1e3a8a', marginTop: '0.5rem', fontSize: '0.95rem' }}>
                     Esta es tu área personal. Aquí podrás consultar tu información y realizar registros. Recuerda mantener tus datos de vehículos y equipos actualizados.
@@ -453,7 +453,7 @@ const UserDashboard: React.FC = () => {
                     onMouseOver={e => e.currentTarget.style.background = '#1d4ed8'}
                     onMouseOut={e => e.currentTarget.style.background = '#2563eb'}
                 >
-                    🚗 Registrar Vehículo
+                    Registrar Vehículo
                 </button>
                 <button
                     onClick={() => setShowEquipoModal(true)}
@@ -461,7 +461,7 @@ const UserDashboard: React.FC = () => {
                     onMouseOver={e => e.currentTarget.style.background = '#059669'}
                     onMouseOut={e => e.currentTarget.style.background = '#10b981'}
                 >
-                    💻 Registrar Equipo
+                    Registrar Equipo
                 </button>
             </div>
 
@@ -489,7 +489,7 @@ const UserDashboard: React.FC = () => {
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando vehículos...</div>
                         ) : vehiculos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
-                                <p style={{ fontSize: '3rem', margin: 0 }}>🚗</p>
+                                <p style={{ fontSize: '3rem', margin: 0 }}></p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay vehículos registrados</p>
                             </div>
                         ) : (
@@ -527,9 +527,9 @@ const UserDashboard: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={thTdStyle}>
-                                                    {v.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
-                                                    {v.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
-                                                    {v.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                    {v.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Activo</span>}
+                                                    {v.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Pendiente</span>}
+                                                    {v.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Inactivo</span>}
                                                     {!v.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
                                                 </td>
                                                 <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{v.placa}</td>
@@ -553,7 +553,7 @@ const UserDashboard: React.FC = () => {
                                                             disabled={loading}
                                                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
                                                         >
-                                                            🚫 Inhabilitar
+                                                            Inhabilitar
                                                         </button>
                                                     )}
                                                     {v.estado_aprobacion === 'inactivo' && (
@@ -562,7 +562,7 @@ const UserDashboard: React.FC = () => {
                                                             disabled={loading}
                                                             style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
                                                         >
-                                                            🔄 Reactivar
+                                                            Reactivar
                                                         </button>
                                                     )}
                                                     {v.estado_aprobacion === 'pendiente' && (
@@ -585,7 +585,7 @@ const UserDashboard: React.FC = () => {
                             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>Cargando equipos...</div>
                         ) : equipos.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
-                                <p style={{ fontSize: '3rem', margin: 0 }}>💻</p>
+                                <p style={{ fontSize: '3rem', margin: 0 }}></p>
                                 <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay equipos registrados</p>
                             </div>
                         ) : (
@@ -622,9 +622,9 @@ const UserDashboard: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={thTdStyle}>
-                                                    {e.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>✅ Activo</span>}
-                                                    {e.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>⏳ Pendiente</span>}
-                                                    {e.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>❌ Inactivo</span>}
+                                                    {e.estado_aprobacion === 'activo' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Activo</span>}
+                                                    {e.estado_aprobacion === 'pendiente' && <span style={{ background: '#fef9c3', color: '#854d0e', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Pendiente</span>}
+                                                    {e.estado_aprobacion === 'inactivo' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold' }}>Inactivo</span>}
                                                     {!e.estado_aprobacion && <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>}
                                                 </td>
                                                 <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{e.serial}</td>
@@ -647,7 +647,7 @@ const UserDashboard: React.FC = () => {
                                                             disabled={loading}
                                                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
                                                         >
-                                                            🚫 Inhabilitar
+                                                            Inhabilitar
                                                         </button>
                                                     )}
                                                     {e.estado_aprobacion === 'inactivo' && (
@@ -656,7 +656,7 @@ const UserDashboard: React.FC = () => {
                                                             disabled={loading}
                                                             style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
                                                         >
-                                                            🔄 Reactivar
+                                                            Reactivar
                                                         </button>
                                                     )}
                                                     {e.estado_aprobacion === 'pendiente' && (

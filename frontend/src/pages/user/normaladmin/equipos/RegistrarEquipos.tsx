@@ -183,7 +183,7 @@ const RegistrarEquipos: React.FC = () => {
                                 onClick={() => document.getElementById('csv-upload')?.click()}
                             >
                                 {parseStatus === 'loading' ? 'Analizando...' : (selectedFile ? 'Cambiar CSV' : 'Seleccionar CSV')}
-                                {parseStatus === 'success' && <span className={styles.successBadge}>🟢</span>}
+                                {parseStatus === 'success' && <span className={styles.successBadge}></span>}
                             </button>
                         </div>
                     </div>

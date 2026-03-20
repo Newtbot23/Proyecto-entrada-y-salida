@@ -134,7 +134,7 @@ const PersonasDashboard: React.FC = () => {
                         disabled={loading}
                     />
                     <button type="submit" className={styles.searchBtn} disabled={loading}>
-                        {loading ? 'Buscando...' : '🔍 Buscar'}
+                        {loading ? 'Buscando...' : 'Buscar'}
                     </button>
                 </form>
             </div>
@@ -158,7 +158,7 @@ const PersonasDashboard: React.FC = () => {
                         {/* Equipos Propios */}
                         {searchResult.equipos.length > 0 && (!searchResult.registro_activo || (searchResult.registro_activo && searchResult.registro_activo.seriales_equipos.length > 0)) ? (
                             <div style={{ marginTop: '1.5rem' }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem' }}>💻 {searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem' }}>{searchResult.registro_activo ? 'Equipos Vinculados a la Entrada' : 'Seleccionar Equipos (Opcional)'}</h4>
                                 <div className={styles.equipmentGrid}>
                                     {searchResult.equipos
                                         .filter(eq => !searchResult.registro_activo || searchResult.registro_activo.seriales_equipos.includes(eq.serial))
@@ -216,11 +216,11 @@ const PersonasDashboard: React.FC = () => {
                         <div className={styles.actionButtons}>
                             {!searchResult.estaAdentro ? (
                                 <button onClick={() => handleRegisterAction('entrada')} className={styles.entryBtn} disabled={loading}>
-                                    📥 Confirmar Entrada {selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}
+                                    Confirmar Entrada {selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}
                                 </button>
                             ) : (
                                 <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                    📤 Confirmar Salida {selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}
+                                    Confirmar Salida {selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}
                                 </button>
                             )}
                         </div>

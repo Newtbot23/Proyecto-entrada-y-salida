@@ -87,10 +87,11 @@ class DynamicTableController extends Controller
 
         // Definition of foreign key relationships for the dynamic system
         $foreignKeyMap = [
-            'id_nave' => ['table' => 'naves', 'column' => 'id', 'label' => 'nave'],
+            'id_nave'          => ['table' => 'naves',          'column' => 'id', 'label' => 'nave'],
             'id_tipo_vehiculo' => ['table' => 'tipos_vehiculo', 'column' => 'id', 'label' => 'tipo_vehiculo'],
-            'id_marca' => ['table' => 'marcas_equipo', 'column' => 'id', 'label' => 'marca'],
-            'id_rol' => ['table' => 'roles', 'column' => 'id', 'label' => 'rol'],
+            'id_marca'         => ['table' => 'marcas_equipo',  'column' => 'id', 'label' => 'marca'],
+            'id_rol'           => ['table' => 'roles',          'column' => 'id', 'label' => 'rol'],
+            'id_tip_doc'       => ['table' => 'tipo_doc',       'column' => 'id_tip_doc',  'label' => 'nombre'],
         ];
 
         foreach ($columns as $column) {

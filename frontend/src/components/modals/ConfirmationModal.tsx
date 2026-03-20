@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal } from '../common/Modal';
+import { CheckIcon } from '../common/Icons';
 import styles from './ConfirmationModal.module.css';
 
 interface ConfirmationModalProps {
@@ -10,7 +11,8 @@ interface ConfirmationModalProps {
     message: string;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'danger' | 'warning' | 'info';
+    variant?: 'danger' | 'warning' | 'info' | 'success';
+    isSingleButton?: boolean;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -21,7 +23,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     message,
     confirmText = 'Confirmar',
     cancelText = 'Cancelar',
-    variant = 'warning'
+    variant = 'warning',
+    isSingleButton = false
 }) => {
     const handleConfirm = () => {
         onConfirm();
@@ -53,15 +56,20 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                         </svg>
                     )}
+                    {variant === 'success' && (
+                        <CheckIcon width={48} height={48} />
+                    )}
                 </div>
 
                 <p className={styles.message}>{message}</p>
 
-                <div className={styles.actions}>
-                    <button onClick={onClose} className={styles.cancelButton}>
-                        {cancelText}
-                    </button>
-                    <button onClick={handleConfirm} className={`${styles.confirmButton} ${styles[variant]}`}>
+                <div className={`${styles.actions} ${isSingleButton ? styles.centered : ''}`}>
+                    {!isSingleButton && (
+                        <button onClick={onClose} className={styles.cancelButton}>
+                            {cancelText}
+                        </button>
+                    )}
+                    <button onClick={handleConfirm} className={`${styles.confirmButton} ${styles[variant]} ${isSingleButton ? styles.fullWidth : ''}`}>
                         {confirmText}
                     </button>
                 </div>

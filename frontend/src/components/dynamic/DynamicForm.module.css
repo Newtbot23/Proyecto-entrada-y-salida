@@ -82,6 +82,17 @@
     cursor: default;
 }
 
+.twoColGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.fullWidth {
+    grid-column: span 2;
+}
+
 .actionsGrid {
     display: flex;
     gap: 0.5rem;
