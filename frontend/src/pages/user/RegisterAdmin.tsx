@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { registrationService } from '../../services/registrationService';
 import { getTiposDoc } from '../../services/userDashboardService';
+import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import styles from './Registration.module.css';
 
 const RegisterAdmin: React.FC = () => {
@@ -277,28 +278,16 @@ const RegisterAdmin: React.FC = () => {
                 </form>
             </div>
 
-            {showModal && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modalContent}>
-                        <div className={styles.modalIcon}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                        </div>
-                        <h2 className={styles.modalTitle}>Usuario registrado correctamente</h2>
-                        <p className={styles.modalSubtitle}>Bienvenido {formData.primer_nombre} {formData.primer_apellido}</p>
-                        <button
-                            className={styles.modalButton}
-                            onClick={() => {
-                                setShowModal(false);
-                                navigate('/login');
-                            }}
-                        >
-                            Aceptar
-                        </button>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                isOpen={showModal}
+                onClose={() => navigate('/login')}
+                onConfirm={() => navigate('/login')}
+                title="Registro Completado"
+                message={`¡Bienvenido ${formData.primer_nombre} ${formData.primer_apellido}! La entidad y tu cuenta de administrador han sido registradas correctamente.`}
+                confirmText="Ir al Inicio de Sesión"
+                variant="success"
+                isSingleButton={true}
+            />
         </div>
     );
 };

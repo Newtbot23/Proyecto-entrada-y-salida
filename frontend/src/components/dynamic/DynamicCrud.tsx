@@ -238,8 +238,32 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                     title=""
                     onCancel={() => setIsCreateModalOpen(false)}
                     immutableFields={[]}
-                    hiddenFields={hiddenFormFields}
+                    hiddenFields={[...(hiddenFormFields || []), 'nit_entidad']}
                     serverErrors={serverValidationErrors}
+                    {...(tableName === 'usuarios' && {
+                        fieldOrder: [
+                            'id_tip_doc', 'doc',
+                            'primer_nombre', 'segundo_nombre',
+                            'primer_apellido', 'segundo_apellido',
+                            'correo', 'telefono',
+                            'id_rol', 'contrasena',
+                            'imagen',
+                        ],
+                        fieldLabels: {
+                            id_tip_doc: 'Tipo de Documento',
+                            doc: 'Número de Documento',
+                            primer_nombre: 'Primer Nombre',
+                            segundo_nombre: 'Segundo Nombre',
+                            primer_apellido: 'Primer Apellido',
+                            segundo_apellido: 'Segundo Apellido',
+                            correo: 'Correo Electrónico',
+                            telefono: 'Teléfono',
+                            id_rol: 'Rol',
+                            contrasena: 'Contraseña',
+                            imagen: 'Foto de Perfil',
+                        },
+                        hiddenWithDefault: { estado: 'activo' },
+                    })}
                 />
             </Modal>
 
@@ -315,6 +339,14 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                                                     alt="Imagen" 
                                                     style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '0.25rem' }} 
                                                 />
+                                            ) : col.foreign?.options?.length ? (
+                                                // Resolve FK id → human-readable label
+                                                (() => {
+                                                    const match = col.foreign!.options.find(
+                                                        opt => String(opt.value) === String(row[col.name])
+                                                    );
+                                                    return match ? String(match.label) : String(row[col.name] ?? '');
+                                                })()
                                             ) : typeof row[col.name] === 'object' && row[col.name] !== null
                                                 ? JSON.stringify(row[col.name])
                                                 : String(row[col.name] || '')}

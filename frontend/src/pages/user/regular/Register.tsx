@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { registrationService } from '../../../services/registrationService';
+import { ConfirmationModal } from '../../../components/modals/ConfirmationModal';
 import styles from '../Registration.module.css';
 
 const REGEX = {
@@ -17,6 +18,7 @@ const RegisterUser: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
         doc: '',
@@ -142,8 +144,7 @@ const RegisterUser: React.FC = () => {
             } else {
                 await registrationService.registerUser(formData);
             }
-            alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
-            navigate('/login');
+            setShowSuccessModal(true);
         } catch (err: any) {
             console.error('Registration error:', err);
             setError(err.message || 'Error al registrar el usuario. Por favor verifica los datos.');
@@ -309,6 +310,17 @@ const RegisterUser: React.FC = () => {
                     </div>
                 </form>
             </div>
+
+            <ConfirmationModal
+                isOpen={showSuccessModal}
+                onClose={() => navigate('/login')}
+                onConfirm={() => navigate('/login')}
+                title="Registro Exitoso"
+                message="¡Tu cuenta ha sido creada correctamente! Ahora puedes iniciar sesión para acceder a la plataforma."
+                confirmText="Continuar al Login"
+                variant="success"
+                isSingleButton={true}
+            />
         </div>
     );
 };

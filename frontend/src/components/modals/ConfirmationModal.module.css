@@ -31,9 +31,14 @@
     color: #3b82f6;
 }
 
+.iconContainer.success {
+    background-color: transparent;
+    color: #39A900;
+}
+
 .message {
     font-size: var(--font-size-base);
-    color: var(--color-text-main);
+    color: #6b7280;
     line-height: 1.6;
     margin: 0;
     max-width: 400px;
@@ -97,8 +102,30 @@
     background-color: #2563eb;
 }
 
+.confirmButton.success {
+    background-color: #001A33;
+}
+
+.confirmButton.success:hover {
+    background-color: #1D3D5E;
+}
+
+/* Single Button Layout */
+.actions.centered {
+    justify-content: center;
+}
+
+.confirmButton.fullWidth {
+    max-width: 280px;
+    margin: 0 auto;
+}
+
 @media (max-width: 768px) {
     .actions {
         flex-direction: column-reverse;
+    }
+    
+    .confirmButton.fullWidth {
+        max-width: 100%;
     }
 }
