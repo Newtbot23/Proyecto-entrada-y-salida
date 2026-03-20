@@ -150,6 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/fichas/{id}/estado', [FichaController::class, 'cambiarEstado']);
     Route::get('/instructor/fichas/{fichaId}/asistencia-mensual', [FichaController::class, 'getAsistenciaMensual']);
     Route::get('/instructor/asistencia-mensual', [FichaController::class, 'getInstructorAsistenciaMensual']);
+    Route::get('/instructor/equipos-asignados', [FichaController::class, 'getInstructorEquiposAsignados']);
 
     // Puertas Access Control
     Route::get('/puertas/search-persona', [App\Http\Controllers\Api\PuertasController::class, 'searchPersona']);

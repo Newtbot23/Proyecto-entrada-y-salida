@@ -307,7 +307,7 @@ const FichasList: React.FC = () => {
                                 </div>
                                 <div className={styles.infoItem}>
                                     <span className={styles.infoLabel}>Equipo asignado</span>
-                                    <span className={styles.infoValue}>{selectedUserModal.equipo?.nombre || 'Sin equipo asignado'}</span>
+                                    <span className={styles.infoValue}>{selectedUserModal.equipo_info || 'Sin equipo asignado'}</span>
                                 </div>
                             </div>
                         </div>

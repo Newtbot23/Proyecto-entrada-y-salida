@@ -1,0 +1,101 @@
+.container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.infoCard {
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.infoCard span {
+    font-weight: 600;
+    color: #374151;
+}
+
+.tableContainer {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th,
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    color: #4b5563;
+    font-size: 0.875rem;
+}
+
+.typeBadge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.typeSena {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.typePropio {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.loading,
+.noResults {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.noResults p {
+    margin-top: 1rem;
+    font-size: 1.125rem;
+}
