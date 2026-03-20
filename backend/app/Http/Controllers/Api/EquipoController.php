@@ -180,6 +180,7 @@ class EquipoController extends Controller
         $lotes = DB::table('equipos')
             ->select('lote_importacion', DB::raw('count(*) as total'))
             ->whereNotNull('lote_importacion')
+            ->where('tipo_equipo', '!=', 'propio')
             ->groupBy('lote_importacion')
             ->get();
 
@@ -242,6 +243,9 @@ class EquipoController extends Controller
         } else {
             $query->where('lote_importacion', $lote);
         }
+
+        // Excluir equipos marcados como propios
+        $query->where('tipo_equipo', '!=', 'propio');
 
         return response()->json($query->get());
     }

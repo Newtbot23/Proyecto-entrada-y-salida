@@ -316,14 +316,42 @@ class FichaController extends Controller
             $usuarios = $ficha->usuarios()
                 ->select(
                     'usuarios.doc', 
-                    'primer_nombre', 
-                    'segundo_nombre', 
-                    'primer_apellido', 
-                    'segundo_apellido',
+                    'usuarios.primer_nombre', 
+                    'usuarios.segundo_nombre', 
+                    'usuarios.primer_apellido', 
+                    'usuarios.segundo_apellido',
+                    'usuarios.nit_entidad',
+                    'usuarios.imagen',
                     'detalle_ficha_usuarios.tipo_participante',
                     'detalle_ficha_usuarios.id as detalle_id'
                 )
                 ->get();
+
+            foreach ($usuarios as $usuario) {
+                // Buscamos si tiene alguna asignacion activa
+                $asignacion = DB::table('asignaciones')
+                    ->join('equipos', 'asignaciones.serial_equipo', '=', 'equipos.serial')
+                    ->where('asignaciones.doc', $usuario->doc)
+                    ->where('asignaciones.estado', 'activo')
+                    ->select('equipos.tipo_equipo', 'equipos.modelo', 'equipos.serial', 'equipos.placa_sena')
+                    ->first();
+
+                if ($asignacion) {
+                    if ($asignacion->tipo_equipo === 'propio') {
+                        $usuario->equipo_info = "Aplica equipo propio";
+                    } else {
+                        $usuario->equipo_info = "SENA - Placa: " . $asignacion->placa_sena . " / Serial: " . $asignacion->serial;
+                    }
+                } else {
+                    $usuario->equipo_info = "Sin equipo asignado";
+                }
+
+                // Asegurar que la entidad venga cargada si no vino (para el modal)
+                if(!isset($usuario->entidad)) {
+                    $entidad = DB::table('entidades')->where('nit', $usuario->nit_entidad)->first();
+                    $usuario->entidad = $entidad ? (array) $entidad : null;
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -574,6 +602,83 @@ class FichaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener asistencia mensual del instructor',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getInstructorEquiposAsignados(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // 1. IDENTIFICAR LA FICHA DEL INSTRUCTOR
+            $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                ->where('tipo_participante', 'instructor')
+                ->first();
+
+            if (!$detalleInstructor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes una ficha asignada como instructor.'
+                ], 403);
+            }
+
+            $fichaId = $detalleInstructor->id_ficha;
+            $ficha = Fichas::find($fichaId);
+
+            // 2. OBTENER LOS EQUIPOS ASIGNADOS A LOS APRENDICES DE ESA FICHA
+            $equipos = DB::table('detalle_ficha_usuarios as dfu')
+                ->join('asignaciones as a', 'dfu.doc', '=', 'a.doc')
+                ->join('equipos as e', 'a.serial_equipo', '=', 'e.serial')
+                ->join('usuarios as u', 'dfu.doc', '=', 'u.doc')
+                ->where('dfu.id_ficha', $fichaId)
+                ->where('dfu.tipo_participante', 'aprendiz')
+                ->where('a.estado', 'activo')
+                ->select(
+                    'u.doc as usuario_doc',
+                    'u.primer_nombre',
+                    'u.segundo_nombre',
+                    'u.primer_apellido',
+                    'u.segundo_apellido',
+                    'e.serial',
+                    'e.tipo_equipo',
+                    'e.placa_sena',
+                    'e.modelo',
+                    'e.tipo_equipo_desc'
+                )
+                ->get();
+
+            // Formatear los datos para el frontend
+            $datosFormateados = $equipos->map(function ($equipo) {
+                $nombres = trim($equipo->primer_nombre . ' ' . ($equipo->segundo_nombre ?? ''));
+                $apellidos = trim($equipo->primer_apellido . ' ' . ($equipo->segundo_apellido ?? ''));
+
+                return [
+                    'usuario_doc' => $equipo->usuario_doc,
+                    'nombre_completo' => $nombres . ' ' . $apellidos,
+                    'serial' => $equipo->serial,
+                    'tipo_equipo' => $equipo->tipo_equipo,
+                    'placa_sena' => $equipo->placa_sena,
+                    'modelo' => $equipo->modelo,
+                    'tipo_equipo_desc' => $equipo->tipo_equipo_desc
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'ficha' => [
+                        'id' => $ficha->id,
+                        'numero_ficha' => $ficha->numero_ficha
+                    ],
+                    'equipos' => $datosFormateados
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los equipos de la ficha',
                 'error' => $e->getMessage()
             ], 500);
         }
