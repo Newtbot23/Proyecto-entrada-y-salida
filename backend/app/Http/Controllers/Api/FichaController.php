@@ -496,14 +496,15 @@ class FichaController extends Controller
                 ], 404);
             }
 
-            $ficha = Fichas::find($detalle->id_ficha);
+            $ficha = Fichas::with('programa:id,programa')->find($detalle->id_ficha);
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'id_ficha' => $ficha->id,
-                    'numero_ficha' => $ficha->numero_ficha,
-                    'hora_limite_llegada' => $ficha->hora_limite_llegada ?? '07:15'
+                    'id_ficha'            => $ficha->id,
+                    'numero_ficha'        => $ficha->numero_ficha,
+                    'hora_limite_llegada' => $ficha->hora_limite_llegada ?? '07:15',
+                    'nombre_programa'     => $ficha->programa->programa ?? null,
                 ]
             ]);
         } catch (\Exception $e) {
