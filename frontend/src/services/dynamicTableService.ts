@@ -15,29 +15,31 @@ export interface TableColumn {
 
 export const DynamicTableService = {
     getShortTables: async (): Promise<string[]> => {
-        const res: any = await apiClient.get<string[]>('/tablas-cortas');
-        return Array.isArray(res) ? res : (res?.data || []);
+        const res = await apiClient.get<string[] | { data: string[] }>('/tablas-cortas');
+        if (Array.isArray(res)) return res;
+        return res?.data || [];
     },
 
     getTableSchema: async (table: string): Promise<TableColumn[]> => {
-        const res: any = await apiClient.get<TableColumn[]>(`/esquema/${table}`);
-        return Array.isArray(res) ? res : (res?.data || []);
+        const res = await apiClient.get<TableColumn[] | { data: TableColumn[] }>(`/esquema/${table}`);
+        if (Array.isArray(res)) return res;
+        return res?.data || [];
     },
 
-    getTableData: async (table: string): Promise<any[]> => {
-        const res: any = await apiClient.get<any[]>(`/datos/${table}`);
-        // Handle pagination object if returned { data: [...], total: ... }
-        if (res && res.data && Array.isArray(res.data)) {
-            return res.data;
+    getTableData: async <T = any>(table: string): Promise<T[]> => {
+        const res = await apiClient.get<T[] | { data: T[] }>(`/datos/${table}`);
+        // Handle both raw array and { data: ... } wrapper
+        if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data)) {
+            return res.data as T[];
         }
-        return Array.isArray(res) ? res : (res?.data || []);
+        return Array.isArray(res) ? res : [];
     },
 
-    createRecord: async (table: string, data: any): Promise<any> => {
-        return await apiClient.post<any>(`/datos/${table}`, data);
+    createRecord: async <T = any>(table: string, data: Partial<T>): Promise<T> => {
+        return await apiClient.post<T, Partial<T>>(`/datos/${table}`, data);
     },
 
-    updateRecord: async (table: string, id: any, data: any): Promise<any> => {
-        return await apiClient.put<any>(`/datos/${table}/${id}`, data);
+    updateRecord: async <T = any>(table: string, id: string | number, data: Partial<T>): Promise<T> => {
+        return await apiClient.put<T, Partial<T>>(`/datos/${table}/${id}`, data);
     }
 };

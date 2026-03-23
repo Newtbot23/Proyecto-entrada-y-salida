@@ -20,4 +20,14 @@ class Vehiculos extends Model
         'color',
         'descripcion'
     ];
+
+    public function tipo_vehiculo()
+    {
+        return $this->belongsTo(TiposVehiculo::class, 'id_tipo_vehiculo', 'id');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuarios::class, 'doc', 'doc');
+    }
 }

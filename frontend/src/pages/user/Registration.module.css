@@ -16,6 +16,11 @@
     max-width: 500px;
 }
 
+.cardLarge {
+    max-width: 600px;
+    width: 90%;
+}
+
 .title {
     font-size: var(--font-size-3xl);
     font-weight: 800;
@@ -67,7 +72,7 @@
 .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-md);
+    gap: 1rem;
 }
 
 .button {
@@ -129,4 +134,31 @@
 .required {
     color: #ef4444;
     margin-left: 2px;
+}
+
+.infoNote {
+    color: #6b7280;
+    display: block;
+    margin-top: 4px;
+}
+
+.loginSection {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.loginText {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.loginLink {
+    color: #008f39;
+    font-size: 0.875rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.loginLink:hover {
+    text-decoration: underline;
 }

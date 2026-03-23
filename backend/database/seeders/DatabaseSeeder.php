@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             PlanesLicenciaSeeder::class,
             ProgramasSeeder::class,
             CatalogsSeeder::class,
+            NavesSeeder::class,
+            JornadasSeeder::class,
         ]);
     }
 }

@@ -6,7 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Fichas;
 use App\Models\DetalleFichaUsuarios;
 use App\Models\Usuarios;
+use App\Models\Programas;
+use App\Models\Ambientes;
+use App\Models\Jornadas;
+use App\Models\Asignaciones;
+use App\Models\Entidades;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -15,9 +21,9 @@ class FichaController extends Controller
     public function getCatalogs()
     {
         try {
-            $programas = DB::table('programas')->select('id', 'programa')->get();
-            $ambientes = DB::table('ambientes')->select('numero_ambiente', 'ambiente')->get();
-            $jornadas = DB::table('jornadas')->select('id', 'jornada')->get();
+            $programas = Programas::select('id', 'programa')->get();
+            $ambientes = Ambientes::select('numero_ambiente', 'ambiente')->get();
+            $jornadas = Jornadas::select('id', 'jornada')->get();
 
             return response()->json([
                 'success' => true,
@@ -75,11 +81,11 @@ class FichaController extends Controller
 
             // 1. Usuarios que son 'aprendiz' en fichas NO finalizadas
             // Estos son los únicos que tienen exclusividad total
-            $aprendicesOcupados = DB::table('detalle_ficha_usuarios')
-                ->join('fichas', 'detalle_ficha_usuarios.id_ficha', '=', 'fichas.id')
-                ->where('fichas.estado', '!=', 'finalizada')
-                ->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz')
-                ->pluck('detalle_ficha_usuarios.doc');
+            $aprendicesOcupados = DetalleFichaUsuarios::whereHas('ficha', function($q) {
+                $q->where('estado', '!=', 'finalizada');
+            })
+            ->where('tipo_participante', 'aprendiz')
+            ->pluck('doc');
 
             // 2. Traemos a los disponibles de la entidad actual
             // Incluimos a los que no tienen ficha y a los que tienen ficha como instructor
@@ -195,8 +201,7 @@ class FichaController extends Controller
             $ficha = Fichas::findOrFail($id);
             
             // Paso A: Obtener roles actuales para preservarlos
-            $rolesActuales = DB::table('detalle_ficha_usuarios')
-                ->where('id_ficha', $id)
+            $rolesActuales = DetalleFichaUsuarios::where('id_ficha', $id)
                 ->pluck('tipo_participante', 'doc')
                 ->toArray();
 
@@ -313,6 +318,7 @@ class FichaController extends Controller
             $ficha = Fichas::findOrFail($id);
 
             // Obtenemos los usuarios con los datos del pivote para conocer el rol (aprendiz/instructor)
+            // Fix N+1: eager load entidad and active asignaciones with their equipment
             $usuarios = $ficha->usuarios()
                 ->select(
                     'usuarios.doc', 
@@ -325,32 +331,28 @@ class FichaController extends Controller
                     'detalle_ficha_usuarios.tipo_participante',
                     'detalle_ficha_usuarios.id as detalle_id'
                 )
+                ->with(['entidad', 'asignaciones' => function($q) {
+                    $q->where('estado', 'activo')->with('equipo.marca');
+                }])
                 ->get();
 
             foreach ($usuarios as $usuario) {
-                // Buscamos si tiene alguna asignacion activa
-                $asignacion = DB::table('asignaciones')
-                    ->join('equipos', 'asignaciones.serial_equipo', '=', 'equipos.serial')
-                    ->where('asignaciones.doc', $usuario->doc)
-                    ->where('asignaciones.estado', 'activo')
-                    ->select('equipos.tipo_equipo', 'equipos.modelo', 'equipos.serial', 'equipos.placa_sena')
-                    ->first();
+                // Buscamos si tiene alguna asignacion activa (ya cargada vía Eager Loading)
+                $asignacion = $usuario->asignaciones->first();
 
-                if ($asignacion) {
-                    if ($asignacion->tipo_equipo === 'propio') {
+                if ($asignacion && $asignacion->equipo) {
+                    $equipo = $asignacion->equipo;
+                    if ($equipo->tipo_equipo === 'propio') {
                         $usuario->equipo_info = "Aplica equipo propio";
                     } else {
-                        $usuario->equipo_info = "SENA - Placa: " . $asignacion->placa_sena . " / Serial: " . $asignacion->serial;
+                        $usuario->equipo_info = "SENA - Placa: " . $equipo->placa_sena . " / Serial: " . $equipo->serial;
                     }
                 } else {
                     $usuario->equipo_info = "Sin equipo asignado";
                 }
 
-                // Asegurar que la entidad venga cargada si no vino (para el modal)
-                if(!isset($usuario->entidad)) {
-                    $entidad = DB::table('entidades')->where('nit', $usuario->nit_entidad)->first();
-                    $usuario->entidad = $entidad ? (array) $entidad : null;
-                }
+                // Asegurar que la entidad venga cargada (ya cargada vía Eager Loading)
+                $usuario->entidad = $usuario->entidad ? (array) $usuario->entidad->toArray() : null;
             }
 
             return response()->json([
@@ -627,26 +629,34 @@ class FichaController extends Controller
             $ficha = Fichas::find($fichaId);
 
             // 2. OBTENER LOS EQUIPOS ASIGNADOS A LOS APRENDICES DE ESA FICHA
-            $equipos = DB::table('detalle_ficha_usuarios as dfu')
-                ->join('asignaciones as a', 'dfu.doc', '=', 'a.doc')
-                ->join('equipos as e', 'a.serial_equipo', '=', 'e.serial')
-                ->join('usuarios as u', 'dfu.doc', '=', 'u.doc')
-                ->where('dfu.id_ficha', $fichaId)
-                ->where('dfu.tipo_participante', 'aprendiz')
-                ->where('a.estado', 'activo')
-                ->select(
-                    'u.doc as usuario_doc',
-                    'u.primer_nombre',
-                    'u.segundo_nombre',
-                    'u.primer_apellido',
-                    'u.segundo_apellido',
-                    'e.serial',
-                    'e.tipo_equipo',
-                    'e.placa_sena',
-                    'e.modelo',
-                    'e.tipo_equipo_desc'
-                )
-                ->get();
+            // Use Eloquent with Eager Loading
+            $equipos = Usuarios::whereHas('fichas', function($q) use ($fichaId) {
+                    $q->where('fichas.id', $fichaId)
+                      ->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz');
+                })
+                ->whereHas('asignaciones', function($q) {
+                    $q->where('estado', 'activo');
+                })
+                ->with(['asignaciones' => function($q) {
+                    $q->where('estado', 'activo')->with('equipo');
+                }])
+                ->get()
+                ->map(function($usuario) {
+                    $asignacion = $usuario->asignaciones->first();
+                    $equipo = $asignacion->equipo;
+                    return (object)[
+                        'usuario_doc' => $usuario->doc,
+                        'primer_nombre' => $usuario->primer_nombre,
+                        'segundo_nombre' => $usuario->segundo_nombre,
+                        'primer_apellido' => $usuario->primer_apellido,
+                        'segundo_apellido' => $usuario->segundo_apellido,
+                        'serial' => $equipo->serial,
+                        'tipo_equipo' => $equipo->tipo_equipo,
+                        'placa_sena' => $equipo->placa_sena,
+                        'modelo' => $equipo->modelo,
+                        'tipo_equipo_desc' => $equipo->tipo_equipo_desc
+                    ];
+                });
 
             // Formatear los datos para el frontend
             $datosFormateados = $equipos->map(function ($equipo) {

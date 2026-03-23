@@ -29,7 +29,7 @@ class DynamicTableController extends Controller
     {
         $tables = DB::select('SHOW TABLES');
         $shortTables = [];
-        $dbName = env('DB_DATABASE', 'forge');
+        $dbName = config('database.connections.mysql.database', 'forge');
         $key = "Tables_in_" . $dbName;
 
         foreach ($tables as $table) {
@@ -63,7 +63,7 @@ class DynamicTableController extends Controller
             return response()->json(['error' => 'Table not found'], 404);
         }
 
-        $dbName = env('DB_DATABASE');
+        $dbName = config('database.connections.mysql.database');
 
         // Fetch foreign keys from information_schema
         $foreignKeys = DB::select("

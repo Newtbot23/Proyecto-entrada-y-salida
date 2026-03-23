@@ -35,9 +35,14 @@ return [
         ],
     ],
     
-    // Dentro de config/services.php agrega esto al final del arreglo:
-'stripe' => [
-    'secret' => env('STRIPE_SECRET_KEY'),
-],
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET_KEY'),
+        'stripe_secret_key' => env('STRIPE_SECRET_KEY'),
+    ],
+
+    'google' => [
+        'vision_key' => env('GOOGLE_VISION_API_KEY'),
+        'google_vision_api_key' => env('GOOGLE_VISION_API_KEY'),
+    ],
 
 ];

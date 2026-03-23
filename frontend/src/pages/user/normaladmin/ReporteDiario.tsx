@@ -1,56 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { apiClient } from '../../../config/api';
-
-interface RegistroDiario {
-    id: number;
-    doc: string;
-    usuario_nombre: string;
-    fecha: string;
-    hora_entrada: string;
-    hora_salida: string | null;
-    placa?: string;
-    seriales_equipos?: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { reportService } from '../../../services/reportService';
 
 const ReporteDiario: React.FC = () => {
     // Default to today
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [records, setRecords] = useState<RegistroDiario[]>([]);
 
-    const handleSearch = async () => {
-        if (!selectedDate) {
-            setError('Por favor selecciona una fecha.');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-        setRecords([]);
-
-        try {
-            const response = await apiClient.get<RegistroDiario[]>(`/reports/daily?date=${selectedDate}`);
-            if (response && Array.isArray(response)) {
-                setRecords(response);
-            } else {
-                setError('No se encontraron registros para esta fecha.');
-            }
-        } catch (err: any) {
-            console.error('Error fetching daily report:', err);
-            setError(err.message || 'Ocurrió un error al cargar el reporte diario.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Load today's data automatically on mount
-    useEffect(() => {
-        handleSearch();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const { data: records = [], isLoading: loading, error } = useQuery({
+        queryKey: ['dailyReport', selectedDate],
+        queryFn: () => reportService.getDailyReport(selectedDate),
+        enabled: !!selectedDate,
+    });
 
     const handleExportPDF = () => {
         if (records.length === 0) return;
@@ -114,11 +76,10 @@ const ReporteDiario: React.FC = () => {
                 </div>
 
                 <button
-                    onClick={handleSearch}
                     disabled={loading}
-                    style={{ padding: '0.625rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}
+                    style={{ padding: '0.625rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'default' }}
                 >
-                    {loading ? 'Cargando...' : 'Buscar'}
+                    {loading ? 'Cargando...' : 'Mostrando Resultados'}
                 </button>
 
                 {records.length > 0 && (
@@ -136,7 +97,7 @@ const ReporteDiario: React.FC = () => {
 
             {error && (
                 <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1.5rem' }}>
-                    {error}
+                    {(error as any).message || 'Error al cargar el reporte.'}
                 </div>
             )}
 

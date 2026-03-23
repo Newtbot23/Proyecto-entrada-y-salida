@@ -37,7 +37,7 @@ class StripeCheckoutController extends Controller
             }
 
             // Set Stripe Secret Key from .env
-            Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+            Stripe::setApiKey(config('services.stripe.secret'));
 
             // Use plan price (assuming price_plan is in decimal/float format from DB)
             // Stripe expects amount in cents for USD
@@ -47,7 +47,7 @@ class StripeCheckoutController extends Controller
             $customerEmail = $licencia->entidad ? $licencia->entidad->correo : null;
 
             // Construct the frontend URL base.
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
 
             $sessionPayload = [
                 'payment_method_types' => ['card'],
@@ -104,7 +104,7 @@ class StripeCheckoutController extends Controller
                 ]);
             }
 
-            Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+            Stripe::setApiKey(config('services.stripe.secret'));
             $session = Session::retrieve($sessionId);
 
             $estadoPago = 'pendiente';

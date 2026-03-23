@@ -1,37 +1,17 @@
 import { apiClient } from '../config/api';
+import type { Ficha, FichaCatalogs, Usuario, ApiResponse } from '../types';
 
 const api = apiClient;
 
-export const updateDetalle = async (fichaId: number | string, usuarioDoc: string, tipo_participante: string) => {
-    const response = await api.patch<any>(`/fichas/${fichaId}/usuarios/${usuarioDoc}/rol`, {
+export const updateDetalle = async (fichaId: number | string, usuarioDoc: string, tipo_participante: string): Promise<ApiResponse<any>> => {
+    return await api.patch<ApiResponse<any>, { tipo_participante: string }>(`/fichas/${fichaId}/usuarios/${usuarioDoc}/rol`, {
         tipo_participante
     });
-    return response.data;
 };
 
-export const updateFichaEstado = async (fichaId: number | string, estado: string) => {
-    const response = await api.patch<any>(`/fichas/${fichaId}/estado`, { estado });
-    return response.data;
+export const updateFichaEstado = async (fichaId: number | string, estado: string): Promise<ApiResponse<any>> => {
+    return await api.patch<ApiResponse<any>, { estado: string }>(`/fichas/${fichaId}/estado`, { estado });
 };
-
-export interface Ficha {
-    id: number;
-    numero_ficha: number;
-    id_programa: string;
-    numero_ambiente: string;
-    id_jornada: number;
-    estado: string;
-    programa?: { programa: string };
-    ambiente?: { numero_ambiente: string; ambiente: string };
-    jornada?: { jornada: string };
-    usuarios_count?: number;
-}
-
-export interface FichaCatalogs {
-    programas: { id: string; programa: string }[];
-    ambientes: { numero_ambiente: string; ambiente: string }[];
-    jornadas: { id: number; jornada: string }[];
-}
 
 export const FichasService = {
     getCatalogs: async (): Promise<FichaCatalogs> => {
@@ -49,24 +29,22 @@ export const FichasService = {
         return response || [];
     },
 
-    getUsuariosAsignables: async (): Promise<any[]> => {
-        const response = await apiClient.get<any[]>('/usuarios/asignables');
+    getUsuariosAsignables: async (): Promise<Usuario[]> => {
+        const response = await apiClient.get<Usuario[]>('/usuarios/asignables');
         return response || [];
     },
 
-    createFicha: async (data: any): Promise<any> => {
-        // apiClient.post already returns response.data (or response)
-        // We return it directly to the mutation
-        return await apiClient.post('/fichas', data);
+    createFicha: async (data: Partial<Ficha>): Promise<Ficha> => {
+        return await apiClient.post<Ficha, Partial<Ficha>>('/fichas', data);
     },
 
-    getFichaUsuarios: async (id: number): Promise<any> => {
-        const response = await apiClient.get<any>(`/fichas/${id}/usuarios`);
+    getFichaUsuarios: async (id: number): Promise<Usuario[]> => {
+        const response = await apiClient.get<Usuario[]>(`/fichas/${id}/usuarios`);
         return response || [];
     },
 
-    asignarUsuarios: async (id: number, usuarios: number[]): Promise<any> => {
-        return await apiClient.post(`/fichas/${id}/asignar`, { usuarios });
+    asignarUsuarios: async (id: number, usuarios: number[] | string[]): Promise<ApiResponse<any>> => {
+        return await apiClient.post<ApiResponse<any>, { usuarios: (number | string)[] }>(`/fichas/${id}/asignar`, { usuarios });
     },
 
     buscarPorNumero: async (numero: string): Promise<Ficha> => {
@@ -74,12 +52,12 @@ export const FichasService = {
         return response;
     },
 
-    getUsuariosDeFicha: async (id: number): Promise<any[]> => {
-        const response = await apiClient.get<any[]>(`/fichas/${id}/usuarios-detallados`);
+    getUsuariosDeFicha: async (id: number): Promise<Usuario[]> => {
+        const response = await apiClient.get<Usuario[]>(`/fichas/${id}/usuarios-detallados`);
         return response || [];
     },
 
-    actualizarRolParticipante: async (detalleId: number, tipoParticipante: string): Promise<any> => {
-        return await apiClient.patch(`/fichas/detalle/${detalleId}`, { tipo_participante: tipoParticipante });
+    actualizarRolParticipante: async (detalleId: number, tipoParticipante: string): Promise<ApiResponse<any>> => {
+        return await apiClient.patch<ApiResponse<any>, { tipo_participante: string }>(`/fichas/detalle/${detalleId}`, { tipo_participante: tipoParticipante });
     }
 };

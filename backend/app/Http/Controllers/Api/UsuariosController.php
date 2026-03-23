@@ -14,9 +14,16 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Contracts\Encryption\DecryptException;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Http\Requests\Api\Usuarios\StoreUsuarioRequest;
+use App\Services\GoogleVisionService;
 
 class UsuariosController extends Controller
 {
+    protected $visionService;
+
+    public function __construct(GoogleVisionService $visionService)
+    {
+        $this->visionService = $visionService;
+    }
     /**
      * Store a newly created user in storage.
      * POST /api/usuarios-flow
@@ -78,7 +85,7 @@ class UsuariosController extends Controller
             }
 
             $encryptedToken = Crypt::encryptString($user->nit_entidad);
-            $registrationUrl = env('FRONTEND_URL', 'http://localhost:5173') . '/register-user?token=' . urlencode($encryptedToken);
+            $registrationUrl = config('app.frontend_url', 'http://localhost:5173') . '/register-user?token=' . urlencode($encryptedToken);
 
             // Using qrserver.com as a more reliable external API
             $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($registrationUrl);
@@ -160,45 +167,20 @@ class UsuariosController extends Controller
             $imagePath = $request->file('imagen')->getPathname();
             $base64Image = base64_encode(file_get_contents($imagePath));
 
-            $apiKey = env('GOOGLE_VISION_API_KEY');
-            if (!$apiKey) {
-                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
-            }
-
-            $visionUrl = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
-
-            $payload = [
-                'requests' => [
-                    [
-                        'image' => [
-                            'content' => $base64Image
-                        ],
-                        'features' => [
-                            [
-                                'type' => 'FACE_DETECTION'
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-            $response = Http::post($visionUrl, $payload);
-
-            if ($response->successful()) {
-                $result = $response->json();
-                $responses = $result['responses'] ?? [];
+            try {
+                $hasFace = $this->visionService->detectFace($base64Image);
                 
-                // Verificar si se detectaron rostros
-                if (empty($responses[0]['faceAnnotations'])) {
+                if (!$hasFace) {
                     return response()->json([
                         'success' => false,
                         'message' => 'La imagen no parece contener un rostro humano válido. Por favor, sube una foto clara de tu rostro.'
-                    ], 400); // Bad Request
+                    ], 400);
                 }
-            } else {
+            } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al comunicarse con el servicio de detección facial.'
+                    'message' => 'Error al comunicarse con el servicio de detección facial.',
+                    'error' => $e->getMessage()
                 ], 500);
             }
 

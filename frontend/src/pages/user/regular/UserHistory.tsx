@@ -1,47 +1,17 @@
 import React, { useState, useEffect } from 'react';
-
-interface Registro {
-    id: number;
-    fecha: string;
-    hora_entrada: string;
-    hora_salida?: string;
-    placa?: string;
-    seriales_equipos?: string; // Comma separated or single string
-    vehiculo_marca?: string;
-    vehiculo_modelo?: string;
-    vehiculo_color?: string;
-    equipos?: {
-        serial: string;
-        marca: string;
-        modelo: string;
-    }[];
-}
+import { getUserEntradas, exportHistoryPdf } from '../../../services/userHistoryService';
+import type { Registro } from '../../../services/userHistoryService';
+import styles from './UserHistory.module.css';
 
 const UserHistory: React.FC = () => {
-    // using userOutletContext is not strictly necessary unless we need user info
-    // const { user } = useOutletContext<{ user: User }>();
-
     const [entradas, setEntradas] = useState<Registro[]>([]);
     const [historyDateFilter, setHistoryDateFilter] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const fetchEntradas = async (headers?: any, fecha?: string) => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-        if (!headers) {
-            const token = sessionStorage.getItem('authToken');
-            if (!token) return;
-            headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-        }
-
+    const fetchEntradas = async (fecha?: string) => {
         try {
-            let url = `${apiUrl}/user/entradas`;
-            if (fecha) url += `?fecha=${fecha}`;
-
-            const res = await fetch(url, { headers });
-            const data = await res.json();
-            if (data.success) {
-                setEntradas(data.data);
-            }
+            const data = await getUserEntradas(fecha);
+            setEntradas(data);
         } catch (error) {
             console.error("Error fetching entradas", error);
         }
@@ -54,7 +24,7 @@ const UserHistory: React.FC = () => {
     const handleDateFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setHistoryDateFilter(val);
-        fetchEntradas(undefined, val);
+        fetchEntradas(val);
     };
 
     const getMonthName = (dateStr: string) => {
@@ -62,41 +32,27 @@ const UserHistory: React.FC = () => {
         return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
     };
 
-    const cardStyle: React.CSSProperties = { background: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '1.5rem' };
-    const inputStyle: React.CSSProperties = { border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.9rem', outline: 'none' };
-    const theadStyle: React.CSSProperties = { background: '#f9fafb', color: '#374151', fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'left' } as const;
-    const thTdStyle: React.CSSProperties = { padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb' };
-
     return (
-        <div className="history-root" style={{ marginTop: '1rem', paddingBottom: '3rem', width: '100%', flex: 1 }}>
-            <style>{`
-                @media (max-width: 768px) {
-                    .history-controls-container { flex-direction: column; align-items: stretch !important; gap: 1rem !important; }
-                    .history-filter { flex-direction: column; align-items: stretch !important; }
-                    .history-filter input { width: 100% !important; box-sizing: border-box; }
-                    .history-filter button { width: 100%; }
-                    .pdf-btn { width: 100%; justify-content: center; margin-left: 0 !important; }
-                }
-            `}</style>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' }}>
+        <div className={styles.root}>
+            <h2 className={styles.title}>
                 Historial de Entradas
             </h2>
 
-            <div style={cardStyle}>
-                <div className="table-responsive" style={{ overflowX: 'auto' }}>
-                    <div className="history-controls-container" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div className="history-filter" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filtro Vista:</label>
+            <div className={styles.card}>
+                <div className={styles.tableResponsive}>
+                    <div className={styles.controlsContainer}>
+                        <div className={styles.filter}>
+                            <label className={styles.label}>Filtro Vista:</label>
                             <input
                                 type="date"
-                                style={{ ...inputStyle, width: 'auto', padding: '0.4rem 0.75rem' }}
+                                className={styles.input}
                                 value={historyDateFilter}
                                 onChange={handleDateFilterChange}
                             />
                             {historyDateFilter && (
                             <button
                                 onClick={() => handleDateFilterChange({ target: { value: '' } } as any)}
-                                style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}
+                                className={styles.cleanButton}
                             >
                                 Limpiar
                             </button>
@@ -104,32 +60,16 @@ const UserHistory: React.FC = () => {
                     </div>
 
                     <button
-                        className="pdf-btn"
+                        className={styles.pdfButton}
                         disabled={loading}
                             onClick={async () => {
                                 setLoading(true);
-                                const token = sessionStorage.getItem('authToken');
-                                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-                                let url = `${apiUrl}/user/history/export-pdf`;
-                                if (historyDateFilter) {
-                                    url += `?date=${historyDateFilter}`;
-                                }
-
                                 try {
-                                    const res = await fetch(url, {
-                                        headers: {
-                                            'Authorization': `Bearer ${token}`
-                                        }
-                                    });
-
-                                    if (!res.ok) throw new Error('Error al generar el PDF');
-
-                                    const blob = await res.blob();
+                                    const blob = await exportHistoryPdf(historyDateFilter);
                                     const downloadUrl = window.URL.createObjectURL(blob);
                                     const link = document.createElement('a');
                                     link.href = downloadUrl;
 
-                                    // Set filename from header or fallback
                                     const monthName = getMonthName(historyDateFilter).replace(/ /g, '_');
                                     link.setAttribute('download', `historial_${monthName}.pdf`);
 
@@ -144,72 +84,55 @@ const UserHistory: React.FC = () => {
                                     setLoading(false);
                                 }
                             }}
-                            style={{
-                                marginLeft: 'auto',
-                                background: loading ? '#9ca3af' : '#008f39',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '0.375rem',
-                                padding: '0.6rem 1rem',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseOver={e => !loading && (e.currentTarget.style.background = '#00702d')}
-                            onMouseOut={e => !loading && (e.currentTarget.style.background = '#008f39')}
                             title={`Exportar todo el mes de ${getMonthName(historyDateFilter)}`}
                         >
                             {loading ? 'Generando...' : `PDF: Mes de ${getMonthName(historyDateFilter)}`}
                         </button>
                     </div>
                     {entradas.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
-                            <p style={{ fontSize: '3rem', margin: 0 }}></p>
-                            <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>No hay registros de entradas</p>
+                        <div className={styles.emptyState}>
+                            <p className={styles.emptyIcon}></p>
+                            <p className={styles.emptyText}>No hay registros de entradas</p>
                         </div>
                     ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-                            <thead style={theadStyle}>
+                        <table className={styles.table}>
+                            <thead className={styles.thead}>
                                 <tr>
-                                    <th style={thTdStyle}>Fecha</th>
-                                    <th style={thTdStyle}>Hora Entrada</th>
-                                    <th style={thTdStyle}>Hora Salida</th>
-                                    <th style={thTdStyle}>Vehículo</th>
-                                    <th style={thTdStyle}>Equipo</th>
+                                    <th className={styles.thTd}>Fecha</th>
+                                    <th className={styles.thTd}>Hora Entrada</th>
+                                    <th className={styles.thTd}>Hora Salida</th>
+                                    <th className={styles.thTd}>Vehículo</th>
+                                    <th className={styles.thTd}>Equipo</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {entradas.map((ent, idx) => (
-                                    <tr key={ent.id || idx} style={{ transition: 'background 0.1s' }} onMouseOver={ev => ev.currentTarget.style.background = '#f9fafb'} onMouseOut={ev => ev.currentTarget.style.background = 'transparent'}>
-                                        <td style={{ ...thTdStyle, fontWeight: '600', color: '#111827' }}>{ent.fecha}</td>
-                                        <td style={{ ...thTdStyle, color: '#10b981', fontWeight: '500' }}>{ent.hora_entrada}</td>
-                                        <td style={thTdStyle}>{ent.hora_salida || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>En instalación</span>}</td>
-                                        <td style={thTdStyle}>
+                                    <tr key={ent.id || idx} className={styles.row}>
+                                        <td className={`${styles.thTd} ${styles.dateCell}`}>{ent.fecha}</td>
+                                        <td className={`${styles.thTd} ${styles.timeCell}`}>{ent.hora_entrada}</td>
+                                        <td className={styles.thTd}>{ent.hora_salida || <span className={styles.statusText}>En instalación</span>}</td>
+                                        <td className={styles.thTd}>
                                             {ent.placa ? (
-                                                <div>
-                                                    <span style={{ fontWeight: '600' }}>{ent.placa}</span>
-                                                    <span style={{ fontSize: '0.8rem', color: '#374151', display: 'block' }}>{ent.vehiculo_marca} {ent.vehiculo_modelo} ({ent.vehiculo_color})</span>
+                                                <div className={styles.vehicleContainer}>
+                                                    <span className={styles.placa}>{ent.placa}</span>
+                                                    <span className={styles.vehicleDetails}>{ent.vehiculo_marca} {ent.vehiculo_modelo} ({ent.vehiculo_color})</span>
                                                 </div>
-                                            ) : <span style={{ color: '#9ca3af' }}>-</span>}
+                                            ) : <span className={styles.noData}>-</span>}
                                         </td>
-                                        <td style={thTdStyle}>
+                                        <td className={styles.thTd}>
                                             {ent.equipos && ent.equipos.length > 0 ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                                <div className={styles.equipmentsContainer}>
                                                     {ent.equipos.map((eq, eidx) => (
-                                                        <div key={eidx} style={{ padding: '0.25rem', borderBottom: eidx < ent.equipos!.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                                                            <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{eq.serial}</span>
-                                                            <span style={{ fontSize: '0.75rem', color: '#374151', display: 'block' }}>{eq.marca} {eq.modelo}</span>
+                                                        <div key={eidx} className={`${styles.equipmentItem} ${eidx < ent.equipos!.length - 1 ? styles.equipmentItemBorder : ''}`}>
+                                                            <span className={styles.serial}>{eq.serial}</span>
+                                                            <span className={styles.equipmentDetails}>{eq.marca} {eq.modelo}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             ) : ent.seriales_equipos ? (
-                                                <span style={{ fontWeight: '600' }}>{ent.seriales_equipos}</span>
+                                                <span className={styles.serial}>{ent.seriales_equipos}</span>
                                             ) : (
-                                                <span style={{ color: '#9ca3af' }}>-</span>
+                                                <span className={styles.noData}>-</span>
                                             )}
                                         </td>
                                     </tr>

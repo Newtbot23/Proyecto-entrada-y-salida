@@ -1,23 +1,22 @@
-/**
- * Registration Service
- * Handles the multi-step registration flow: Entity -> (License + Admin User)
- * Uses the centralized apiClient for all HTTP requests.
- */
 import { apiClient } from '../config/api';
-
-// ============================================================================
-// FUNCIONES
-// ============================================================================
+import type { 
+    ApiResponse, 
+    Entidad, 
+    CreateEntityDTO, 
+    CompleteRegistrationDTO, 
+    Usuario, 
+    QrRegistrationResponse 
+} from '../types';
 
 export const registrationService = {
     /**
      * Step 1: Create an Entity
      * Returns the created entity data including its ID.
      */
-    createEntity: async (entityData: any) => {
+    createEntity: async (entityData: CreateEntityDTO): Promise<Entidad> => {
         try {
-            const response = await apiClient.post<any, any>('/registration/entidades', entityData);
-            return response;
+            // apiClient returns response.data directly if it exists
+            return await apiClient.post<Entidad, CreateEntityDTO>('/registration/entidades', entityData);
         } catch (error) {
             console.error('Error creating entity:', error);
             throw error;
@@ -28,10 +27,9 @@ export const registrationService = {
      * Step 2: Complete registration for an existing entity
      * Creates the License and Admin User in one transaction.
      */
-    completeEntityRegistration: async (payload: any) => {
+    completeEntityRegistration: async (payload: CompleteRegistrationDTO): Promise<ApiResponse<any>> => {
         try {
-            const response = await apiClient.post<any, any>('/registration/complete-entity', payload);
-            return response;
+            return await apiClient.post<ApiResponse<any>, CompleteRegistrationDTO>('/registration/complete-entity', payload);
         } catch (error) {
             console.error('Error completing registration:', error);
             throw error;
@@ -41,10 +39,9 @@ export const registrationService = {
     /**
      * Complete Registration Flow (Unified - Legacy)
      */
-    fullRegistration: async (allData: any) => {
+    fullRegistration: async (allData: any): Promise<ApiResponse<any>> => {
         try {
-            const response = await apiClient.post<any, any>('/registration/full', allData);
-            return response;
+            return await apiClient.post<ApiResponse<any>, any>('/registration/full', allData);
         } catch (error) {
             console.error('Error during full registration:', error);
             throw error;
@@ -54,10 +51,9 @@ export const registrationService = {
     /**
      * Individual User Registration
      */
-    registerUser: async (userData: any) => {
+    registerUser: async (userData: FormData | any): Promise<Usuario> => {
         try {
-            const response = await apiClient.post<any, any>('/registration/usuarios', userData);
-            return response;
+            return await apiClient.post<Usuario, FormData | any>('/registration/usuarios', userData);
         } catch (error) {
             console.error('Error registering user:', error);
             throw error;
@@ -67,10 +63,9 @@ export const registrationService = {
     /**
      * Get QR Code for Registration (Admin only)
      */
-    getRegistrationQr: async () => {
+    getRegistrationQr: async (): Promise<QrRegistrationResponse> => {
         try {
-            const response = await apiClient.get<any>('/usuarios/qr-registro');
-            return response;
+            return await apiClient.get<QrRegistrationResponse>('/usuarios/qr-registro');
         } catch (error) {
             console.error('Error getting QR code:', error);
             throw error;
@@ -80,13 +75,12 @@ export const registrationService = {
     /**
      * Register User with QR Token
      */
-    registerUserWithQr: async (userData: any, qrToken: string) => {
+    registerUserWithQr: async (userData: FormData | any, qrToken: string): Promise<Usuario> => {
         try {
-            let payload: any;
+            let payload: FormData | any;
 
             if (userData instanceof FormData) {
                 payload = userData;
-                // Only append if it doesn't already exist to prevent duplicates
                 if (!payload.has('token')) {
                     payload.append('token', qrToken);
                 }
@@ -94,8 +88,7 @@ export const registrationService = {
                 payload = { ...userData, token: qrToken };
             }
 
-            const response = await apiClient.post<any, any>('/usuarios/qr-register', payload);
-            return response;
+            return await apiClient.post<Usuario, FormData | any>('/usuarios/qr-register', payload);
         } catch (error) {
             console.error('Error registering user with QR:', error);
             throw error;

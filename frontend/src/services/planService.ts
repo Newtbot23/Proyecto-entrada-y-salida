@@ -1,30 +1,32 @@
-export type { PricingPlan } from '../types/plans';
+import { apiClient } from '../config/api';
 import type { PricingPlan } from '../types/plans';
 
-const API_URL = 'http://127.0.0.1:8000/api';
+export type { PricingPlan } from '../types/plans';
 
+/**
+ * Obtener planes de precios
+ */
 export const getPricingPlans = async (): Promise<PricingPlan[]> => {
-    const response = await fetch(`${API_URL}/plans`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch pricing plans');
+    try {
+        const response = await apiClient.get<PricingPlan[]>('/plans');
+        return response;
+    } catch (error) {
+        console.error('Failed to fetch pricing plans:', error);
+        throw error;
     }
-    return response.json();
 };
 
+/**
+ * Seleccionar un plan
+ */
 export const sendSelectedPlan = async (planId: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/plans/select`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify({ plan_id: planId }),
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to select plan');
+    try {
+        await apiClient.post<any, { plan_id: string }>('/plans/select', { 
+            plan_id: planId 
+        });
+        console.log('Plan selected successfully');
+    } catch (error) {
+        console.error('Failed to select plan:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    console.log('Plan selected successfully:', data);
 };

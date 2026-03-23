@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DynamicTableService, type TableColumn } from '../../services/dynamicTableService';
 import { registrationService } from '../../services/registrationService';
 import DynamicForm from './DynamicForm';
@@ -28,11 +29,6 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     const { tableName: urlTableName } = useParams<{ tableName: string }>();
     const tableName = propTableName || urlTableName;
 
-    const [schema, setSchema] = useState<TableColumn[]>([]);
-    const [data, setData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [serverValidationErrors, setServerValidationErrors] = useState<Record<string, string[]>>({});
 
     // New states for search, pagination and edit
@@ -48,79 +44,70 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
     const [qrLoading, setQrLoading] = useState(false);
     const [qrError, setQrError] = useState<string | null>(null);
 
-    const loadData = async () => {
-        if (!tableName) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const columns = await DynamicTableService.getTableSchema(tableName);
-            setSchema(columns);
-            let records = await DynamicTableService.getTableData(tableName);
+    const queryClient = useQueryClient();
 
-            // --- INICIO LÓGICA CORREGIDA ---
-            const userDataStr = sessionStorage.getItem('authUser');
-            if (userDataStr) {
-                try {
-                    const user = JSON.parse(userDataStr);
+    // Query for Schema
+    const { data: schema = [], isLoading: schemaLoading } = useQuery<TableColumn[]>({
+        queryKey: ['tablaSchema', tableName],
+        queryFn: () => DynamicTableService.getTableSchema(tableName!),
+        enabled: !!tableName
+    });
 
-                    // Verificamos si la tabla actual realmente tiene la columna 'nit_entidad'
-                    const hasNitColumn = columns.some(col => col.name === 'nit_entidad');
+    // Query for Data
+    const { data: rawData = [], isLoading: dataLoading, error: dataError } = useQuery({
+        queryKey: ['tablaDinamica', tableName],
+        queryFn: () => DynamicTableService.getTableData(tableName!),
+        enabled: !!tableName
+    });
 
-                    // Si el usuario tiene un NIT y la tabla también soporta ese campo, filtramos.
-                    // (Opcional: puedes volver a agregar la validación del rol aquí si ES ESTRICTAMENTE necesario)
-                    if (user.nit_entidad && hasNitColumn) {
-                        records = records.filter((r: any) => String(r.nit_entidad) === String(user.nit_entidad));
-                    }
-                } catch (e) {
-                    console.error('Error parsing user data for filtering', e);
-                }
-            }
-            // --- FIN LÓGICA CORREGIDA ---
-
-            setData(records);
-        } catch (err: any) {
-            console.error("Error loading dynamic table", err);
-            setError(err.message || 'Error cargando la tabla');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-        setSearchTerm('');
-        setCurrentPage(1);
-        setEditingRecord(null);
-    }, [tableName]);
-
-    const handleFormSubmit = async (formData: any) => {
-        if (!tableName) return;
-        setActionLoading(true);
-        setError(null);
-        setServerValidationErrors({});
-        try {
+    // Mutation for Create/Update
+    const crudMutation = useMutation({
+        mutationFn: async (formData: any) => {
             if (editingRecord) {
-                // Find primary key
                 const pkColumn = schema.find(col => col.key === 'PRI')?.name || 'id';
-                await DynamicTableService.updateRecord(tableName, editingRecord[pkColumn], formData);
-                toast.success('Registro actualizado exitosamente');
+                return await DynamicTableService.updateRecord(tableName!, editingRecord[pkColumn], formData);
             } else {
-                await DynamicTableService.createRecord(tableName, formData);
-                toast.success('Registro creado exitosamente');
+                return await DynamicTableService.createRecord(tableName!, formData);
             }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tablaDinamica', tableName] });
+            toast.success(editingRecord ? 'Registro actualizado exitosamente' : 'Registro creado exitosamente');
             setEditingRecord(null);
             setIsCreateModalOpen(false);
-            await loadData();
-        } catch (err: any) {
+            setServerValidationErrors({});
+        },
+        onError: (err: any) => {
             console.error(err);
             if (err.errors) {
                 setServerValidationErrors(err.errors);
             } else {
-                setError(err.message || 'Error al procesar registro');
+                toast.error(err.message || 'Error al procesar registro');
             }
-        } finally {
-            setActionLoading(false);
         }
+    });
+
+    // Final data filtering
+    const data = useMemo(() => {
+        let records = rawData;
+        const userDataStr = sessionStorage.getItem('authUser');
+        if (userDataStr) {
+            try {
+                const user = JSON.parse(userDataStr);
+                const hasNitColumn = schema.some(col => col.name === 'nit_entidad');
+                if (user.nit_entidad && hasNitColumn) {
+                    records = records.filter((r: any) => String(r.nit_entidad) === String(user.nit_entidad));
+                }
+            } catch (e) {
+                console.error('Error parsing user data for filtering', e);
+            }
+        }
+        return records;
+    }, [rawData, schema]);
+
+    const handleFormSubmit = async (formData: any) => {
+        setServerValidationErrors({});
+        crudMutation.mutate(formData);
     };
 
     const handleEdit = (record: any) => {
@@ -152,6 +139,9 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
             setQrLoading(false);
         }
     };
+
+    const loading = schemaLoading || dataLoading;
+    const error = dataError ? (dataError as any).message || 'Error cargando la tabla' : null;
 
     if (loading) return <div>Cargando la tabla...</div>;
     if (error) return <div style={{ color: 'red' }}>{error}</div>;
@@ -189,7 +179,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                     <DynamicForm
                         schema={schema}
                         onSubmit={handleFormSubmit}
-                        isLoading={actionLoading}
+                        isLoading={crudMutation.isPending}
                         initialData={null} // Only for creation
                         title={`Agregar a ${resolvedTitle}`}
                         onCancel={undefined}
@@ -233,7 +223,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                 <DynamicForm
                     schema={schema}
                     onSubmit={handleFormSubmit}
-                    isLoading={actionLoading}
+                    isLoading={crudMutation.isPending}
                     initialData={null}
                     title=""
                     onCancel={() => setIsCreateModalOpen(false)}
@@ -294,7 +284,7 @@ const DynamicCrud: React.FC<DynamicCrudProps> = ({
                 <DynamicForm
                     schema={schema}
                     onSubmit={handleFormSubmit}
-                    isLoading={actionLoading}
+                    isLoading={crudMutation.isPending}
                     initialData={editingRecord}
                     title="" // Title is handled by the Modal
                     onCancel={handleCancelEdit}

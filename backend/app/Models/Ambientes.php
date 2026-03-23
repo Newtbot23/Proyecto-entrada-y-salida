@@ -16,4 +16,9 @@ class Ambientes extends Model
         'ambiente',
         'id_nave'
     ];
+
+    public function nave()
+    {
+        return $this->belongsTo(Naves::class, 'id_nave', 'id');
+    }
 }

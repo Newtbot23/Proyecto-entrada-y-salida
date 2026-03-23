@@ -155,14 +155,14 @@ const RegisterUser: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.card} style={{ maxWidth: '600px', width: '90%' }}>
+            <div className={`${styles.card} ${styles.cardLarge}`}>
                 <h2 className={styles.title}>Registro de Usuario</h2>
                 <p className={styles.subtitle}>Crea una cuenta completando la siguiente información.</p>
 
-                {error && <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                {error && <div className={styles.error}>{error}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>Tipo de Documento *</label>
                             <select
@@ -170,7 +170,6 @@ const RegisterUser: React.FC = () => {
                                 value={formData.id_tip_doc}
                                 onChange={handleChange}
                                 required
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
                             >
                                 <option value="1">Cédula de Ciudadanía</option>
                                 <option value="2">Tarjeta de Identidad</option>
@@ -192,7 +191,7 @@ const RegisterUser: React.FC = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>Primer Nombre *</label>
                             <input
@@ -218,7 +217,7 @@ const RegisterUser: React.FC = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className={styles.row}>
                         <div className={styles.formGroup}>
                             <label>Primer Apellido *</label>
                             <input
@@ -291,9 +290,8 @@ const RegisterUser: React.FC = () => {
                             capture="user"
                             onChange={handleFileChange}
                             required
-                            style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%', background: 'white' }}
                         />
-                        <small style={{ color: '#6b7280', display: 'block', marginTop: '4px' }}>
+                        <small className={styles.infoNote}>
                             Asegúrate de que tu rostro se vea claramente en la foto.
                         </small>
                     </div>
@@ -302,9 +300,9 @@ const RegisterUser: React.FC = () => {
                         {loading ? 'Registrando...' : 'Registrarse'}
                     </button>
 
-                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>¿Ya tienes una cuenta? </span>
-                        <a href="/login" style={{ color: '#008f39', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                    <div className={styles.loginSection}>
+                        <span className={styles.loginText}>¿Ya tienes una cuenta? </span>
+                        <a href="/login" className={styles.loginLink}>
                             Iniciar Sesión
                         </a>
                     </div>

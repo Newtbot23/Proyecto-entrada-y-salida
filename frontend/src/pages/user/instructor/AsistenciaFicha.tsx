@@ -1,37 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { apiClient } from '../../../config/api';
-
-interface Registro {
-    fecha: string;
-    hora_entrada: string;
-    hora_salida?: string | null;
-}
-
-interface Aprendiz {
-    doc: string;
-    nombres: string;
-    apellidos: string;
-    foto_perfil: string | null;
-    registros_del_mes: Registro[];
-}
-
-interface AsistenciaMensualData {
-    success: boolean;
-    ficha: {
-        id: number;
-        numero_ficha: number;
-        hora_limite_llegada: string;
-    };
-    aprendices: Aprendiz[];
-}
-
-interface AsistenciaBaseData {
-    id_ficha: number;
-    numero_ficha: number;
-    hora_limite_llegada: string;
-    nombre_programa: string | null;
-}
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getAsistenciaBase, getAsistenciaMensual, updateHoraLimite } from '../../../services/instructorService';
+import type { AprendizAsistencia as Aprendiz } from '../../../services/instructorService';
 
 const COLORS = {
     green: '#22c55e',
@@ -47,77 +18,49 @@ const COLORS = {
 };
 
 const AsistenciaFicha: React.FC = () => {
-    const [idFicha, setIdFicha] = useState<number | null>(null);
-    const [fichaInfo, setFichaInfo] = useState<{ numero: number | null; programa: string | null }>({ numero: null, programa: null });
     const [horaLimite, setHoraLimite] = useState('07:15');
-    const [isSaving, setIsSaving] = useState(false);
-    const [isLoadingBase, setIsLoadingBase] = useState(true);
-
+    
     const now = new Date();
     const [mes, setMes] = useState(now.getMonth() + 1);
     const [anio, setAnio] = useState(now.getFullYear());
-    const [aprendices, setAprendices] = useState<Aprendiz[]>([]);
-    const [isLoadingAsistencia, setIsLoadingAsistencia] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const data = await apiClient.get<AsistenciaBaseData>('/instructor/asistencia-base');
-                if (data) {
-                    setIdFicha(data.id_ficha);
-                    setFichaInfo({ numero: data.numero_ficha, programa: data.nombre_programa });
-                    if (data.hora_limite_llegada) {
-                        setHoraLimite(data.hora_limite_llegada.substring(0, 5));
-                    }
-                }
-            } catch (error) {
-                toast.error("No se pudieron cargar los datos.");
-            } finally {
-                setIsLoadingBase(false);
-            }
-        };
-        fetchInitialData();
-    }, []);
+    // --- Queries ---
+    const { data: baseData, isLoading: isLoadingBase } = useQuery({
+        queryKey: ['asistenciaBase'],
+        queryFn: getAsistenciaBase,
+    });
 
-    useEffect(() => {
-        const fetchAsistencia = async () => {
-            setIsLoadingAsistencia(true);
-            try {
-                const response = await apiClient.get<AsistenciaMensualData>(
-                    `/instructor/asistencia-mensual?mes=${mes}&anio=${anio}`
-                );
-                if (response.success) {
-                    setAprendices(response.aprendices);
-                    if (response.ficha.hora_limite_llegada) {
-                        setHoraLimite(response.ficha.hora_limite_llegada.substring(0, 5));
-                    }
-                }
-            } catch (error) {
-                toast.error("Error al cargar asistencia.");
-            } finally {
-                setIsLoadingAsistencia(false);
-            }
-        };
-
-        if (!isLoadingBase) {
-            fetchAsistencia();
+    React.useEffect(() => {
+        if (baseData?.hora_limite_llegada) {
+            setHoraLimite(baseData.hora_limite_llegada.substring(0, 5));
         }
-    }, [mes, anio, isLoadingBase]);
+    }, [baseData]);
 
-    const handleSaveConfig = async () => {
-        if (!idFicha) return;
-        setIsSaving(true);
-        try {
-            await apiClient.patch(`/fichas/${idFicha}/hora-limite`, { 
-                hora_limite_llegada: horaLimite 
-            });
+    const { data: asistenciaData, isLoading: isLoadingAsistencia } = useQuery({
+        queryKey: ['asistenciaMensual', mes, anio],
+        queryFn: () => getAsistenciaMensual(mes, anio),
+        enabled: !!baseData,
+    });
+
+    const aprendices = asistenciaData?.aprendices || [];
+    const idFicha = baseData?.id_ficha;
+    const fichaInfo = { numero: baseData?.numero_ficha, programa: baseData?.nombre_programa };
+
+    // --- Mutations ---
+    const mutation = useMutation({
+        mutationFn: (hora: string) => updateHoraLimite(idFicha!, hora),
+        onSuccess: () => {
             toast.success("Configuración guardada.");
-        } catch (error) {
+        },
+        onError: () => {
             toast.error("Error al guardar.");
-        } finally {
-            setIsSaving(false);
         }
+    });
+
+    const handleSaveConfig = () => {
+        if (!idFicha) return;
+        mutation.mutate(horaLimite);
     };
 
     const toggleMonth = (dir: number) => {
@@ -194,7 +137,7 @@ const AsistenciaFicha: React.FC = () => {
                     <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textMuted }}>LÍMITE ENTRADA:</span>
                     <input type="time" value={horaLimite} onChange={e => setHoraLimite(e.target.value)} style={{ padding: '5px', borderRadius: '5px', border: `1px solid ${COLORS.grayLight}` }} />
                     <button onClick={handleSaveConfig} style={{ padding: '6px 15px', backgroundColor: COLORS.green, color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
-                        {isSaving ? '...' : 'Guardar'}
+                        {mutation.isPending ? '...' : 'Guardar'}
                     </button>
                 </div>
             </div>

@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AprobacionesActivos.module.css';
 import { toast } from 'sonner';
-
-interface ActivoPendiente {
-    id: string; // placa o serial
-    placa: string;
-    tipo_activo: 'vehiculo' | 'equipo';
-    descripcion_tipo: string;
-    marca: string;
-    usuario_nombres: string;
-    usuario_apellidos: string;
-    usuario_doc: number;
-    foto_usuario?: string;
-    imagen?: string;
-    created_at: string;
-}
+import { getActivosPendientes, updateActivoEstado } from '../../../services/aprobacionesActivosService';
+import type { ActivoPendiente } from '../../../services/aprobacionesActivosService';
 
 const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
@@ -22,26 +10,14 @@ const AprobacionesActivos: React.FC = () => {
     const [activos, setActivos] = useState<ActivoPendiente[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const token = sessionStorage.getItem('authToken');
 
     const fetchPendientes = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/activos-pendientes`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setActivos(data.data);
-            } else {
-                setError(data.message || 'Error al obtener activos pendientes');
-            }
-        } catch (err) {
-            setError('Error de conexión con el servidor.');
+            const data = await getActivosPendientes();
+            setActivos(data);
+        } catch (err: any) {
+            setError(err.message || 'Error de conexión con el servidor.');
             console.error(err);
         } finally {
             setLoading(false);
@@ -58,16 +34,7 @@ const AprobacionesActivos: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/activos/${tipo}/${id}/estado`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ estado_aprobacion: estado })
-            });
-
-            const data = await response.json();
+            const data = await updateActivoEstado(tipo, id, estado);
 
             if (data.success) {
                 toast.success(`Activo marcado como ${estado} exitosamente.`);
@@ -75,8 +42,8 @@ const AprobacionesActivos: React.FC = () => {
             } else {
                 toast.error(data.message || 'Error al actualizar el estado.');
             }
-        } catch (err) {
-            toast.error('Error de conexión con el servidor.');
+        } catch (err: any) {
+            toast.error(err.message || 'Error de conexión con el servidor.');
             console.error(err);
         }
     };

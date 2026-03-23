@@ -34,6 +34,11 @@ class Equipos extends Model
 
     public function sistema_operativo()
     {
-        return $this->belongsTo(SistemasOperativos::class, 'id_sistema_operativo');
+        return $this->belongsTo(SistemasOperativos::class, 'id_sistema_operativo', 'id');
+    }
+
+    public function asignaciones()
+    {
+        return $this->hasMany(Asignaciones::class, 'serial_equipo', 'serial');
     }
 }

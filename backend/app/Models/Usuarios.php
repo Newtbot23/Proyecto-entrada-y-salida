@@ -97,4 +97,14 @@ class Usuarios extends Authenticatable
                     ->withPivot('id', 'tipo_participante')
                     ->withTimestamps();
     }
+
+    public function asignaciones()
+    {
+        return $this->hasMany(Asignaciones::class, 'doc', 'doc');
+    }
+
+    public function vehiculos()
+    {
+        return $this->hasMany(Vehiculos::class, 'doc', 'doc');
+    }
 }

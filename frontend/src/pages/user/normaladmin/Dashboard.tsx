@@ -20,7 +20,6 @@ const NormalAdminDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [isLicenseExpired, setIsLicenseExpired] = useState(false);
 
     // Context query for Stats
     const { data: stats, isLoading: loadingStats } = useQuery({
@@ -54,24 +53,13 @@ const NormalAdminDashboard: React.FC = () => {
 
             setUser(userData);
 
-            // Initial check from session
-            if (userData.license_status === 'expirado' || userData.license_expired === true) {
-                setIsLicenseExpired(true);
-            }
         } catch (e) {
             console.error("Error parsing user data", e);
             navigate('/login');
         }
     }, [navigate]);
 
-    // Update expiration state when query data changes
-    useEffect(() => {
-        if (stats?.license?.estado === 'expirado') {
-            setIsLicenseExpired(true);
-        } else if (stats?.license?.estado === 'activo') {
-            setIsLicenseExpired(false);
-        }
-    }, [stats]);
+    const isLicenseExpiredResult = stats?.license?.estado === 'expirado' || (user?.license_status === 'expirado' || user?.license_expired === true);
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -85,7 +73,7 @@ const NormalAdminDashboard: React.FC = () => {
         <div className={styles.dashboardLayout} style={{ backgroundColor: 'transparent' }}>
             <div className="app-bg-container"></div>
             <div className="app-bg-overlay"></div>
-            <ExpirationModal isOpen={isLicenseExpired} />
+            <ExpirationModal isOpen={isLicenseExpiredResult} />
             <NormalAdminSidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
             <main className={`${styles.mainContent} ${isCollapsedClass}`} style={{ backgroundColor: 'transparent' }}>
                 <NormalAdminHeader />

@@ -1,60 +1,21 @@
-/**
- * User Dashboard Service
- * Handles catalogs, vehicles, and equipment for regular users.
- */
 import { apiClient } from '../config/api';
-
-// ============================================================================
-// TIPOS
-// ============================================================================
-
-export interface CatalogData {
-    tipos_vehiculo: { id: number; tipo_vehiculo: string }[];
-    marcas_equipo: { id: number; marca: string }[];
-    sistemas_operativos: { id: number; sistema_operativo: string }[];
-}
-
-export interface Vehiculo {
-    id?: number;
-    placa: string;
-    tipo?: string;
-    tipo_vehiculo?: string;
-    id_tipo_vehiculo?: string | number;
-    marca: string;
-    modelo: string;
-    color: string;
-    descripcion?: string;
-    img_vehiculo?: string;
-    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
-    es_predeterminado?: boolean | number;
-}
-
-export interface Equipo {
-    id?: number;
-    serial: string;
-    marca?: string;
-    id_marca?: string;
-    modelo: string;
-    tipo_equipo_desc?: string;
-    caracteristicas?: string;
-    so?: string;
-    id_sistema_operativo?: string;
-    img_serial?: string;
-    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
-    es_predeterminado?: boolean | number;
-}
-
-// ============================================================================
-// FUNCIONES
-// ============================================================================
+import type { 
+    UserDashboardCatalog, 
+    Vehiculo, 
+    Equipo, 
+    OCRPlateResponse, 
+    OCRSerialResponse, 
+    TipoDoc, 
+    SessionCheckResponse,
+    ApiResponse
+} from '../types';
 
 /**
  * Obtener catálogos (tipos de vehículo, marcas de equipo, sistemas operativos)
  */
-export const getCatalogs = async (): Promise<CatalogData> => {
+export const getCatalogs = async (): Promise<UserDashboardCatalog> => {
     try {
-        const response = await apiClient.get<CatalogData>('/user/catalogs');
-        return response;
+        return await apiClient.get<UserDashboardCatalog>('/user/catalogs');
     } catch (error) {
         console.error('Error fetching catalogs:', error);
         throw error;
@@ -66,8 +27,7 @@ export const getCatalogs = async (): Promise<CatalogData> => {
  */
 export const getUserVehiculos = async (): Promise<Vehiculo[]> => {
     try {
-        const response = await apiClient.get<Vehiculo[]>('/user/vehiculos');
-        return response;
+        return await apiClient.get<Vehiculo[]>('/user/vehiculos');
     } catch (error) {
         console.error('Error fetching user vehiculos:', error);
         throw error;
@@ -79,8 +39,7 @@ export const getUserVehiculos = async (): Promise<Vehiculo[]> => {
  */
 export const getUserEquipos = async (): Promise<Equipo[]> => {
     try {
-        const response = await apiClient.get<Equipo[]>('/user/equipos');
-        return response;
+        return await apiClient.get<Equipo[]>('/user/equipos');
     } catch (error) {
         console.error('Error fetching user equipos:', error);
         throw error;
@@ -88,12 +47,11 @@ export const getUserEquipos = async (): Promise<Equipo[]> => {
 };
 
 /**
- * Registrar un vehículo
+ * Registrar un vehículo (soporta FormData para imágenes)
  */
-export const storeVehiculo = async (data: Partial<Vehiculo>): Promise<Vehiculo> => {
+export const storeVehiculo = async (data: FormData | Partial<Vehiculo>): Promise<Vehiculo> => {
     try {
-        const response = await apiClient.post<Vehiculo, Partial<Vehiculo>>('/user/vehiculos', data);
-        return response;
+        return await apiClient.post<Vehiculo, FormData | Partial<Vehiculo>>('/user/vehiculos', data);
     } catch (error) {
         console.error('Error storing vehiculo:', error);
         throw error;
@@ -101,12 +59,11 @@ export const storeVehiculo = async (data: Partial<Vehiculo>): Promise<Vehiculo> 
 };
 
 /**
- * Registrar un equipo
+ * Registrar un equipo (soporta FormData para imágenes)
  */
-export const storeEquipo = async (data: Partial<Equipo>): Promise<Equipo> => {
+export const storeEquipo = async (data: FormData | Partial<Equipo>): Promise<Equipo> => {
     try {
-        const response = await apiClient.post<Equipo, Partial<Equipo>>('/user/equipos', data);
-        return response;
+        return await apiClient.post<Equipo, FormData | Partial<Equipo>>('/user/equipos', data);
     } catch (error) {
         console.error('Error storing equipo:', error);
         throw error;
@@ -114,12 +71,35 @@ export const storeEquipo = async (data: Partial<Equipo>): Promise<Equipo> => {
 };
 
 /**
+ * Leer placa desde imagen (OCR)
+ */
+export const readPlate = async (formData: FormData): Promise<OCRPlateResponse> => {
+    try {
+        return await apiClient.post<OCRPlateResponse, FormData>('/ocr/read-plate', formData);
+    } catch (error) {
+        console.error('Error reading plate OCR:', error);
+        throw error;
+    }
+};
+
+/**
+ * Leer serial desde imagen (OCR)
+ */
+export const readSerial = async (formData: FormData): Promise<OCRSerialResponse> => {
+    try {
+        return await apiClient.post<OCRSerialResponse, FormData>('/ocr/read-serial', formData);
+    } catch (error) {
+        console.error('Error reading serial OCR:', error);
+        throw error;
+    }
+};
+
+/**
  * Obtener tipos de documento
  */
-export const getTiposDoc = async (): Promise<any[]> => {
+export const getTiposDoc = async (): Promise<TipoDoc[]> => {
     try {
-        const response = await apiClient.get<any[]>('/tipo-doc');
-        return response;
+        return await apiClient.get<TipoDoc[]>('/tipo-doc');
     } catch (error) {
         console.error('Error fetching tipos doc:', error);
         throw error;
@@ -129,10 +109,9 @@ export const getTiposDoc = async (): Promise<any[]> => {
 /**
  * Establecer un activo como predeterminado
  */
-export const setDefaultAsset = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<any> => {
+export const setDefaultAsset = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<ApiResponse<any>> => {
     try {
-        const response = await apiClient.patch<any, any>(`/user/activos/${tipo}/${id}/set-default`, {});
-        return response;
+        return await apiClient.patch<ApiResponse<any>, Record<string, never>>(`/user/activos/${tipo}/${id}/set-default`, {});
     } catch (error) {
         console.error(`Error setting default for ${tipo}:`, error);
         throw error;
@@ -142,10 +121,9 @@ export const setDefaultAsset = async (tipo: 'vehiculo' | 'equipo', id: string): 
 /**
  * Cambiar el estado de un activo (vehículo o equipo)
  */
-export const toggleAssetStatus = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<any> => {
+export const toggleAssetStatus = async (tipo: 'vehiculo' | 'equipo', id: string): Promise<ApiResponse<any>> => {
     try {
-        const response = await apiClient.patch<any, any>(`/user/activos/${tipo}/${id}/toggle-estado`, {});
-        return response;
+        return await apiClient.patch<ApiResponse<any>, Record<string, never>>(`/user/activos/${tipo}/${id}/toggle-estado`, {});
     } catch (error) {
         console.error(`Error toggling status for ${tipo}:`, error);
         throw error;
@@ -155,9 +133,9 @@ export const toggleAssetStatus = async (tipo: 'vehiculo' | 'equipo', id: string)
 /**
  * Verificar si el usuario tiene una sesión activa prolongada (> 6.5h)
  */
-export const checkActiveSession = async (): Promise<{ warning: boolean, horas_transcurridas?: number }> => {
+export const checkActiveSession = async (): Promise<SessionCheckResponse> => {
     try {
-        const response = await apiClient.get<any>('/user/check-active-session');
+        const response = await apiClient.get<SessionCheckResponse>('/user/check-active-session');
         return response;
     } catch (error) {
         console.error('Error checking active session:', error);

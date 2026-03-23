@@ -1,35 +1,28 @@
 import { apiClient } from '../config/api';
-import type { LicensePlan, PlanFormData } from '../types/licensePlan';
+import type { LicensePlan, PlanFormData, BackendPlan } from '../types';
 
 /**
  * Map backend plan to frontend LicensePlan
- * 
- * Traslada los nombres de campos de la base de datos (en español) 
- * a los nombres de propiedades esperados por el frontend (en inglés).
  */
-const mapToFrontend = (plan: any): LicensePlan => ({
+const mapToFrontend = (plan: BackendPlan): LicensePlan => ({
     id: plan.id.toString(),
     name: plan.nombre_plan,
-    price: parseFloat(plan.precio_plan),
+    price: typeof plan.precio_plan === 'string' ? parseFloat(plan.precio_plan) : plan.precio_plan,
     billingPeriod: plan.periodo_facturacion || 'mensual',
     duration: plan.duracion_plan,
     description: plan.descripcion || '',
-    // El backend puede devolver strings simples o objetos {text, included} (seeder)
     caracteristicas: Array.isArray(plan.caracteristicas)
         ? plan.caracteristicas.map((item: any) =>
-            typeof item === 'object' && item !== null ? item.text : item
+            typeof item === 'object' && item !== null ? item.text || JSON.stringify(item) : item
         ).join(', ')
         : (typeof plan.caracteristicas === 'string' ? plan.caracteristicas : ''),
-    status: plan.estado as 'active' | 'disabled',
+    status: plan.estado,
     createdAt: plan.created_at,
     updatedAt: plan.updated_at
 });
 
 /**
  * Map frontend PlanFormData to backend format
- * 
- * Traslada los datos del formulario (en inglés) a los nombres 
- * de campos esperados por la API Laravel (en español).
  */
 const mapToBackend = (data: PlanFormData) => ({
     nombre_plan: data.name,
@@ -37,7 +30,6 @@ const mapToBackend = (data: PlanFormData) => ({
     periodo_facturacion: data.billingPeriod,
     duracion_plan: data.duration,
     descripcion: data.description,
-    // El backend espera un array de strings
     caracteristicas: data.caracteristicas.split(',').map(f => f.trim()).filter(f => f !== '')
 });
 
@@ -46,10 +38,10 @@ const mapToBackend = (data: PlanFormData) => ({
  */
 export const getLicensePlans = async (): Promise<LicensePlan[]> => {
     try {
-        // El controlador refactorizado devuelve un objeto paginado: { data: [...], total: ... }
-        const response = await apiClient.get<{ data: any[] }>('/planes');
+        const response = await apiClient.get<{ data: BackendPlan[] }>('/planes');
         return response.data.map(mapToFrontend);
     } catch (error) {
+        console.error('Error fetching license plans:', error);
         throw error;
     }
 };
@@ -59,9 +51,10 @@ export const getLicensePlans = async (): Promise<LicensePlan[]> => {
  */
 export const createLicensePlan = async (data: PlanFormData): Promise<LicensePlan> => {
     try {
-        const newPlan = await apiClient.post<any, any>('/planes', mapToBackend(data));
+        const newPlan = await apiClient.post<BackendPlan, any>('/planes', mapToBackend(data));
         return mapToFrontend(newPlan);
     } catch (error) {
+        console.error('Error creating license plan:', error);
         throw error;
     }
 };
@@ -71,35 +64,35 @@ export const createLicensePlan = async (data: PlanFormData): Promise<LicensePlan
  */
 export const updateLicensePlan = async (id: string, data: PlanFormData): Promise<LicensePlan> => {
     try {
-        const updatedPlan = await apiClient.put<any, any>(`/planes/${id}`, mapToBackend(data));
+        const updatedPlan = await apiClient.put<BackendPlan, any>(`/planes/${id}`, mapToBackend(data));
         return mapToFrontend(updatedPlan);
     } catch (error) {
+        console.error(`Error updating license plan ${id}:`, error);
         throw error;
     }
 };
 
 /**
  * Duplicate a license plan
- * Realiza un POST con la data del plan a duplicar
  */
 export const duplicateLicensePlan = async (_id: string, data: PlanFormData): Promise<LicensePlan> => {
     try {
-        // En el backend es simplemente crear un nuevo registro
-        const newPlan = await apiClient.post<any, any>('/planes', mapToBackend(data));
+        const newPlan = await apiClient.post<BackendPlan, any>('/planes', mapToBackend(data));
         return mapToFrontend(newPlan);
     } catch (error) {
+        console.error('Error duplicating license plan:', error);
         throw error;
     }
 };
 
 /**
  * Disable a license plan
- * Cambia el estado del plan a 'disabled'
  */
 export const disableLicensePlan = async (id: string): Promise<void> => {
     try {
-        await apiClient.put(`/planes/${id}`, { estado: 'disabled' });
+        await apiClient.put<void, { estado: string }>(`/planes/${id}`, { estado: 'disabled' });
     } catch (error) {
+        console.error(`Error disabling license plan ${id}:`, error);
         throw error;
     }
 };

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { DynamicTableService } from '../../services/dynamicTableService';
 import styles from './NormalAdminSidebar.module.css';
 import {
@@ -43,27 +44,23 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
 
     const userRole = getRole();
 
-    const [shortTables, setShortTables] = useState<string[]>([]);
     const [isOtrosOpen, setIsOtrosOpen] = useState(false);
     const [isReportesOpen, setIsReportesOpen] = useState(false);
     const [isFichasOpen, setIsFichasOpen] = useState(false);
     const [isEquiposOpen, setIsEquiposOpen] = useState(false);
 
-    useEffect(() => {
-        const fetchShortTables = async () => {
+    const { data: shortTables = [] } = useQuery({
+        queryKey: ['shortTables'],
+        queryFn: async () => {
             try {
                 const response = await DynamicTableService.getShortTables();
-                const tables = (response as any).data || response;
-                if (Array.isArray(tables)) {
-                    setShortTables(tables);
-                }
+                return Array.isArray(response) ? response : (response as any).data || [];
             } catch (error) {
                 console.error("Error fetching short tables for sidebar", error);
+                return [];
             }
-        };
-
-        fetchShortTables();
-    }, []);
+        }
+    });
 
     const menuItems = [];
     if (userRole === 1) {
@@ -296,7 +293,7 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                             {!isCollapsed && (
                                 <div className={`${styles.accordionContent} ${isOtrosOpen || activePath.includes('/tables/') ? styles.open : ''}`}>
                                     <ul className={styles.accordionList}>
-                                        {shortTables.map(tableName => {
+                                        {shortTables.map((tableName: string) => {
                                             const tablePath = `/user/normaladmin/tables/${tableName}`;
                                             const isActive = activePath === tablePath;
                                             return (

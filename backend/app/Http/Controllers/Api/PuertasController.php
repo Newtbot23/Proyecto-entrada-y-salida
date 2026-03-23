@@ -5,6 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Usuarios;
+use App\Models\Equipos;
+use App\Models\Asignaciones;
+use App\Models\Vehiculos;
+use App\Models\Registros;
+use App\Models\RegistrosEquipos;
 use Carbon\Carbon;
 
 class PuertasController extends Controller
@@ -22,28 +28,34 @@ class PuertasController extends Controller
 
         $nit = $request->user()->nit_entidad;
 
-        $usuario = DB::table('usuarios')
-            ->select(
-                'doc', 
-                DB::raw("TRIM(CONCAT_WS(' ', primer_nombre, segundo_nombre, primer_apellido, segundo_apellido)) as nombre")
-            )
+        $usuario = Usuarios::select('doc', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')
             ->where('doc', $doc)
             ->where('nit_entidad', $nit)
             ->first();
+
+        if ($usuario) {
+            $usuario->nombre = trim($usuario->primer_nombre . ' ' . $usuario->segundo_nombre . ' ' . $usuario->primer_apellido . ' ' . $usuario->segundo_apellido);
+        }
 
         if (!$usuario) {
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado'], 404);
         }
 
         // Get 'propio' equipment for this user
-        $equipos = DB::table('equipos')
-            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
-            ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->where('asignaciones.doc', $doc)
-            ->where('equipos.tipo_equipo', 'propio')
-            ->where('equipos.estado_aprobacion', 'activo')
-            ->select('equipos.*', 'marcas_equipo.marca', 'asignaciones.es_predeterminado')
-            ->get();
+        $equipos = Asignaciones::where('doc', $doc)
+            ->whereHas('equipo', function($q) {
+                $q->where('tipo_equipo', 'propio')
+                  ->where('estado_aprobacion', 'activo');
+            })
+            ->with(['equipo.marca'])
+            ->get()
+            ->map(function($asignacion) {
+                $equipo = $asignacion->equipo;
+                return (object) array_merge((array)$equipo->toArray(), [
+                    'marca' => $equipo->marca->marca ?? 'N/A',
+                    'es_predeterminado' => $asignacion->es_predeterminado
+                ]);
+            });
 
         // Check if user is currently inside (has a record without hora_salida, regardless of the date)
         $registroAbierto = \App\Models\Registros::with(['equipos_registrados.equipo.marca'])
@@ -97,21 +109,21 @@ class PuertasController extends Controller
 
         // Find all vehicles matching the query (either by plate or by owner's doc)
         // Restricted by the authenticated user's entity (nit_entidad)
-        $vehiculos = DB::table('vehiculos')
-            ->join('usuarios', 'vehiculos.doc', '=', 'usuarios.doc')
-            ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
-            ->where('vehiculos.estado_aprobacion', 'activo')
+        $vehiculos = Vehiculos::with(['usuario', 'tipo_vehiculo'])
+            ->where('estado_aprobacion', 'activo')
             ->where(function($q) use ($query) {
-                $q->where('vehiculos.placa', 'like', "%$query%")
-                  ->orWhere('usuarios.doc', $query);
+                $q->where('placa', 'like', "%$query%")
+                  ->orWhere('doc', $query);
             })
-            ->where('usuarios.nit_entidad', $nit)
-            ->select(
-                'vehiculos.*', 
-                DB::raw("TRIM(CONCAT_WS(' ', usuarios.primer_nombre, usuarios.segundo_nombre, usuarios.primer_apellido, usuarios.segundo_apellido)) as usuario_nombre"), 
-                'tipos_vehiculo.tipo_vehiculo'
-            )
-            ->get();
+            ->whereHas('usuario', function($q) use ($nit) {
+                $q->where('nit_entidad', $nit);
+            })
+            ->get()
+            ->map(function($v) {
+                $v->usuario_nombre = trim($v->usuario->primer_nombre . ' ' . $v->usuario->segundo_nombre . ' ' . $v->usuario->primer_apellido . ' ' . $v->usuario->segundo_apellido);
+                $v->tipo_vehiculo = $v->tipo_vehiculo->tipo_vehiculo ?? null;
+                return $v;
+            });
 
         if ($vehiculos->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Vehículo o usuario no encontrado'], 404);
@@ -121,14 +133,20 @@ class PuertasController extends Controller
         $doc = $vehiculos->first()->doc;
 
         // Fetch 'propio' equipment for this user
-        $equipos = DB::table('equipos')
-            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
-            ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->where('asignaciones.doc', $doc)
-            ->where('equipos.tipo_equipo', 'propio')
-            ->where('equipos.estado_aprobacion', 'activo')
-            ->select('equipos.*', 'marcas_equipo.marca', 'asignaciones.es_predeterminado')
-            ->get();
+        $equipos = Asignaciones::where('doc', $doc)
+            ->whereHas('equipo', function($q) {
+                $q->where('tipo_equipo', 'propio')
+                  ->where('estado_aprobacion', 'activo');
+            })
+            ->with(['equipo.marca'])
+            ->get()
+            ->map(function($asignacion) {
+                $equipo = $asignacion->equipo;
+                return (object) array_merge((array)$equipo->toArray(), [
+                    'marca' => $equipo->marca->marca ?? 'N/A',
+                    'es_predeterminado' => $asignacion->es_predeterminado
+                ]);
+            });
 
         // Check if any of these vehicles are currently inside 
         // We look for open records for this user regardless of the date, ordered by newest first
@@ -181,8 +199,7 @@ class PuertasController extends Controller
         $nit = $request->user()->nit_entidad;
 
         // Security check: Ensure the user belongs to the same entity
-        $usuarioEntidad = DB::table('usuarios')
-            ->where('doc', $request->doc)
+        $usuarioEntidad = Usuarios::where('doc', $request->doc)
             ->where('nit_entidad', $nit)
             ->exists();
 
@@ -195,23 +212,21 @@ class PuertasController extends Controller
                 DB::beginTransaction();
 
                 // Create main registry entry
-                $idRegistro = DB::table('registros')->insertGetId([
+                $registro = Registros::create([
                     'doc' => $request->doc,
                     'placa' => $request->placa ?? null,
                     'fecha' => $now->toDateString(),
                     'hora_entrada' => $now->toTimeString(),
-                    'created_at' => $now,
-                    'updated_at' => $now
                 ]);
+                
+                $idRegistro = $registro->id;
 
                 // Insert associated equipments
                 if (!empty($request->seriales_equipos)) {
                     foreach ($request->seriales_equipos as $serial) {
-                        DB::table('registros_equipos')->insert([
+                        RegistrosEquipos::create([
                             'id_registro' => $idRegistro,
                             'serial_equipo' => $serial,
-                            'created_at' => $now,
-                            'updated_at' => $now
                         ]);
                     }
                 }
@@ -228,11 +243,9 @@ class PuertasController extends Controller
                 return response()->json(['success' => false, 'message' => 'ID de registro requerido para la salida'], 400);
             }
 
-            DB::table('registros')
-                ->where('id', $request->id_registro)
+            Registros::where('id', $request->id_registro)
                 ->update([
                     'hora_salida' => $now->toTimeString(),
-                    'updated_at' => $now
                 ]);
 
             return response()->json(['success' => true, 'message' => 'Salida registrada correctamente']);

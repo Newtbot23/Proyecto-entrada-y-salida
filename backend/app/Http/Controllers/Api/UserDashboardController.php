@@ -9,14 +9,28 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Vehiculos;
 use App\Models\Equipos;
+use App\Models\Asignaciones;
+use App\Models\TiposVehiculo;
+use App\Models\MarcasEquipo;
+use App\Models\SistemasOperativos;
+use App\Http\Requests\Api\Vehiculos\StoreVehiculoRequest;
+use App\Http\Requests\Api\Equipos\StoreEquipoRequest;
+use App\Http\Requests\Api\UserDashboard\OCRImageRequest;
+use App\Services\GoogleVisionService;
 
 class UserDashboardController extends Controller
 {
+    protected $visionService;
+
+    public function __construct(GoogleVisionService $visionService)
+    {
+        $this->visionService = $visionService;
+    }
     public function getCatalogs()
     {
-        $tiposVehiculo = DB::table('tipos_vehiculo')->select('id', 'tipo_vehiculo')->get();
-        $marcasEquipo = DB::table('marcas_equipo')->select('id', 'marca')->get();
-        $sistemasOperativos = DB::table('sistemas_operativos')->select('id', 'sistema_operativo')->get();
+        $tiposVehiculo = TiposVehiculo::select('id', 'tipo_vehiculo')->get();
+        $marcasEquipo = MarcasEquipo::select('id', 'marca')->get();
+        $sistemasOperativos = SistemasOperativos::select('id', 'sistema_operativo')->get();
 
         return response()->json([
             'success' => true,
@@ -35,10 +49,8 @@ class UserDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
 
-        $vehiculos = DB::table('vehiculos')
-            ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
-            ->where('vehiculos.doc', $user->doc)
-            ->select('vehiculos.*', 'tipos_vehiculo.tipo_vehiculo')
+        $vehiculos = Vehiculos::with('tipo_vehiculo')
+            ->where('doc', $user->doc)
             ->orderBy('es_predeterminado', 'desc')
             ->get();
 
@@ -55,15 +67,20 @@ class UserDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
 
-        $equipos = DB::table('equipos')
-            ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
-            ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->join('sistemas_operativos', 'equipos.id_sistema_operativo', '=', 'sistemas_operativos.id')
-            ->where('asignaciones.doc', $user->doc)
-            ->select('equipos.*', 'marcas_equipo.marca', 'sistemas_operativos.sistema_operativo as so', 'asignaciones.es_predeterminado')
-            ->distinct()
-            ->orderBy('asignaciones.es_predeterminado', 'desc')
-            ->get();
+        $equipos = Asignaciones::with(['equipo.marca', 'equipo.sistema_operativo'])
+            ->where('doc', $user->doc)
+            ->whereHas('equipo')
+            ->get()
+            ->map(function ($asignacion) {
+                $equipo = $asignacion->equipo;
+                return (object) array_merge((array) $equipo->toArray(), [
+                    'marca' => $equipo->marca->marca ?? null,
+                    'so' => $equipo->sistema_operativo->sistema_operativo ?? null,
+                    'es_predeterminado' => $asignacion->es_predeterminado
+                ]);
+            })
+            ->unique('serial')
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -118,81 +135,20 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    public function readPlate(Request $request)
+    public function readPlate(OCRImageRequest $request)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-        ]);
-
         try {
             $imagePath = $request->file('image')->getPathname();
             $base64Image = base64_encode(file_get_contents($imagePath));
 
-            $apiKey = env('GOOGLE_VISION_API_KEY');
-            if (!$apiKey) {
-                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
-            }
+            $placa = $this->visionService->parsePlate($base64Image);
 
-            $url = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
-
-            $payload = [
-                'requests' => [
-                    [
-                        'image' => [
-                            'content' => $base64Image
-                        ],
-                        'features' => [
-                            [
-                                'type' => 'TEXT_DETECTION'
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-            $response = Http::post($url, $payload);
-
-            if ($response->successful()) {
-                $result = $response->json();
-                $responses = $result['responses'] ?? [];
-                
-                if (isset($responses[0]['textAnnotations'][0]['description'])) {
-                    $description = $responses[0]['textAnnotations'][0]['description'];
-                    
-                    // Extraemos 6 caracteres alfanuméricos agrupados en 3 y 3, separados opcionalmente por guiones o espacios
-                    preg_match('/([A-Z0-9]{3})[-\s._]*([A-Z0-9]{3})/i', $description, $matches);
-                    
-                    if (isset($matches[1]) && isset($matches[2])) {
-                        $letras = strtoupper($matches[1]);
-                        $numeros = strtoupper($matches[2]);
-
-                        // Autocorrección para las 3 primeras letras (reemplazo de números por letras comunes)
-                        $letras = str_replace(
-                            ['0', '1', '8', '5'], 
-                            ['O', 'I', 'B', 'S'], 
-                            $letras
-                        );
-
-                        // Autocorrección para los 2 siguientes (siempre números en Colombia)
-                        $numerosPrefix = substr($numeros, 0, 2);
-                        $numerosPrefix = str_replace(
-                            ['O', 'I', 'B', 'S'], 
-                            ['0', '1', '8', '5'], 
-                            $numerosPrefix
-                        );
-
-                        // El último carácter puede ser letra o número dependiendo si es moto o carro
-                        $numerosSuffix = substr($numeros, 2, 1);
-
-                        $placa = $letras . $numerosPrefix . $numerosSuffix;
-                        
-                        return response()->json([
-                            'success' => true,
-                            'placa' => $placa,
-                            'message' => 'Placa detectada con éxito'
-                        ]);
-                    }
-                }
+            if ($placa) {
+                return response()->json([
+                    'success' => true,
+                    'placa' => $placa,
+                    'message' => 'Placa detectada con éxito'
+                ]);
             }
 
             return response()->json([
@@ -209,67 +165,21 @@ class UserDashboardController extends Controller
         }
     }
 
-    public function readSerial(Request $request)
+    public function readSerial(OCRImageRequest $request)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-        ]);
-
         try {
             $imagePath = $request->file('image')->getPathname();
             $base64Image = base64_encode(file_get_contents($imagePath));
 
-            $apiKey = env('GOOGLE_VISION_API_KEY');
-            if (!$apiKey) {
-                return response()->json(['success' => false, 'message' => 'Configuración de API Vision faltante'], 500);
-            }
+            $result = $this->visionService->parseSerial($base64Image);
 
-            $url = 'https://vision.googleapis.com/v1/images:annotate?key=' . $apiKey;
-
-            $payload = [
-                'requests' => [
-                    [
-                        'image' => [
-                            'content' => $base64Image
-                        ],
-                        'features' => [
-                            [
-                                'type' => 'TEXT_DETECTION'
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-            $response = Http::post($url, $payload);
-
-            if ($response->successful()) {
-                $result = $response->json();
-                $responses = $result['responses'] ?? [];
-                
-                if (isset($responses[0]['textAnnotations'][0]['description'])) {
-                    $description = $responses[0]['textAnnotations'][0]['description'];
-                    
-                    // Buscar prefijos comunes de serial con una expresión regular: "S/N", "SN:", "Serial:", "Serial No", etc.
-                    // Y capturar la cadena alfanumérica contigua o que le siga después de espacios/dos puntos/guiones.
-                    // Ejemplo de patrones a buscar: "S/N 12345ABC", "Serial: XYZ-987", "SN:123"
-                    $extracted_serial = null;
-                         
-                    if (preg_match('/(?:S\/N|SN|S\.N\.|Serial(?:\s*No\.?|\s*Number)?|Service\s*Tag)\s*[:.\-#]?\s*([A-Z0-9-]+)/i', $description, $matches)) {
-                        $extracted_serial = $matches[1];
-                    }
-                    
-                    // Raw text para validación manual en frontend
-                    // Removemos saltos de línea y espacios extras para facilitar el `includes`
-                    $raw_text = preg_replace('/\s+/', ' ', $description);
-
-                    return response()->json([
-                        'success' => true,
-                        'extracted_serial' => $extracted_serial,
-                        'raw_text' => $raw_text,
-                        'message' => 'Texto extraído exitosamente'
-                    ]);
-                }
+            if ($result) {
+                return response()->json([
+                    'success' => true,
+                    'extracted_serial' => $result['serial'],
+                    'raw_text' => $result['raw_text'],
+                    'message' => 'Texto extraído exitosamente'
+                ]);
             }
 
             return response()->json([
@@ -286,23 +196,12 @@ class UserDashboardController extends Controller
         }
     }
 
-    public function storeVehiculo(Request $request)
+    public function storeVehiculo(StoreVehiculoRequest $request)
     {
         $user = $request->user();
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
-
-        $request->validate([
-            'placa' => 'required|string|max:10|unique:vehiculos,placa',
-            'id_tipo_vehiculo' => 'required|integer',
-            'marca' => 'required|string|max:100',
-            'modelo' => 'required|string|max:100',
-            'color' => 'required|string|max:50',
-            'descripcion' => 'nullable|string',
-            'foto_general' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
-            'foto_detalle' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
-        ]);
 
         try {
             $pathGeneral = null;
@@ -321,7 +220,7 @@ class UserDashboardController extends Controller
                 $rutaFinal = $rutaGeneral = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
             }
 
-            DB::table('vehiculos')->insert([
+            Vehiculos::create([
                 'placa' => strtoupper($request->placa),
                 'id_tipo_vehiculo' => $request->id_tipo_vehiculo,
                 'doc' => $user->doc,
@@ -330,8 +229,6 @@ class UserDashboardController extends Controller
                 'color' => $request->color,
                 'descripcion' => $request->descripcion ?? '',
                 'img_vehiculo' => $rutaFinal,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             return response()->json([
@@ -347,23 +244,12 @@ class UserDashboardController extends Controller
         }
     }
 
-    public function storeEquipo(Request $request)
+    public function storeEquipo(StoreEquipoRequest $request)
     {
         $user = $request->user();
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
-
-        $request->validate([
-            'serial' => 'required|string|max:100|unique:equipos,serial',
-            'id_marca' => 'required|integer',
-            'modelo' => 'required|string|max:100',
-            'tipo_equipo_desc' => 'required|string|max:200',
-            'caracteristicas' => 'nullable|string',
-            'id_sistema_operativo' => 'required|integer',
-            'foto_general' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
-            'foto_detalle' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
-        ]);
 
         try {
             $pathGeneral = null;
@@ -382,7 +268,7 @@ class UserDashboardController extends Controller
                 $rutaFinal = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
             }
 
-            DB::table('equipos')->insert([
+            Equipos::create([
                 'serial' => $request->serial,
                 'tipo_equipo' => 'propio',
                 'placa_sena' => 'N/A', // Placa sena defaults to N/A for propio
@@ -394,17 +280,13 @@ class UserDashboardController extends Controller
                 'caracteristicas' => $request->caracteristicas ?? '',
                 'id_sistema_operativo' => $request->id_sistema_operativo,
                 'img_serial' => $rutaFinal,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
-            DB::table('asignaciones')->insert([
+            Asignaciones::create([
                 'doc' => $user->doc,
                 'serial_equipo' => $request->serial,
                 'numero_ambiente' => null,
                 'estado' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             return response()->json([
@@ -429,8 +311,7 @@ class UserDashboardController extends Controller
 
         try {
             if ($tipo === 'vehiculo') {
-                $item = DB::table('vehiculos')
-                    ->where('placa', $id)
+                $item = Vehiculos::where('placa', $id)
                     ->where('doc', $user->doc)
                     ->first();
 
@@ -440,17 +321,14 @@ class UserDashboardController extends Controller
 
                 $nuevoEstado = $item->estado_aprobacion === 'activo' ? 'inactivo' : 'pendiente';
 
-                DB::table('vehiculos')
-                    ->where('placa', $id)
-                    ->update(['estado_aprobacion' => $nuevoEstado, 'updated_at' => now()]);
+                $item->update(['estado_aprobacion' => $nuevoEstado]);
 
             } elseif ($tipo === 'equipo') {
                 // Para equipos, validamos que el usuario tenga la asignación
-                $item = DB::table('equipos')
-                    ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
-                    ->where('equipos.serial', $id)
-                    ->where('asignaciones.doc', $user->doc)
-                    ->select('equipos.*')
+                $item = Equipos::where('serial', $id)
+                    ->whereHas('asignaciones', function($q) use ($user) {
+                        $q->where('doc', $user->doc);
+                    })
                     ->first();
 
                 if (!$item) {
@@ -459,9 +337,7 @@ class UserDashboardController extends Controller
 
                 $nuevoEstado = $item->estado_aprobacion === 'activo' ? 'inactivo' : 'pendiente';
 
-                DB::table('equipos')
-                    ->where('serial', $id)
-                    ->update(['estado_aprobacion' => $nuevoEstado, 'updated_at' => now()]);
+                $item->update(['estado_aprobacion' => $nuevoEstado]);
             } else {
                 return response()->json(['success' => false, 'message' => 'Tipo de activo no válido'], 400);
             }
@@ -492,45 +368,37 @@ class UserDashboardController extends Controller
 
             if ($tipo === 'vehiculo') {
                 // Check ownership
-                $exists = DB::table('vehiculos')
-                    ->where('placa', $id)
+                $item = Vehiculos::where('placa', $id)
                     ->where('doc', $user->doc)
-                    ->exists();
+                    ->first();
 
-                if (!$exists) {
+                if (!$item) {
                     return response()->json(['success' => false, 'message' => 'Vehículo no encontrado o no pertenece al usuario'], 404);
                 }
 
                 // Reset all for this user
-                DB::table('vehiculos')
-                    ->where('doc', $user->doc)
+                Vehiculos::where('doc', $user->doc)
                     ->update(['es_predeterminado' => 0]);
 
                 // Set new default
-                DB::table('vehiculos')
-                    ->where('placa', $id)
-                    ->update(['es_predeterminado' => 1]);
+                $item->update(['es_predeterminado' => 1]);
 
             } elseif ($tipo === 'equipo') {
                 // Check ownership in asignaciones
-                $exists = DB::table('asignaciones')
-                    ->where('serial_equipo', $id)
+                $item = Asignaciones::where('serial_equipo', $id)
                     ->where('doc', $user->doc)
-                    ->exists();
+                    ->first();
 
-                if (!$exists) {
+                if (!$item) {
                     return response()->json(['success' => false, 'message' => 'Equipo no encontrado o no asignado al usuario'], 404);
                 }
 
                 // Reset all for this user
-                DB::table('asignaciones')
-                    ->where('doc', $user->doc)
+                Asignaciones::where('doc', $user->doc)
                     ->update(['es_predeterminado' => 0]);
 
                 // Set new default
-                DB::table('asignaciones')
-                    ->where('serial_equipo', $id)
-                    ->update(['es_predeterminado' => 1]);
+                $item->update(['es_predeterminado' => 1]);
 
             } else {
                 return response()->json(['success' => false, 'message' => 'Tipo de activo no válido'], 400);
