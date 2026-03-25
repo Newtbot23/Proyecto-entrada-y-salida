@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { getAsistenciaBase, getAsistenciaMensual, updateHoraLimite } from '../../../services/instructorService';
-import type { AprendizAsistencia as Aprendiz } from '../../../services/instructorService';
+import { getInstructorFichas, getAsistenciaBase, getAsistenciaMensual, updateHoraLimite } from '../../../services/instructorService';
+import type { AprendizAsistencia as Aprendiz, InstructorFicha } from '../../../services/instructorService';
+import styles from './AsistenciaFicha.module.css';
 
 const COLORS = {
     green: '#22c55e',
@@ -19,28 +20,43 @@ const COLORS = {
 
 const AsistenciaFicha: React.FC = () => {
     const [horaLimite, setHoraLimite] = useState('07:15');
+    const [activeFichaId, setActiveFichaId] = useState<number | null>(null);
     
     const now = new Date();
     const [mes, setMes] = useState(now.getMonth() + 1);
     const [anio, setAnio] = useState(now.getFullYear());
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
-    // --- Queries ---
-    const { data: baseData, isLoading: isLoadingBase } = useQuery({
-        queryKey: ['asistenciaBase'],
-        queryFn: getAsistenciaBase,
+    // --- Query: list of instructor fichas ---
+    const { data: fichasList = [], isLoading: isLoadingFichas } = useQuery({
+        queryKey: ['instructorFichas'],
+        queryFn: getInstructorFichas,
     });
 
-    React.useEffect(() => {
+    // Default to first ficha when list loads
+    useEffect(() => {
+        if (fichasList.length > 0 && activeFichaId === null) {
+            setActiveFichaId(fichasList[0].id);
+        }
+    }, [fichasList, activeFichaId]);
+
+    // --- Queries (parameterized by activeFichaId) ---
+    const { data: baseData, isLoading: isLoadingBase } = useQuery({
+        queryKey: ['asistenciaBase', activeFichaId],
+        queryFn: () => getAsistenciaBase(activeFichaId!),
+        enabled: !!activeFichaId,
+    });
+
+    useEffect(() => {
         if (baseData?.hora_limite_llegada) {
             setHoraLimite(baseData.hora_limite_llegada.substring(0, 5));
         }
     }, [baseData]);
 
     const { data: asistenciaData, isLoading: isLoadingAsistencia } = useQuery({
-        queryKey: ['asistenciaMensual', mes, anio],
-        queryFn: () => getAsistenciaMensual(mes, anio),
-        enabled: !!baseData,
+        queryKey: ['asistenciaMensual', activeFichaId, mes, anio],
+        queryFn: () => getAsistenciaMensual(mes, anio, activeFichaId!),
+        enabled: !!activeFichaId && !!baseData,
     });
 
     const aprendices = asistenciaData?.aprendices || [];
@@ -121,11 +137,29 @@ const AsistenciaFicha: React.FC = () => {
         );
     };
 
-    if (isLoadingBase) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>Cargando...</div>;
+    if (isLoadingFichas || isLoadingBase) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>Cargando...</div>;
 
     return (
-        <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Arial, sans-serif', backgroundColor: COLORS.bgApp }}>
-            <div style={{ display: 'flex', justifyContent: 'base-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+        <div className={styles.container}>
+            {/* Ficha Selector — only when instructor has multiple fichas */}
+            {fichasList.length > 1 && (
+                <div className={styles.fichaSelector}>
+                    <label className={styles.fichaSelectorLabel}>Ficha Activa:</label>
+                    <select
+                        className={styles.fichaSelectorSelect}
+                        value={activeFichaId ?? ''}
+                        onChange={(e) => { setActiveFichaId(Number(e.target.value)); setExpandedId(null); }}
+                    >
+                        {fichasList.map((f: InstructorFicha) => (
+                            <option key={f.id} value={f.id}>
+                                Ficha {f.numero_ficha} {f.nombre_programa ? `- ${f.nombre_programa}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
                     <h1 style={{ margin: 0, fontSize: '24px', color: COLORS.textMain }}>Asistencia de Instructores</h1>
                     <p style={{ color: COLORS.textMuted, fontSize: '14px', marginTop: '5px' }}>

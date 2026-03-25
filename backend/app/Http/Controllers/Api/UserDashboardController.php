@@ -28,16 +28,25 @@ class UserDashboardController extends Controller
     }
     public function getCatalogs()
     {
-        $tiposVehiculo = TiposVehiculo::select('id', 'tipo_vehiculo')->get();
-        $marcasEquipo = MarcasEquipo::select('id', 'marca')->get();
-        $sistemasOperativos = SistemasOperativos::select('id', 'sistema_operativo')->get();
+        $tiposVehiculo = TiposVehiculo::select('id', 'tipo_vehiculo as nombre')->get();
+        $marcasEquipo = MarcasEquipo::select('id', 'marca as nombre')->get();
+        $sistemasOperativos = SistemasOperativos::select('id', 'sistema_operativo as nombre')->get();
+
+        // Synthetic catalog for equipment types (categories)
+        $tiposEquipo = [
+            ['id' => 1, 'nombre' => 'COMPUTO'],
+            ['id' => 2, 'nombre' => 'ELECTRONICA'],
+            ['id' => 3, 'nombre' => 'HERRAMIENTAS'],
+            ['id' => 4, 'nombre' => 'OTROS'],
+        ];
 
         return response()->json([
             'success' => true,
             'data' => [
                 'tipos_vehiculo' => $tiposVehiculo,
                 'marcas_equipo' => $marcasEquipo,
-                'sistemas_operativos' => $sistemasOperativos
+                'sistemas_operativos' => $sistemasOperativos,
+                'tipos_equipo' => $tiposEquipo
             ]
         ]);
     }

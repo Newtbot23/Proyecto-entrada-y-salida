@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Usuario } from '../../../types';
-import { useUserDashboard } from '../../../hooks/useUserDashboard';
+import { 
+    getCatalogs, 
+    getUserVehiculos, 
+    getUserEquipos, 
+    toggleAssetStatus, 
+    checkActiveSession, 
+    setDefaultAsset,
+    storeVehiculo,
+    storeEquipo
+} from '../../../services/userDashboardService';
 import { useOCR } from '../../../hooks/useOCR';
 
 // Subcomponentes
@@ -15,21 +25,65 @@ import styles from './UserDashboard.module.css';
 const UserDashboard: React.FC = () => {
     const { user } = useOutletContext<{ user: Usuario }>();
     const [activeTab, setActiveTab] = useState<'vehiculos' | 'equipos'>('vehiculos');
+    const queryClient = useQueryClient();
     
-    // Hooks de Lógica
-    const {
-        vehiculos,
-        equipos,
-        catalogos,
-        loadingVehiculos,
-        loadingEquipos,
-        sessionInfo,
-        isSubmitting,
-        handleToggleStatus,
-        handleSetDefault,
-        createVehiculo,
-        createEquipo
-    } = useUserDashboard();
+    // Queries
+    const { data: catalogos } = useQuery({
+        queryKey: ['usuario', 'catalogosDashboard'],
+        queryFn: getCatalogs,
+        staleTime: 1000 * 60 * 10, // 10 minutes
+    });
+
+    const { data: vehiculos = [], isLoading: loadingVehiculos } = useQuery({
+        queryKey: ['usuario', 'vehiculos'],
+        queryFn: getUserVehiculos,
+        refetchInterval: 15000,
+        refetchOnWindowFocus: true,
+    });
+
+    const { data: equipos = [], isLoading: loadingEquipos } = useQuery({
+        queryKey: ['usuario', 'equipos'],
+        queryFn: getUserEquipos,
+        refetchInterval: 15000,
+        refetchOnWindowFocus: true,
+    });
+
+    const { data: sessionInfo } = useQuery({
+        queryKey: ['usuario', 'check-session'],
+        queryFn: checkActiveSession,
+        refetchInterval: 1000 * 60 * 5, // Re-check every 5 mins
+    });
+
+    // Mutations
+    const mutationSetDefault = useMutation({
+        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: number }) => setDefaultAsset(tipo, id.toString()),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'vehiculos'] });
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'equipos'] });
+        }
+    });
+
+    const mutationToggleStatus = useMutation({
+        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: number }) => toggleAssetStatus(tipo, id.toString()),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'vehiculos'] });
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'equipos'] });
+        }
+    });
+
+    const mutationCreateVehiculo = useMutation({
+        mutationFn: storeVehiculo,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'vehiculos'] });
+        }
+    });
+
+    const mutationCreateEquipo = useMutation({
+        mutationFn: storeEquipo,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuario', 'equipos'] });
+        }
+    });
 
     const {
         isOcrLoading,
@@ -38,11 +92,42 @@ const UserDashboard: React.FC = () => {
         performSerialOCR
     } = useOCR();
 
+    const handleToggleStatus = (id: number, currentStatus: string, tipo: 'vehiculo' | 'equipo') => {
+        const confirmMsg = currentStatus === 'activo' 
+            ? `¿Estás seguro de inhabilitar este ${tipo}? No podrás usarlo para ingresar hasta que lo reactives.`
+            : `¿Deseas reactivar este ${tipo}?`;
+            
+        if (!window.confirm(confirmMsg)) return;
+        mutationToggleStatus.mutate({ tipo, id });
+    };
+
+    const handleSetDefault = (id: number, tipo: 'vehiculo' | 'equipo') => {
+        mutationSetDefault.mutate({ tipo, id });
+    };
+
+    const handleCreateVehiculo = async (formData: FormData) => {
+        try {
+            await mutationCreateVehiculo.mutateAsync(formData);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message || "Error al registrar vehículo" };
+        }
+    };
+
+    const handleCreateEquipo = async (formData: FormData) => {
+        try {
+            await mutationCreateEquipo.mutateAsync(formData);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message || "Error al registrar equipo" };
+        }
+    };
+
     return (
         <div className={styles.root}>
             <DashboardHeader 
                 nombre={user.primer_nombre} 
-                sessionInfo={sessionInfo} 
+                sessionInfo={sessionInfo || null} 
             />
 
             <DashboardCards 
@@ -72,24 +157,24 @@ const UserDashboard: React.FC = () => {
                     <VehiculoContainer 
                         vehiculos={vehiculos}
                         loading={loadingVehiculos}
-                        catalogos={catalogos}
-                        isSubmitting={isSubmitting}
+                        catalogos={catalogos || null}
+                        isSubmitting={mutationCreateVehiculo.isPending}
                         isOcrLoading={isOcrLoading}
                         onToggleStatus={handleToggleStatus}
                         onSetDefault={handleSetDefault}
-                        onCreate={createVehiculo}
+                        onCreate={handleCreateVehiculo}
                         onPerformOCR={performPlateOCR}
                     />
                 ) : (
                     <EquipoContainer 
                         equipos={equipos}
                         loading={loadingEquipos}
-                        catalogos={catalogos}
-                        isSubmitting={isSubmitting}
+                        catalogos={catalogos || null}
+                        isSubmitting={mutationCreateEquipo.isPending}
                         isOcrLoading={isOcrEquipoLoading}
                         onToggleStatus={handleToggleStatus}
                         onSetDefault={handleSetDefault}
-                        onCreate={createEquipo}
+                        onCreate={handleCreateEquipo}
                         onPerformOCR={performSerialOCR}
                     />
                 )}

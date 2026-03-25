@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from '../UserDashboard.module.css';
 import type { Equipo, UserDashboardCatalog } from '../../../../types';
+import { alphanumeric, alphanumericNoSpaces } from '../../../../utils/inputFormatters';
 
 interface EquipoContainerProps {
     equipos: Equipo[];
@@ -29,8 +30,27 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
         so_id: '',
         ram: '',
         procesador: '',
+        tipo_equipo_desc: '',
+        caracteristicas: '',
+        tipo_equipo: 'propio', // Regla de Negocio: Usuario Normal siempre registra como Propio
         foto: null as File | null
     });
+
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        setForm(prev => {
+            const newState = { ...prev, tipo_equipo_id: val };
+            // Si no es COMPUTO (id: 1), limpiamos campos de hardware y serial
+            if (val !== '1') {
+                newState.marca_equipo_id = '';
+                newState.so_id = '';
+                newState.serial = '';
+                newState.ram = '';
+                newState.procesador = '';
+            }
+            return newState;
+        });
+    };
 
     const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -48,19 +68,25 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
         e.preventDefault();
 
         const formData = new FormData();
-        formData.append('serial', form.serial);
-        formData.append('id_tipo_equipo', form.tipo_equipo_id);
+        formData.append('serial', form.serial); // Forzado a "" si no es COMPUTO por la lógica de limpieza
         formData.append('id_marca', form.marca_equipo_id);
-        formData.append('modelo', form.modelo);
         formData.append('id_sistema_operativo', form.so_id);
+        formData.append('modelo', form.modelo);
         formData.append('ram', form.ram);
         formData.append('procesador', form.procesador);
+        formData.append('tipo_equipo_desc', form.tipo_equipo_desc);
+        formData.append('caracteristicas', form.caracteristicas);
+        
+        // Inyección directa de valores fijos por seguridad
+        formData.append('tipo_equipo', 'propio');
+        formData.append('estado', 'asignado');
+        
         if (form.foto) formData.append('foto', form.foto);
 
         const res = await onCreate(formData);
         if (res.success) {
             setShowModal(false);
-            setForm({ serial: '', tipo_equipo_id: '', marca_equipo_id: '', modelo: '', so_id: '', ram: '', procesador: '', foto: null });
+            setForm({ serial: '', tipo_equipo_id: '', marca_equipo_id: '', modelo: '', so_id: '', ram: '', procesador: '', tipo_equipo_desc: '', caracteristicas: '', tipo_equipo: 'propio', foto: null });
         }
     };
 
@@ -95,43 +121,43 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {equipos.map((e) => (
-                                <tr key={e.id} className={styles.row}>
+                            {equipos.map((equipo) => (
+                                <tr key={String(equipo.id)} className={styles.row}>
                                     <td className={styles.thTd}>
                                         <button 
-                                            onClick={() => e.principal === 0 && onSetDefault(e.id, 'equipo')}
-                                            className={`${styles.starButton} ${e.principal === 1 ? styles.starButtonEquipoActive : ''}`}
-                                            title={e.principal === 1 ? "Equipo principal" : "Marcar como principal"}
+                                            onClick={() => equipo.principal === 0 && onSetDefault(equipo.id, 'equipo')}
+                                            className={`${styles.starButton} ${equipo.principal === 1 ? styles.starButtonEquipoActive : ''}`}
+                                            title={equipo.principal === 1 ? "Equipo principal" : "Marcar como principal"}
                                         >
-                                            {e.principal === 1 ? '★' : '☆'}
+                                            {equipo.principal === 1 ? '★' : '☆'}
                                         </button>
                                     </td>
                                     <td className={styles.thTd}>
                                         <div className={styles.assetImageContainer}>
-                                            {e.img_asset ? (
+                                            {equipo.img_asset ? (
                                                 <img 
-                                                    src={`${STORAGE_URL}/${e.img_asset}`} 
+                                                    src={`${STORAGE_URL}/${equipo.img_asset}`} 
                                                     alt="Equipo" 
                                                     className={styles.assetImage}
-                                                    onClick={() => window.open(`${STORAGE_URL}/${e.img_asset}`, '_blank')}
+                                                    onClick={() => window.open(`${STORAGE_URL}/${equipo.img_asset}`, '_blank')}
                                                 />
                                             ) : <span className={styles.noImage}>Sin foto</span>}
                                         </div>
                                     </td>
-                                    <td className={`${styles.thTd} ${styles.boldCell}`}>{e.serial}</td>
-                                    <td className={styles.thTd}>{e.marca_equipo?.nombre || e.marca?.marca}</td>
-                                    <td className={styles.thTd}>{e.modelo}</td>
-                                    <td className={styles.thTd}>{e.tipo_equipo_desc}</td>
+                                    <td className={`${styles.thTd} ${styles.boldCell}`}>{equipo.serial}</td>
+                                    <td className={styles.thTd}>{equipo.marca_equipo?.nombre || equipo.marca?.marca}</td>
+                                    <td className={styles.thTd}>{equipo.modelo}</td>
+                                    <td className={styles.thTd}>{equipo.tipo_equipo_desc}</td>
                                     <td className={styles.thTd}>
-                                        {e.estado === 'activo' && <span className={styles.badgeActivo}>Activo</span>}
-                                        {e.estado === 'pendiente' && <span className={styles.badgePendiente}>Pendiente</span>}
-                                        {e.estado === 'inactivo' && <span className={styles.badgeInactivo}>Inactivo</span>}
+                                        {equipo.estado_aprobacion === 'activo' && <span className={styles.badgeActivo}>Activo</span>}
+                                        {equipo.estado_aprobacion === 'pendiente' && <span className={styles.badgePendiente}>Pendiente</span>}
+                                        {equipo.estado_aprobacion === 'inactivo' && <span className={styles.badgeInactivo}>Inactivo</span>}
                                     </td>
                                     <td className={styles.thTd}>
-                                        {e.estado === 'activo' ? (
-                                            <button onClick={() => onToggleStatus(e.id, 'activo', 'equipo')} className={styles.btnInhabilitar}>Inhabilitar</button>
-                                        ) : e.estado === 'inactivo' ? (
-                                            <button onClick={() => onToggleStatus(e.id, 'inactivo', 'equipo')} className={styles.btnReactivar}>Reactivar</button>
+                                        {equipo.estado_aprobacion === 'activo' ? (
+                                            <button onClick={() => onToggleStatus(equipo.id, 'activo', 'equipo')} className={styles.btnInhabilitar}>Inhabilitar</button>
+                                        ) : equipo.estado_aprobacion === 'inactivo' ? (
+                                            <button onClick={() => onToggleStatus(equipo.id, 'inactivo', 'equipo')} className={styles.btnReactivar}>Reactivar</button>
                                         ) : (
                                             <span className={styles.reviewText}>En revisión</span>
                                         )}
@@ -147,73 +173,147 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
                         <h3 className={styles.modalTitle}>Registrar Nuevo Equipo</h3>
-                        <form onSubmit={handleSubmit}>
-                            <label className={styles.label}>Foto del Serial (Opcional):</label>
-                            <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
-                            {isOcrLoading && <p className={styles.ocrLoadingEquipo}>Analizando serial...</p>}
-
-                            <label className={styles.label}>Serial:</label>
-                            <input 
-                                type="text" 
-                                value={form.serial}
-                                onChange={e => setForm(prev => ({ ...prev, serial: e.target.value.toUpperCase() }))}
-                                className={styles.input}
-                                required 
-                            />
-
-                            <div className={styles.formRow}>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Tipo:</label>
-                                    <select 
-                                        className={styles.input}
-                                        value={form.tipo_equipo_id}
-                                        onChange={e => setForm(prev => ({ ...prev, tipo_equipo_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {catalogos?.tipos_equipo.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                                    </select>
-                                </div>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Marca:</label>
-                                    <select 
-                                        className={styles.input}
-                                        value={form.marca_equipo_id}
-                                        onChange={e => setForm(prev => ({ ...prev, marca_equipo_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {catalogos?.marcas_equipo.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                                    </select>
-                                </div>
+                        <form onSubmit={handleSubmit} className={styles.formGrid}>
+                            
+                            {/* CATEGORÍA (TIPO) */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Categoría de Equipo:</label>
+                                <select 
+                                    className={styles.input}
+                                    value={form.tipo_equipo_id}
+                                    onChange={handleCategoryChange}
+                                    required
+                                >
+                                    <option value="">Seleccione...</option>
+                                    {(catalogos?.tipos_equipo || []).map(t => (
+                                        <option key={String(t.id)} value={t.id}>{t.nombre}</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <label className={styles.label}>Modelo:</label>
-                            <input type="text" className={styles.input} value={form.modelo} onChange={e => setForm(prev => ({ ...prev, modelo: e.target.value }))} required />
+                            {/* MARCA, OS, RAM, PROCESADOR, SERIAL (Solo para COMPUTO id:1) */}
+                            {form.tipo_equipo_id === '1' && (
+                                <React.Fragment key="computo-fields">
+                                    {/* MARCA */}
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>Marca:</label>
+                                        <select 
+                                            className={styles.input}
+                                            value={form.marca_equipo_id}
+                                            onChange={e => setForm(prev => ({ ...prev, marca_equipo_id: e.target.value }))}
+                                            required
+                                        >
+                                            <option value="">Seleccione...</option>
+                                            {(catalogos?.marcas_equipo || []).map(m => (
+                                                <option key={String(m.id)} value={m.id}>{m.nombre}</option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            <div className={styles.formRow}>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Sist. Operativo:</label>
-                                    <select 
-                                        className={styles.input}
-                                        value={form.so_id}
-                                        onChange={e => setForm(prev => ({ ...prev, so_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {catalogos?.sistemas_operativos.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                                    </select>
-                                </div>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>RAM:</label>
-                                    <input type="text" className={styles.input} value={form.ram} onChange={e => setForm(prev => ({ ...prev, ram: e.target.value }))} placeholder="Ej: 8GB" required />
-                                </div>
+                                    {/* SISTEMA OPERATIVO */}
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>Sistema Operativo:</label>
+                                        <select 
+                                            className={styles.input}
+                                            value={form.so_id}
+                                            onChange={e => setForm(prev => ({ ...prev, so_id: e.target.value }))}
+                                            required
+                                        >
+                                            <option value="">Seleccione...</option>
+                                            {(catalogos?.sistemas_operativos || []).map(s => (
+                                                <option key={String(s.id)} value={s.id}>{s.nombre}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* MEMORIA RAM */}
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>Memoria RAM:</label>
+                                        <input 
+                                            type="text" 
+                                            value={form.ram}
+                                            onChange={e => setForm(prev => ({ ...prev, ram: alphanumeric(e.target.value) }))}
+                                            className={styles.input}
+                                            placeholder="Ej: 16GB"
+                                            required 
+                                        />
+                                    </div>
+
+                                    {/* PROCESADOR */}
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>Procesador:</label>
+                                        <input 
+                                            type="text" 
+                                            value={form.procesador}
+                                            onChange={e => setForm(prev => ({ ...prev, procesador: alphanumeric(e.target.value) }))}
+                                            className={styles.input}
+                                            placeholder="Ej: Core i7 12va"
+                                            required 
+                                        />
+                                    </div>
+
+                                    {/* SERIAL / PLACA (Solo si es COMPUTO es obligatorio y visible) */}
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>Serial / Placa:</label>
+                                        <input 
+                                            type="text" 
+                                            value={form.serial}
+                                            onChange={e => setForm(prev => ({ ...prev, serial: alphanumericNoSpaces(e.target.value) }))}
+                                            className={styles.input}
+                                            placeholder="Serial único"
+                                            required 
+                                        />
+                                    </div>
+                                </React.Fragment>
+                            )}
+
+                            {/* MODELO */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Modelo:</label>
+                                <input 
+                                    type="text" 
+                                    className={styles.input} 
+                                    value={form.modelo} 
+                                    onChange={e => setForm(prev => ({ ...prev, modelo: alphanumeric(e.target.value) }))} 
+                                    placeholder="Ej: Latitude 5420"
+                                    required 
+                                />
                             </div>
 
-                            <label className={styles.label}>Procesador:</label>
-                            <input type="text" className={styles.input} value={form.procesador} onChange={e => setForm(prev => ({ ...prev, procesador: e.target.value }))} placeholder="Ej: Core i5" required />
+                            {/* DESCRIPCIÓN (Resumen) */}
+                            <div className={styles.formGroupFull}>
+                                <label className={styles.label}>Descripción del Tipo (Resumen):</label>
+                                <input 
+                                    type="text" 
+                                    className={styles.input} 
+                                    value={form.tipo_equipo_desc} 
+                                    onChange={e => setForm(prev => ({ ...prev, tipo_equipo_desc: e.target.value }))}
+                                    placeholder="Ej: Portátil de alto rendimiento"
+                                    required 
+                                />
+                            </div>
 
-                            <div className={styles.modalFooter}>
+                            {/* CARACTERÍSTICAS / OBSERVACIONES */}
+                            <div className={styles.formGroupFull}>
+                                <label className={styles.label}>Características / Observaciones Físicas:</label>
+                                <textarea 
+                                    className={`${styles.input} ${styles.textarea}`}
+                                    value={form.caracteristicas}
+                                    onChange={e => setForm(prev => ({ ...prev, caracteristicas: e.target.value }))}
+                                    placeholder="Describe el estado físico o componentes..."
+                                    required 
+                                />
+                            </div>
+
+                            {/* FOTO OCR */}
+                            <div className={styles.formGroupFull}>
+                                <label className={styles.label}>Foto del Serial (Opcional):</label>
+                                <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
+                                {isOcrLoading && <p className={styles.ocrLoadingEquipo}>Analizando serial...</p>}
+                            </div>
+
+                            {/* FOOTER ACTIONS */}
+                            <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
                                 <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isSubmitting}>Cancelar</button>
                                 <button type="submit" className={`${styles.btnSubmit} ${styles.btnSubmitEquipo}`} disabled={isSubmitting}>
                                     {isSubmitting ? 'Registrando...' : 'Registrar Equipo'}

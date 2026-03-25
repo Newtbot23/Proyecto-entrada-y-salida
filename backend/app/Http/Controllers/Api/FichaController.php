@@ -240,6 +240,21 @@ class FichaController extends Controller
         try {
             $detalle = DetalleFichaUsuarios::findOrFail($detalle_id);
 
+            // REGLA DE NEGOCIO: Solo un instructor por ficha
+            if ($request->tipo_participante === 'instructor') {
+                $existeInstructor = DetalleFichaUsuarios::where('id_ficha', $detalle->id_ficha)
+                    ->where('tipo_participante', 'instructor')
+                    ->where('id', '!=', $detalle_id)
+                    ->exists();
+
+                if ($existeInstructor) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta ficha ya tiene un instructor asignado.'
+                    ], 422);
+                }
+            }
+
             $detalle->update([
                 'tipo_participante' => $request->tipo_participante
             ]);
@@ -267,6 +282,21 @@ class FichaController extends Controller
             $detalle = DetalleFichaUsuarios::where('id_ficha', $id_ficha)
                 ->where('doc', $doc)
                 ->firstOrFail();
+
+            // REGLA DE NEGOCIO: Solo un instructor por ficha
+            if ($request->tipo_participante === 'instructor') {
+                $existeInstructor = DetalleFichaUsuarios::where('id_ficha', $id_ficha)
+                    ->where('tipo_participante', 'instructor')
+                    ->where('doc', '!=', $doc)
+                    ->exists();
+
+                if ($existeInstructor) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta ficha ya tiene un instructor asignado.'
+                    ], 422);
+                }
+            }
 
             $detalle->update([
                 'tipo_participante' => $request->tipo_participante
@@ -509,15 +539,58 @@ class FichaController extends Controller
         }
     }
 
+    /**
+     * Returns all fichas where the authenticated user is an instructor.
+     */
+    public function getInstructorFichas(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $fichas = DetalleFichaUsuarios::where('doc', $user->doc)
+                ->where('tipo_participante', 'instructor')
+                ->with(['ficha.programa:id,programa'])
+                ->get()
+                ->map(function ($detalle) {
+                    $ficha = $detalle->ficha;
+                    return [
+                        'id' => $ficha->id,
+                        'numero_ficha' => $ficha->numero_ficha,
+                        'nombre_programa' => $ficha->programa->programa ?? null,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $fichas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener fichas del instructor',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getInstructorAsistenciaBase(Request $request)
     {
         try {
             $user = $request->user();
-            
-            // Buscar la ficha donde el usuario es instructor
-            $detalle = DetalleFichaUsuarios::where('doc', $user->doc)
-                ->where('tipo_participante', 'instructor')
-                ->first();
+            $fichaIdParam = $request->query('ficha_id');
+
+            if ($fichaIdParam) {
+                // Validate membership
+                $detalle = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->where('id_ficha', $fichaIdParam)
+                    ->first();
+            } else {
+                // Fallback: first ficha
+                $detalle = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->first();
+            }
 
             if (!$detalle) {
                 return response()->json([
@@ -552,11 +625,19 @@ class FichaController extends Controller
             $user = $request->user();
             $mes = $request->query('mes', Carbon::now()->month);
             $anio = $request->query('anio', Carbon::now()->year);
+            $fichaIdParam = $request->query('ficha_id');
 
             // 1. IDENTIFICAR LA FICHA DEL INSTRUCTOR
-            $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
-                ->where('tipo_participante', 'instructor')
-                ->first();
+            if ($fichaIdParam) {
+                $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->where('id_ficha', $fichaIdParam)
+                    ->first();
+            } else {
+                $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->first();
+            }
 
             if (!$detalleInstructor) {
                 return response()->json([
@@ -568,7 +649,6 @@ class FichaController extends Controller
             $fichaId = $detalleInstructor->id_ficha;
 
             // 2. CONSULTA OPTIMIZADA (Eager Loading Constrained)
-            // Traemos la ficha con sus aprendices y SUS registros filtrados por mes/año
             $ficha = Fichas::with(['usuarios' => function ($query) use ($mes, $anio) {
                 $query->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz')
                     ->select('usuarios.doc', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'imagen')
@@ -612,11 +692,19 @@ class FichaController extends Controller
     {
         try {
             $user = $request->user();
+            $fichaIdParam = $request->query('ficha_id');
 
             // 1. IDENTIFICAR LA FICHA DEL INSTRUCTOR
-            $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
-                ->where('tipo_participante', 'instructor')
-                ->first();
+            if ($fichaIdParam) {
+                $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->where('id_ficha', $fichaIdParam)
+                    ->first();
+            } else {
+                $detalleInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                    ->where('tipo_participante', 'instructor')
+                    ->first();
+            }
 
             if (!$detalleInstructor) {
                 return response()->json([
@@ -629,7 +717,6 @@ class FichaController extends Controller
             $ficha = Fichas::find($fichaId);
 
             // 2. OBTENER LOS EQUIPOS ASIGNADOS A LOS APRENDICES DE ESA FICHA
-            // Use Eloquent with Eager Loading
             $equipos = Usuarios::whereHas('fichas', function($q) use ($fichaId) {
                     $q->where('fichas.id', $fichaId)
                       ->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz');

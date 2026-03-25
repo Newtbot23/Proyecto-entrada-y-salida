@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import type { TableColumn } from '../../services/dynamicTableService';
 import styles from './DynamicForm.module.css';
+import { onlyNumbers, onlyLetters, alphanumeric, alphanumericNoSpaces, sanitizeAddress } from '../../utils/inputFormatters';
+
+const FIELD_SANITIZERS: Record<string, (v: string) => string> = {
+    telefono: onlyNumbers,
+    doc: onlyNumbers,
+    nit: onlyNumbers,
+    primer_nombre: onlyLetters,
+    segundo_nombre: onlyLetters,
+    primer_apellido: onlyLetters,
+    segundo_apellido: onlyLetters,
+    placa: alphanumericNoSpaces,
+    serial: alphanumericNoSpaces,
+    direccion: sanitizeAddress,
+    nombre_entidad: alphanumeric,
+    nombre_titular: onlyLetters,
+    modelo: alphanumeric,
+    color: onlyLetters,
+};
 
 export interface DynamicFormProps {
     schema: TableColumn[];
@@ -57,7 +75,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         } else {
             const defaultData: any = {};
             schema.forEach(col => {
-                if (col.name !== 'id' && col.name !== 'created_at' && col.name !== 'updated_at') {
+                // Incluir 'id' solo si NO es autoincremental
+                if (!col.auto_increment && col.name !== 'created_at' && col.name !== 'updated_at') {
                     defaultData[col.name] = col.default || '';
                 }
             });
@@ -88,7 +107,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                 setFormData((prev: any) => ({ ...prev, [name]: fileInput.files![0] }));
             }
         } else {
-            setFormData((prev: any) => ({ ...prev, [name]: value }));
+            let sanitizedValue = value;
+            if (FIELD_SANITIZERS[name]) {
+                sanitizedValue = FIELD_SANITIZERS[name](value);
+            }
+            setFormData((prev: any) => ({ ...prev, [name]: sanitizedValue }));
         }
         validateField(name, value);
     };
@@ -143,9 +166,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     const getLabel = (colName: string): string =>
         fieldLabels[colName] ?? colName.replace(/_/g, ' ');
 
-    // All editable columns from schema
+    // All editable columns from schema (incluye PKs si NO son auto-incrementales)
     const editableColumns = schema.filter(
-        col => col.name !== 'id' && col.name !== 'created_at' && col.name !== 'updated_at' && !col.auto_increment
+        col => col.name !== 'created_at' && col.name !== 'updated_at' && !col.auto_increment
     );
 
     // When fieldOrder is provided, restrict and sort columns by that order
@@ -165,7 +188,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
         : styles.grid;
 
     const renderField = (col: TableColumn) => {
-        const isImmutable = !!(initialData && immutableFields.includes(col.name));
+        // Un campo es inmutable si está en la lista explicit, O si estamos editando (initialData) y es la llave primaria.
+        const isImmutable = !!(initialData && (immutableFields.includes(col.name) || col.key === 'PRI'));
         const isPassword = col.name === 'password' || col.name === 'contrasena';
         const isHidden = hiddenFields.includes(col.name);
         const isImagen = col.name === 'imagen';

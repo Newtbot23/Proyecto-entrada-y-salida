@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from '../UserDashboard.module.css';
 import type { Vehiculo, UserDashboardCatalog } from '../../../../types';
+import { alphanumeric, alphanumericNoSpaces } from '../../../../utils/inputFormatters';
 
 interface VehiculoContainerProps {
     vehiculos: Vehiculo[];
@@ -98,7 +99,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                         </thead>
                         <tbody>
                             {vehiculos.map((v) => (
-                                <tr key={v.id} className={styles.row}>
+                                <tr key={String(v.id)} className={styles.row}>
                                     <td className={styles.thTd}>
                                         <button 
                                             onClick={() => v.principal === 0 && onSetDefault(v.id, 'vehiculo')}
@@ -150,61 +151,87 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
                         <h3 className={styles.modalTitle}>Registrar Nuevo Vehículo</h3>
-                        <form onSubmit={handleSubmit}>
-                            <label className={styles.label}>Foto del Vehículo (Opcional):</label>
-                            <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
-                            {isOcrLoading && <p className={styles.ocrLoadingVehiculo}>Analizando placa...</p>}
-
-                            <label className={styles.label}>Placa:</label>
-                            <input 
-                                type="text" 
-                                value={form.placa}
-                                onChange={e => setForm(prev => ({ ...prev, placa: e.target.value.toUpperCase() }))}
-                                placeholder="Sube una foto o escribe la placa"
-                                className={`${styles.input} ${placaError ? styles.inputError : ''}`}
-                                required 
-                            />
-                            {placaError && <p className={styles.errorText}>{placaError}</p>}
-
-                            <div className={styles.formRow}>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Tipo:</label>
-                                    <select 
-                                        className={styles.input}
-                                        value={form.tipo_vehiculo_id}
-                                        onChange={e => setForm(prev => ({ ...prev, tipo_vehiculo_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {catalogos?.tipos_vehiculo.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                                    </select>
-                                </div>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Marca:</label>
-                                    <select 
-                                        className={styles.input}
-                                        value={form.marca_vehiculo_id}
-                                        onChange={e => setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="">Seleccione...</option>
-                                        {catalogos?.marcas_vehiculo.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                                    </select>
-                                </div>
+                        <form onSubmit={handleSubmit} className={styles.formGrid}>
+                            
+                            {/* FOTO OCR - Span full width */}
+                            <div className={styles.formGroupFull}>
+                                <label className={styles.label}>Foto del Vehículo (Opcional):</label>
+                                <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
+                                {isOcrLoading && <p className={styles.ocrLoadingVehiculo}>Analizando placa...</p>}
                             </div>
 
-                            <div className={styles.formRow}>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Modelo:</label>
-                                    <input type="text" className={styles.input} value={form.modelo} onChange={e => setForm(prev => ({ ...prev, modelo: e.target.value }))} required />
-                                </div>
-                                <div className={styles.flex1}>
-                                    <label className={styles.label}>Color:</label>
-                                    <input type="text" className={styles.input} value={form.color} onChange={e => setForm(prev => ({ ...prev, color: e.target.value }))} required />
-                                </div>
+                            {/* PLACA */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Placa:</label>
+                                <input 
+                                    type="text" 
+                                    value={form.placa}
+                                    onChange={e => setForm(prev => ({ ...prev, placa: alphanumericNoSpaces(e.target.value) }))}
+                                    placeholder="Ej: ABC123"
+                                    className={`${styles.input} ${placaError ? styles.inputError : ''}`}
+                                    required 
+                                />
+                                {placaError && <p className={styles.errorText}>{placaError}</p>}
                             </div>
 
-                            <div className={styles.modalFooter}>
+                            {/* TIPO VEHICULO */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Tipo de Vehículo:</label>
+                                <select 
+                                    className={styles.input}
+                                    value={form.tipo_vehiculo_id}
+                                    onChange={e => setForm(prev => ({ ...prev, tipo_vehiculo_id: e.target.value }))}
+                                    required
+                                >
+                                    <option value="">Seleccione...</option>
+                                    {(catalogos?.tipos_vehiculo || []).map(t => (
+                                        <option key={String(t.id)} value={t.id}>{t.nombre?.toUpperCase()}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* MARCA */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Marca:</label>
+                                <select 
+                                    className={styles.input}
+                                    value={form.marca_vehiculo_id}
+                                    onChange={e => setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }))}
+                                    required
+                                >
+                                    <option value="">Seleccione...</option>
+                                    {(catalogos?.marcas_vehiculo || []).map(m => (
+                                        <option key={String(m.id)} value={m.id}>{m.nombre?.toUpperCase()}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* MODELO */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Modelo:</label>
+                                <input 
+                                    type="text" 
+                                    className={styles.input} 
+                                    value={form.modelo} 
+                                    onChange={e => setForm(prev => ({ ...prev, modelo: alphanumeric(e.target.value) }))} 
+                                    required 
+                                />
+                            </div>
+
+                            {/* COLOR */}
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Color:</label>
+                                <input 
+                                    type="text" 
+                                    className={styles.input} 
+                                    value={form.color} 
+                                    onChange={e => setForm(prev => ({ ...prev, color: alphanumeric(e.target.value) }))} 
+                                    required 
+                                />
+                            </div>
+
+                            {/* FOOTER ACTIONS - Span full width */}
+                            <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
                                 <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isSubmitting}>Cancelar</button>
                                 <button type="submit" className={styles.btnSubmit} disabled={isSubmitting || !!placaError}>
                                     {isSubmitting ? 'Registrando...' : 'Registrar Vehículo'}

@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useQuery } from '@tanstack/react-query';
 import { reportService } from '../../../services/reportService';
+import type { DailyReportEntry } from '../../../types';
 
-const ReporteDiario: React.FC = () => {
+const ReporteDiario = () => {
     // Default to today
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-    const { data: records = [], isLoading: loading, error } = useQuery({
+    const { data: records = [], isLoading: loading, error } = useQuery<DailyReportEntry[]>({
         queryKey: ['dailyReport', selectedDate],
         queryFn: () => reportService.getDailyReport(selectedDate),
         enabled: !!selectedDate,
@@ -30,7 +31,7 @@ const ReporteDiario: React.FC = () => {
         // Table Data
         const tableColumn = ["Documento", "Nombre", "Hora Ingreso", "Hora Salida"];
 
-        const tableRows = records.map(record => [
+        const tableRows = records.map((record: DailyReportEntry) => [
             record.doc,
             record.usuario_nombre,
             record.hora_entrada,
@@ -97,7 +98,7 @@ const ReporteDiario: React.FC = () => {
 
             {error && (
                 <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1.5rem' }}>
-                    {(error as any).message || 'Error al cargar el reporte.'}
+                    {error instanceof Error ? error.message : 'Error al cargar el reporte.'}
                 </div>
             )}
 

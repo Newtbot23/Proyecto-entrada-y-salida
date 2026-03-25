@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { updateInstitution } from '../services/institutionService';
+import { onlyNumbers, onlyLetters, sanitizeAddress } from '../utils/inputFormatters';
 
 const REGEX = {
     NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
@@ -51,9 +52,14 @@ export const useInstitutionForm = (onSuccess: () => void) => {
     };
 
     const handleChange = (field: keyof typeof editFormData, value: string) => {
-        setEditFormData(prev => ({ ...prev, [field]: value }));
+        let sanitizedValue = value;
+        if (field === 'nombre_titular') sanitizedValue = onlyLetters(value);
+        else if (field === 'telefono') sanitizedValue = onlyNumbers(value);
+        else if (field === 'direccion') sanitizedValue = sanitizeAddress(value);
+
+        setEditFormData(prev => ({ ...prev, [field]: sanitizedValue }));
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => validateField(field, value), 500);
+        debounceRef.current = setTimeout(() => validateField(field, sanitizedValue), 500);
     };
 
     const validateAll = (): boolean => {

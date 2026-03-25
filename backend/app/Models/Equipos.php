@@ -18,6 +18,7 @@ class Equipos extends Model
         'placa_sena',
         'id_marca',
         'estado',
+        'estado_aprobacion',
         'modelo',
         'tipo_equipo_desc',
         'caracteristicas',

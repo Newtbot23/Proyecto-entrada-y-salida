@@ -67,7 +67,7 @@ export interface Vehiculo {
     color: string;
     descripcion?: string;
     estado: 'activo' | 'inactivo' | 'pendiente';
-    estado_aprobacion?: 'pendiente' | 'aprobado' | 'rechazado';
+    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
     principal: number; // 1 for true, 0 for false
     es_predeterminado?: boolean;
     img_asset?: string;
@@ -105,7 +105,7 @@ export interface Equipo {
     img_asset?: string;
     doc?: number;
     lote_importacion?: string;
-    estado_aprobacion?: 'pendiente' | 'aprobado' | 'rechazado';
+    estado_aprobacion?: 'pendiente' | 'activo' | 'inactivo';
     principal: number; // 1 for true, 0 for false
     es_predeterminado?: boolean;
     foto_general?: string;
@@ -146,7 +146,7 @@ export interface Ficha {
     numero_ambiente: string;
     id_jornada: number;
     hora_limite_llegada?: string;
-    estado: 'activo' | 'inactivo';
+    estado: 'lectiva' | 'productiva' | 'finalizada';
     // Relations
     programa?: Programa;
     ambiente?: Ambiente;
@@ -309,13 +309,14 @@ export interface ReportData {
 export type ExportFormat = 'csv' | 'excel' | 'pdf';
 
 export interface DailyReportEntry {
+    id: number;
     doc: number;
-    nombre_completo: string;
-    placa_vehiculo?: string;
+    usuario_nombre: string;
+    fecha: string;
     hora_entrada: string;
     hora_salida?: string;
-    tipo_usuario: string;
-    fichas?: string;
+    placa?: string;
+    seriales_equipos?: string;
 }
 
 // Licenses and Plans
@@ -402,4 +403,16 @@ export interface AdminFormData {
     telefono: string;
     correo: string;
     contrasena?: string;
+}
+
+export interface PricingPlan {
+    id: string;
+    name: string;
+    price: string;
+    period: string;
+    description: string;
+    features: string[];
+    caracteristicas?: string;
+    is_popular?: boolean;
+    button_text?: string;
 }

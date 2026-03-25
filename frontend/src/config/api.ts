@@ -150,6 +150,14 @@ class ApiClient {
             console.error('Error parsing error response:', e);
         }
 
+        // Manejo neutral de 401 (Sesión expirada o no autorizada)
+        if (response.status === 401) {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('authUser');
+            // Emitimos evento global para que componentes (ej. AuthContext) reaccionen si es necesario
+            window.dispatchEvent(new Event('api-auth-error'));
+        }
+
         throw new ApiError(errorMessage, response.status, response.statusText, errorData, validationErrors);
     }
 
