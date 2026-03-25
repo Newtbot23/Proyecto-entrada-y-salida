@@ -94,7 +94,9 @@
     color: var(--color-text-main);
 }
 
-.input, .select, .textarea {
+.input,
+.select,
+.textarea {
     padding: 0.85rem 1.15rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -104,7 +106,9 @@
     width: 100%;
 }
 
-.input:focus, .select:focus, .textarea:focus {
+.input:focus,
+.select:focus,
+.textarea:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(0, 143, 57, 0.1);
@@ -184,8 +188,15 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* CSV Upload UX Styles */
@@ -319,7 +330,8 @@
         flex-direction: column;
     }
 
-    .btnOutline, .btnImport {
+    .btnOutline,
+    .btnImport {
         width: 100%;
         justify-content: center;
     }
@@ -336,6 +348,7 @@
     .formGrid {
         grid-template-columns: 1fr;
     }
+
     .formGroupFull {
         grid-column: auto;
     }
@@ -387,6 +400,13 @@
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

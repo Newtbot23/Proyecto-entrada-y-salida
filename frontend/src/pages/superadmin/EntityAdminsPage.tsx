@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Header from '../../components/layout/Header';
@@ -59,7 +60,7 @@ export default function EntityAdminsPage() {
             queryClient.invalidateQueries({ queryKey: ['entityAdmins', nit] });
         },
         onError: (err: any) => {
-            alert('Error al cambiar estado: ' + (err.message || 'Desconocido'));
+            toast.error('Error al cambiar estado: ' + (err.message || 'Desconocido'));
         }
     });
 
@@ -84,7 +85,7 @@ export default function EntityAdminsPage() {
             setIsModalOpen(false);
         },
         onError: (err: any) => {
-            alert('Error al crear administrador: ' + (err.message || 'Desconocido'));
+            toast.error('Error al crear administrador: ' + (err.message || 'Desconocido'));
         }
     });
 

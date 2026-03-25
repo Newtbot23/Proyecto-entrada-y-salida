@@ -56,15 +56,34 @@ const UserDashboard: React.FC = () => {
 
     // Mutations
     const mutationSetDefault = useMutation({
-        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: number }) => setDefaultAsset(tipo, id.toString()),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['usuario', 'vehiculos'] });
-            queryClient.invalidateQueries({ queryKey: ['usuario', 'equipos'] });
+        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: string }) => setDefaultAsset(tipo, id),
+        onMutate: async ({ tipo, id }) => {
+            const queryKey = ['usuario', tipo === 'vehiculo' ? 'vehiculos' : 'equipos'];
+            await queryClient.cancelQueries({ queryKey });
+            const previousData = queryClient.getQueryData(queryKey);
+            
+            queryClient.setQueryData(queryKey, (old: any) => {
+                if (!old) return old;
+                return old.map((item: any) => ({
+                    ...item,
+                    es_predeterminado: (tipo === 'vehiculo' ? item.placa === id : item.serial === id) ? 1 : 0
+                }));
+            });
+            
+            return { previousData, queryKey };
+        },
+        onError: (_err, _vars, context: any) => {
+            if (context?.previousData) {
+                queryClient.setQueryData(context.queryKey, context.previousData);
+            }
+        },
+        onSettled: (_data, _err, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['usuario', variables.tipo === 'vehiculo' ? 'vehiculos' : 'equipos'] });
         }
     });
 
     const mutationToggleStatus = useMutation({
-        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: number }) => toggleAssetStatus(tipo, id.toString()),
+        mutationFn: ({ tipo, id }: { tipo: 'vehiculo' | 'equipo', id: string }) => toggleAssetStatus(tipo, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['usuario', 'vehiculos'] });
             queryClient.invalidateQueries({ queryKey: ['usuario', 'equipos'] });
@@ -92,7 +111,7 @@ const UserDashboard: React.FC = () => {
         performSerialOCR
     } = useOCR();
 
-    const handleToggleStatus = (id: number, currentStatus: string, tipo: 'vehiculo' | 'equipo') => {
+    const handleToggleStatus = (id: string, currentStatus: string, tipo: 'vehiculo' | 'equipo') => {
         const confirmMsg = currentStatus === 'activo' 
             ? `¿Estás seguro de inhabilitar este ${tipo}? No podrás usarlo para ingresar hasta que lo reactives.`
             : `¿Deseas reactivar este ${tipo}?`;
@@ -101,7 +120,7 @@ const UserDashboard: React.FC = () => {
         mutationToggleStatus.mutate({ tipo, id });
     };
 
-    const handleSetDefault = (id: number, tipo: 'vehiculo' | 'equipo') => {
+    const handleSetDefault = (id: string, tipo: 'vehiculo' | 'equipo') => {
         mutationSetDefault.mutate({ tipo, id });
     };
 

@@ -75,7 +75,7 @@ const RegistrarEquipos: React.FC = () => {
         reader.onload = (event) => {
             const text = event.target?.result as string;
             const lines = text.split('\n').filter(line => line.trim() !== '');
-            
+
             if (lines.length > 0) {
                 const headers = lines[0].split(',').map(h => h.trim());
                 const rows = lines.slice(1, 6).map(line => {
@@ -161,24 +161,24 @@ const RegistrarEquipos: React.FC = () => {
                         <p>Ingresa los detalles técnicos del nuevo equipo o herramienta.</p>
                     </div>
                     <div className={styles.headerActions}>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className={styles.btnOutline}
                             onClick={handleDownloadTemplate}
                         >
                             <span>Descargar Plantilla CSV</span>
                         </button>
-                        
+
                         <div className={styles.uploadZone}>
-                            <input 
-                                type="file" 
+                            <input
+                                type="file"
                                 id="csv-upload"
                                 accept=".csv"
                                 style={{ display: 'none' }}
                                 onChange={handleFileSelect}
                             />
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className={styles.btnImport}
                                 onClick={() => document.getElementById('csv-upload')?.click()}
                             >
@@ -202,14 +202,14 @@ const RegistrarEquipos: React.FC = () => {
                         <div className={styles.previewHeader}>
                             <div className={styles.fileInfo}>
                                 <span className={styles.fileName}>Archivo: <strong>{selectedFile.name}</strong></span>
-                                <button 
+                                <button
                                     className={styles.btnTogglePreview}
                                     onClick={() => setIsPreviewOpen(!isPreviewOpen)}
                                 >
                                     {isPreviewOpen ? 'Ocultar previsualización' : 'Ver previsualización de datos'}
                                 </button>
                             </div>
-                            <button 
+                            <button
                                 className={styles.btnConfirmUpload}
                                 onClick={handleSubmitCsv}
                                 disabled={importMutation.isPending}
@@ -429,10 +429,10 @@ const RegistrarEquipos: React.FC = () => {
                         <p className={styles.modalDescription}>
                             Asigna un nombre descriptivo para identificar este grupo de equipos (ej: "Computadores HP Sala 301").
                         </p>
-                        
+
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Nombre del Lote</label>
-                            <input 
+                            <input
                                 type="text"
                                 className={styles.input}
                                 placeholder="Escribe el nombre del lote..."
@@ -443,14 +443,14 @@ const RegistrarEquipos: React.FC = () => {
                         </div>
 
                         <div className={styles.modalActions}>
-                            <button 
+                            <button
                                 className={styles.btnSecondary}
                                 onClick={() => setIsBatchModalOpen(false)}
                                 disabled={importMutation.isPending}
                             >
                                 Cancelar
                             </button>
-                            <button 
+                            <button
                                 className={styles.btnPrimary}
                                 onClick={handleConfirmImport}
                                 disabled={!batchName.trim() || importMutation.isPending}

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { updateInstitution } from '../services/institutionService';
 import { onlyNumbers, onlyLetters, sanitizeAddress } from '../utils/inputFormatters';
 
@@ -100,7 +101,7 @@ export const useInstitutionForm = (onSuccess: () => void) => {
             setIsSaving(true);
             const idToUpdate = editFormData.nit || selectedInstitution.id;
             await updateInstitution(idToUpdate, editFormData);
-            alert('Institución actualizada exitosamente');
+            toast.success('Institución actualizada exitosamente');
             setIsEditModalOpen(false);
             onSuccess();
         } catch (error: any) {

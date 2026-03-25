@@ -19,7 +19,8 @@ class Asignaciones extends Model
         'serial_equipo',
         'numero_ambiente',
         'estado',
-        'codigo_asignacion'
+        'codigo_asignacion',
+        'es_predeterminado',
     ];
 
     /**

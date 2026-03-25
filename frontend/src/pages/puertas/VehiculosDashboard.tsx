@@ -225,7 +225,7 @@ const VehiculosDashboard: React.FC = () => {
                                                     )}
                                                     <div>
                                                         <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>{vehiculo.placa}</h3>
-                                                        <p style={{ fontSize: '0.9rem', color: '#374151', margin: '0.25rem 0' }}>{vehiculo.tipo_vehiculo} | {vehiculo.marca} {vehiculo.modelo} | Color: {vehiculo.color}</p>
+                                                        <p style={{ fontSize: '0.9rem', color: '#374151', margin: '0.25rem 0' }}>{typeof vehiculo.tipo_vehiculo === 'object' ? (vehiculo.tipo_vehiculo as any)?.tipo_vehiculo : vehiculo.tipo_vehiculo as React.ReactNode} | {typeof vehiculo.marca === 'object' ? ((vehiculo.marca as any)?.nombre || (vehiculo.marca as any)?.marca) : vehiculo.marca as React.ReactNode} {vehiculo.modelo} | Color: {vehiculo.color}</p>
                                                         <p style={{ fontSize: '0.85rem', color: '#1f2937', margin: 0 }}>Propietario: {vehiculo.usuario_nombre}</p>
                                                     </div>
                                                 </div>

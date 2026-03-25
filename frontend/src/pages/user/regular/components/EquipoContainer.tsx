@@ -9,8 +9,8 @@ interface EquipoContainerProps {
     catalogos: UserDashboardCatalog | null;
     isSubmitting: boolean;
     isOcrLoading: boolean;
-    onToggleStatus: (id: number, currentStatus: string, tipo: 'equipo') => void;
-    onSetDefault: (id: number, tipo: 'equipo') => void;
+    onToggleStatus: (id: string, currentStatus: string, tipo: 'equipo') => void;
+    onSetDefault: (id: string, tipo: 'equipo') => void;
     onCreate: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
     onPerformOCR: (file: File) => Promise<{ success: boolean; serial?: string }>;
 }
@@ -122,14 +122,14 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                         </thead>
                         <tbody>
                             {equipos.map((equipo) => (
-                                <tr key={String(equipo.id)} className={styles.row}>
+                                <tr key={equipo.serial} className={styles.row}>
                                     <td className={styles.thTd}>
                                         <button 
-                                            onClick={() => equipo.principal === 0 && onSetDefault(equipo.id, 'equipo')}
-                                            className={`${styles.starButton} ${equipo.principal === 1 ? styles.starButtonEquipoActive : ''}`}
-                                            title={equipo.principal === 1 ? "Equipo principal" : "Marcar como principal"}
+                                            onClick={() => !equipo.es_predeterminado && onSetDefault(equipo.serial, 'equipo')}
+                                            className={`${styles.starButton} ${equipo.es_predeterminado ? styles.starButtonEquipoActive : ''}`}
+                                            title={equipo.es_predeterminado ? "Equipo principal" : "Marcar como principal"}
                                         >
-                                            {equipo.principal === 1 ? '★' : '☆'}
+                                            {equipo.es_predeterminado ? '★' : '☆'}
                                         </button>
                                     </td>
                                     <td className={styles.thTd}>
@@ -155,9 +155,9 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                                     </td>
                                     <td className={styles.thTd}>
                                         {equipo.estado_aprobacion === 'activo' ? (
-                                            <button onClick={() => onToggleStatus(equipo.id, 'activo', 'equipo')} className={styles.btnInhabilitar}>Inhabilitar</button>
+                                            <button onClick={() => onToggleStatus(equipo.serial, 'activo', 'equipo')} className={styles.btnInhabilitar}>Inhabilitar</button>
                                         ) : equipo.estado_aprobacion === 'inactivo' ? (
-                                            <button onClick={() => onToggleStatus(equipo.id, 'inactivo', 'equipo')} className={styles.btnReactivar}>Reactivar</button>
+                                            <button onClick={() => onToggleStatus(equipo.serial, 'inactivo', 'equipo')} className={styles.btnReactivar}>Reactivar</button>
                                         ) : (
                                             <span className={styles.reviewText}>En revisión</span>
                                         )}

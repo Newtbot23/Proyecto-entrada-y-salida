@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import styles from './ReportsPage.module.css';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
@@ -40,7 +41,7 @@ const ReportsPage: React.FC = () => {
             setCurrentReportType('licenses');
             setShowPreview(true);
         } catch (error) {
-            alert('Error al cargar la vista previa');
+            toast.error('Error al cargar la vista previa');
         } finally {
             setLoading(false);
         }
@@ -55,7 +56,7 @@ const ReportsPage: React.FC = () => {
             setCurrentReportType('entities');
             setShowPreview(true);
         } catch (error) {
-            alert('Error al cargar la vista previa');
+            toast.error('Error al cargar la vista previa');
         } finally {
             setLoading(false);
         }
@@ -63,7 +64,7 @@ const ReportsPage: React.FC = () => {
 
     const handlePreviewEntityFull = async () => {
         if (!selectedInstitutionId) {
-            alert('Por favor seleccione una entidad');
+            toast.error('Por favor seleccione una entidad');
             return;
         }
         try {
@@ -77,7 +78,7 @@ const ReportsPage: React.FC = () => {
                 setShowPreview(true);
             }
         } catch (error) {
-            alert('Error al cargar la vista previa');
+            toast.error('Error al cargar la vista previa');
         } finally {
             setLoading(false);
         }
@@ -95,7 +96,7 @@ const ReportsPage: React.FC = () => {
                 if (institution) await reportService.downloadEntityFullReport(institution.nit);
             }
         } catch (error) {
-            alert('Error al descargar el PDF');
+            toast.error('Error al descargar el PDF');
         } finally {
             setLoading(false);
         }

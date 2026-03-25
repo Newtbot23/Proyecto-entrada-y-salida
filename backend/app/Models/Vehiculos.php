@@ -18,7 +18,10 @@ class Vehiculos extends Model
         'marca',
         'modelo',
         'color',
-        'descripcion'
+        'descripcion',
+        'estado_aprobacion',
+        'es_predeterminado',
+        'img_vehiculo',
     ];
 
     public function tipo_vehiculo()

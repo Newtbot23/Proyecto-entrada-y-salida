@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { getUserEntradas, exportHistoryPdf } from '../../../services/userHistoryService';
 import type { Registro } from '../../../services/userHistoryService';
 import styles from './UserHistory.module.css';
@@ -78,7 +79,7 @@ const UserHistory: React.FC = () => {
                                     link.parentNode?.removeChild(link);
                                     window.URL.revokeObjectURL(downloadUrl);
                                 } catch (error) {
-                                    alert('No se pudo descargar el PDF. Por favor intenta de nuevo.');
+                                    toast.error('No se pudo descargar el PDF. Por favor intenta de nuevo.');
                                     console.error(error);
                                 } finally {
                                     setLoading(false);

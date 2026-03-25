@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from './useDebounce';
 import { getInstitutions, disableInstitution, enableInstitution } from '../services/institutionService';
@@ -39,11 +40,11 @@ export const useInstitutions = () => {
             try {
                 const idToDisable = inst.nit || inst.id;
                 await disableInstitution(idToDisable);
-                alert('Institución desactivada exitosamente');
+                toast.success('Institución desactivada exitosamente');
                 refetch();
             } catch (error: any) {
                 console.error('Failed to disable institution:', error);
-                alert(error.response?.data?.message || 'Error al desactivar la institución');
+                toast.error(error.response?.data?.message || 'Error al desactivar la institución');
             }
         }
     };
@@ -53,11 +54,11 @@ export const useInstitutions = () => {
             try {
                 const idToEnable = inst.nit || inst.id;
                 await enableInstitution(idToEnable);
-                alert('Institución reactivada exitosamente');
+                toast.success('Institución reactivada exitosamente');
                 refetch();
             } catch (error: any) {
                 console.error('Failed to enable institution:', error);
-                alert(error.response?.data?.message || 'Error al reactivar la institución');
+                toast.error(error.response?.data?.message || 'Error al reactivar la institución');
             }
         }
     };

@@ -9,8 +9,8 @@ interface VehiculoContainerProps {
     catalogos: UserDashboardCatalog | null;
     isSubmitting: boolean;
     isOcrLoading: boolean;
-    onToggleStatus: (id: number, currentStatus: string, tipo: 'vehiculo') => void;
-    onSetDefault: (id: number, tipo: 'vehiculo') => void;
+    onToggleStatus: (id: string, currentStatus: string, tipo: 'vehiculo') => void;
+    onSetDefault: (id: string, tipo: 'vehiculo') => void;
     onCreate: (formData: FormData) => Promise<{ success: boolean; error?: string }>;
     onPerformOCR: (file: File) => Promise<{ success: boolean; plate?: string }>;
 }
@@ -99,14 +99,14 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                         </thead>
                         <tbody>
                             {vehiculos.map((v) => (
-                                <tr key={String(v.id)} className={styles.row}>
+                                <tr key={v.placa} className={styles.row}>
                                     <td className={styles.thTd}>
                                         <button 
-                                            onClick={() => v.principal === 0 && onSetDefault(v.id, 'vehiculo')}
-                                            className={`${styles.starButton} ${v.principal === 1 ? styles.starButtonVehiculoActive : ''}`}
-                                            title={v.principal === 1 ? "Vehículo principal" : "Marcar como principal"}
+                                            onClick={() => !v.es_predeterminado && onSetDefault(v.placa, 'vehiculo')}
+                                            className={`${styles.starButton} ${v.es_predeterminado ? styles.starButtonVehiculoActive : ''}`}
+                                            title={v.es_predeterminado ? "Vehículo principal" : "Marcar como principal"}
                                         >
-                                            {v.principal === 1 ? '★' : '☆'}
+                                            {v.es_predeterminado ? '★' : '☆'}
                                         </button>
                                     </td>
                                     <td className={styles.thTd}>
@@ -133,9 +133,9 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                     </td>
                                     <td className={styles.thTd}>
                                         {v.estado === 'activo' ? (
-                                            <button onClick={() => onToggleStatus(v.id, 'activo', 'vehiculo')} className={styles.btnInhabilitar}>Inhabilitar</button>
+                                            <button onClick={() => onToggleStatus(v.placa, 'activo', 'vehiculo')} className={styles.btnInhabilitar}>Inhabilitar</button>
                                         ) : v.estado === 'inactivo' ? (
-                                            <button onClick={() => onToggleStatus(v.id, 'inactivo', 'vehiculo')} className={styles.btnReactivar}>Reactivar</button>
+                                            <button onClick={() => onToggleStatus(v.placa, 'inactivo', 'vehiculo')} className={styles.btnReactivar}>Reactivar</button>
                                         ) : (
                                             <span className={styles.reviewText}>En revisión</span>
                                         )}

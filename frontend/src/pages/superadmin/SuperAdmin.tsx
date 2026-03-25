@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './SuperAdmin.module.css';
 import Sidebar from '../../components/layout/Sidebar';
@@ -64,7 +65,7 @@ const SuperAdmin: React.FC = () => {
             await deleteMutation.mutateAsync(String(selectedAdmin.doc));
         } catch (error) {
             console.error('Error deleting admin:', error);
-            alert('Error deleting admin');
+            toast.error('Error deleting admin');
         }
     };
 

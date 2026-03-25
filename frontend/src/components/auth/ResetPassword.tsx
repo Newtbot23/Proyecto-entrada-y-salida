@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../config/api';
@@ -121,7 +122,7 @@ const ResetPassword = () => {
             });
 
             // Si la petición es exitosa, redirigir al login
-            alert('Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.');
+            toast.success('Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.');
             navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login');
         } catch (error: any) {
             // Manejo de errores con ApiError

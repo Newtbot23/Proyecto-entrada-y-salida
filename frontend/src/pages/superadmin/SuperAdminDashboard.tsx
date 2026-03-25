@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './SuperAdminDashboard.module.css';
 import Sidebar from '../../components/layout/Sidebar';
@@ -89,7 +90,7 @@ const SuperAdminDashboard: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['licenses'] });
         } catch (err) {
             console.error(`Error updating license status to ${status}:`, err);
-            alert(`Failed to update license status to ${status}`);
+            toast.error(`Failed to update license status to ${status}`);
         }
     };
 
