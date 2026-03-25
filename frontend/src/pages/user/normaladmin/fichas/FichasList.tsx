@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FichasService, updateDetalle, updateFichaEstado } from '../../../../services/fichasService';
-import type { Ficha } from '../../../../services/fichasService';
+import type { Ficha } from '../../../../types';
 import { Modal } from '../../../../components/common/Modal';
 import styles from './FichasList.module.css';
 
@@ -23,16 +23,17 @@ const FichasList: React.FC = () => {
         },
         onError: (error: any) => {
             console.error("Error al actualizar rol:", error);
-            toast.error(error.message || 'Error al actualizar el rol');
+            const errorMsg = error.data?.message || error.message || 'Error al actualizar el rol';
+            toast.error(errorMsg);
         }
     });
 
     const estadoMutation = useMutation({
-        mutationFn: ({ fichaId, estado }: { fichaId: number | string, estado: string }) =>
+        mutationFn: ({ fichaId, estado }: { fichaId: number | string, estado: 'lectiva' | 'productiva' | 'finalizada' }) =>
             updateFichaEstado(fichaId, estado),
         onSuccess: (_data, variables) => {
             // 1. ACTUALIZACIÓN VISUAL INMEDIATA (Fix del Select)
-            setActiveFicha(prevFicha =>
+            setActiveFicha((prevFicha: Ficha | null) =>
                 prevFicha ? { ...prevFicha, estado: variables.estado } : prevFicha
             );
 
@@ -175,7 +176,7 @@ const FichasList: React.FC = () => {
                             <select
                                 value={activeFicha.estado}
                                 disabled={estadoMutation.isPending}
-                                onChange={(e) => estadoMutation.mutate({ fichaId: activeFicha.id, estado: e.target.value })}
+                                onChange={(e) => estadoMutation.mutate({ fichaId: activeFicha.id, estado: e.target.value as 'lectiva' | 'productiva' | 'finalizada' })}
                                 style={{
                                     padding: '0.25rem 0.5rem',
                                     borderRadius: '0.375rem',

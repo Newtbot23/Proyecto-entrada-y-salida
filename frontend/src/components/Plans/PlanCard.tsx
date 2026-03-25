@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './Plans.module.css';
-import type { PricingPlan } from '../../types/plans';
+import type { PricingPlan } from '../../types';
 import { PlanBadge } from './PlanBadge';
 import { PlanFeatures } from './PlanFeatures';
 

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { registrationService } from '../../../services/registrationService';
 import { ConfirmationModal } from '../../../components/modals/ConfirmationModal';
 import styles from '../Registration.module.css';
+import { onlyNumbers, onlyLetters, sanitizeAddress } from '../../../utils/inputFormatters';
 
 const REGEX = {
     NAME: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
@@ -86,7 +87,17 @@ const RegisterUser: React.FC = () => {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+
+        // Aplicar sanitización según el campo
+        if (['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido'].includes(name)) {
+            value = onlyLetters(value);
+        } else if (['doc', 'telefono'].includes(name)) {
+            value = onlyNumbers(value);
+        } else if (name === 'direccion') {
+            value = sanitizeAddress(value);
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
 
         if (debounceRef.current) clearTimeout(debounceRef.current);

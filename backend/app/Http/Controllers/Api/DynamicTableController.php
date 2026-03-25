@@ -19,7 +19,8 @@ class DynamicTableController extends Controller
         'failed_jobs',
         'roles',
         'password_reset_tokens',
-        'old_passwords'
+        'old_passwords',
+        'registros_equipos'
     ];
 
     /**
@@ -249,6 +250,18 @@ class DynamicTableController extends Controller
                 // Fetch the created record
                 $newItem = DB::table($table)->where($primaryKey, $insertedId)->first();
             } else {
+                // Check for uniqueness before inserting
+                if (isset($dataToInsert[$primaryKey])) {
+                    $exists = DB::table($table)->where($primaryKey, $dataToInsert[$primaryKey])->exists();
+                    if ($exists) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "El registro con el ID ({$dataToInsert[$primaryKey]}) ya existe.",
+                            'errors' => [$primaryKey => ['El valor ya está en uso.']]
+                        ], 422);
+                    }
+                }
+
                 DB::table($table)->insert($dataToInsert);
                 // Fetch the created record using the provided primary key in the request
                 $insertedId = $dataToInsert[$primaryKey] ?? null;

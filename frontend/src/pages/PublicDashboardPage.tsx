@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../layouts/TopBar';
 import { PlanCard } from '../components/Plans/PlanCard';
-import type { PricingPlan } from '../types/plans';
+import type { PricingPlan } from '../types';
 import { getPricingPlans } from '../services/planService';
 import styles from './PublicDashboard.module.css';
 

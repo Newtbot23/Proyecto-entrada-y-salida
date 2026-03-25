@@ -106,8 +106,8 @@ const UserHistory: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {entradas.map((ent, idx) => (
-                                    <tr key={ent.id || idx} className={styles.row}>
+                                {entradas.map((ent) => (
+                                    <tr key={ent.id} className={styles.row}>
                                         <td className={`${styles.thTd} ${styles.dateCell}`}>{ent.fecha}</td>
                                         <td className={`${styles.thTd} ${styles.timeCell}`}>{ent.hora_entrada}</td>
                                         <td className={styles.thTd}>{ent.hora_salida || <span className={styles.statusText}>En instalación</span>}</td>
@@ -123,7 +123,7 @@ const UserHistory: React.FC = () => {
                                             {ent.equipos && ent.equipos.length > 0 ? (
                                                 <div className={styles.equipmentsContainer}>
                                                     {ent.equipos.map((eq, eidx) => (
-                                                        <div key={eidx} className={`${styles.equipmentItem} ${eidx < ent.equipos!.length - 1 ? styles.equipmentItemBorder : ''}`}>
+                                                        <div key={`${ent.id}-${eq.serial || eidx}`} className={`${styles.equipmentItem} ${eidx < ent.equipos!.length - 1 ? styles.equipmentItemBorder : ''}`}>
                                                             <span className={styles.serial}>{eq.serial}</span>
                                                             <span className={styles.equipmentDetails}>{eq.marca} {eq.modelo}</span>
                                                         </div>

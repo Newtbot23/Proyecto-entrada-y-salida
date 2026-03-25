@@ -40,6 +40,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, []);
 
+    // Global Listener for API Auth Errors (Neutral 401 handling)
+    useEffect(() => {
+        const handleAuthError = () => {
+            if (user) {
+                // Determine redirect based on current role before clearing
+                const isRegularUser = user.id_rol === 2;
+                setUserState(null);
+                // The api.ts already cleared sessionStorage, but we ensure it
+                sessionStorage.clear();
+                
+                if (isRegularUser) {
+                    navigate('/', { replace: true });
+                } else {
+                    navigate('/login', { replace: true });
+                }
+            }
+        };
+
+        window.addEventListener('api-auth-error', handleAuthError);
+        return () => window.removeEventListener('api-auth-error', handleAuthError);
+    }, [user, navigate]);
+
     const setUser = (newUser: User | null) => {
         setUserState(newUser);
         if (newUser) {
@@ -50,17 +72,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const logout = useCallback(() => {
-        // Determine redirect path based on user role before clearing state
         const currentUser = user;
         setUserState(null);
         sessionStorage.clear();
 
-        // Redirect based on the role of the user that was logged in
+        // Redirect based on role
         if (currentUser && currentUser.id_rol === 0) {
-            // Superadmin (id_rol 0 or a convention you use)
+            // Superadmin
             navigate('/superadmin/login', { replace: true });
+        } else if (currentUser && currentUser.id_rol === 2) {
+            // Regular User -> Public Home
+            navigate('/', { replace: true });
         } else {
-            // Normal admins and all other roles
+            // Other admins -> Shared Login
             navigate('/login', { replace: true });
         }
     }, [user, navigate]);

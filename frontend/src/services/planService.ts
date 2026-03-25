@@ -1,7 +1,7 @@
 import { apiClient } from '../config/api';
-import type { PricingPlan } from '../types/plans';
+import type { PricingPlan } from '../types';
 
-export type { PricingPlan } from '../types/plans';
+export type { PricingPlan } from '../types';
 
 /**
  * Obtener planes de precios
@@ -21,7 +21,7 @@ export const getPricingPlans = async (): Promise<PricingPlan[]> => {
  */
 export const sendSelectedPlan = async (planId: string): Promise<void> => {
     try {
-        await apiClient.post<any, { plan_id: string }>('/plans/select', { 
+        await apiClient.post<void, { plan_id: string }>('/plans/select', { 
             plan_id: planId 
         });
         console.log('Plan selected successfully');

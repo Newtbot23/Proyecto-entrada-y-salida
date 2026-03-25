@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../../config/api';
+import { getInstructorFichas, getInstructorEquiposAsignados } from '../../../services/instructorService';
+import type { InstructorFicha } from '../../../services/instructorService';
 import styles from './EquiposAsignados.module.css';
 
 interface EquipoAsignado {
@@ -21,18 +22,30 @@ interface InstructorEquiposResponse {
     equipos: EquipoAsignado[];
 }
 
-const fetchEquiposFiltrados = async (): Promise<InstructorEquiposResponse> => {
-    // apiClient.get automatically unwraps { data: ... }
-    return await apiClient.get<InstructorEquiposResponse>('/instructor/equipos-asignados');
-};
-
 const EquiposAsignados: React.FC = () => {
-    const { data: responseData, isLoading, error } = useQuery({
-        queryKey: ['instructorEquiposAsignados'],
-        queryFn: fetchEquiposFiltrados,
+    const [activeFichaId, setActiveFichaId] = useState<number | null>(null);
+
+    // --- Query: list of instructor fichas ---
+    const { data: fichasList = [], isLoading: isLoadingFichas } = useQuery({
+        queryKey: ['instructorFichas'],
+        queryFn: getInstructorFichas,
     });
 
-    if (isLoading) {
+    // Default to first ficha when list loads
+    useEffect(() => {
+        if (fichasList.length > 0 && activeFichaId === null) {
+            setActiveFichaId(fichasList[0].id);
+        }
+    }, [fichasList, activeFichaId]);
+
+    // --- Query: equipos for the active ficha ---
+    const { data: responseData, isLoading, error } = useQuery<InstructorEquiposResponse>({
+        queryKey: ['instructorEquiposAsignados', activeFichaId],
+        queryFn: () => getInstructorEquiposAsignados(activeFichaId!) as Promise<InstructorEquiposResponse>,
+        enabled: !!activeFichaId,
+    });
+
+    if (isLoadingFichas || isLoading) {
         return <div className={styles.loading}>Cargando información de equipos...</div>;
     }
 
@@ -40,7 +53,7 @@ const EquiposAsignados: React.FC = () => {
         return (
             <div className={styles.noResults}>
                 <h2>Atención</h2>
-                <p>{(error as any)?.response?.data?.message || 'Hubo un error al cargar la información. Probablemente no tienes una ficha asignada como instructor.'}</p>
+                <p>{(error as any)?.data?.message || 'Hubo un error al cargar la información. Probablemente no tienes una ficha asignada como instructor.'}</p>
             </div>
         );
     }
@@ -54,10 +67,23 @@ const EquiposAsignados: React.FC = () => {
                 <p>Lista de todos los equipos asociados a los aprendices de tu ficha.</p>
             </header>
 
-            <div className={styles.infoCard}>
-                <span>📘</span>
-                <span>Ficha Activa:</span> {ficha.numero_ficha}
-            </div>
+            {/* Ficha Selector — only when instructor has multiple fichas */}
+            {fichasList.length > 1 && (
+                <div className={styles.fichaSelector}>
+                    <label className={styles.fichaSelectorLabel}>Ficha Activa:</label>
+                    <select
+                        className={styles.fichaSelectorSelect}
+                        value={activeFichaId ?? ''}
+                        onChange={(e) => setActiveFichaId(Number(e.target.value))}
+                    >
+                        {fichasList.map((f: InstructorFicha) => (
+                            <option key={f.id} value={f.id}>
+                                Ficha {f.numero_ficha} {f.nombre_programa ? `- ${f.nombre_programa}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div className={styles.tableContainer}>
                 {equipos.length > 0 ? (

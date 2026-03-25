@@ -2,41 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import UserSidebar from './UserSidebar';
 import UserHeader from './UserHeader';
-
-interface User {
-    id?: number | string;
-    doc?: string;
-    nombre: string;
-    correo: string;
-    id_entidad?: number;
-    id_rol: number;
-    codigo_qr?: string;
-}
+import { useAuth } from '../../context/AuthContext';
 
 const UserLayout: React.FC = () => {
     const navigate = useNavigate();
-    const [user, setUser] = useState<User | null>(null);
+    const { user, setUser } = useAuth(); 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     useEffect(() => {
+        const token = sessionStorage.getItem('authToken');
         const userDataString = sessionStorage.getItem('authUser');
-        if (!userDataString) {
-            navigate('/login');
-        } else {
-            try {
-                const userData = JSON.parse(userDataString);
-                // Security check for role
-                if (userData.id_rol !== 2) {
-                    navigate('/dashboard'); // Only role 2 here
-                    return;
-                }
-                setUser(userData);
-            } catch (e) {
-                console.error("Error parsing user data", e);
-                navigate('/login');
-            }
+
+        if (!token || !userDataString) {
+            navigate('/');
+            return;
         }
-    }, [navigate]);
+
+        try {
+            const userData = JSON.parse(userDataString);
+            // Security check for role (User role is 2)
+            if (userData.id_rol !== 2) {
+                navigate('/'); 
+                return;
+            }
+            // Sync with global auth state if needed, though AuthContext handles it usually
+            if (!user) {
+                setUser(userData);
+            }
+        } catch (e) {
+            console.error("Error parsing user data", e);
+            navigate('/');
+        }
+    }, [navigate, user, setUser]);
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);

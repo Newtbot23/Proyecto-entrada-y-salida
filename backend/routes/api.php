@@ -146,6 +146,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/fichas/{id}/usuarios/{doc}/rol', [FichaController::class, 'actualizarRolPorFichaYUsuario']);
     Route::delete('/fichas/{id}/usuarios/{doc}', [FichaController::class, 'desvincularUsuario']);
     Route::patch('/fichas/{id}/hora-limite', [FichaController::class, 'updateHoraLimite']);
+    Route::get('/instructor/mis-fichas', [FichaController::class, 'getInstructorFichas']);
     Route::get('/instructor/asistencia-base', [FichaController::class, 'getInstructorAsistenciaBase']);
     Route::patch('/fichas/{id}/estado', [FichaController::class, 'cambiarEstado']);
     Route::get('/instructor/fichas/{fichaId}/asistencia-mensual', [FichaController::class, 'getAsistenciaMensual']);
