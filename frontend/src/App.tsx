@@ -43,13 +43,14 @@ import GestionLotes from './pages/user/normaladmin/equipos/GestionLotes';
 import HistorialAsignaciones from './pages/user/normaladmin/equipos/HistorialAsignaciones';
 import AsistenciaFicha from './pages/user/instructor/AsistenciaFicha';
 import EquiposAsignados from './pages/user/instructor/EquiposAsignados';
-
+import DocumentTitleUpdater from './components/common/DocumentTitleUpdater';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'sonner';
 
 function App() {
   return (
     <AuthProvider>
+      <DocumentTitleUpdater />
       <Toaster richColors position="top-right" />
       <Routes>
         {/* Public Landing Page */}
