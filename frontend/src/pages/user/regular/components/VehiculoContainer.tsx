@@ -55,7 +55,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
         formData.append('id_marca_vehiculo', form.marca_vehiculo_id);
         formData.append('modelo', form.modelo);
         formData.append('color', form.color);
-        if (form.foto) formData.append('foto', form.foto);
+        if (form.foto) formData.append('foto_general', form.foto);
 
         const res = await onCreate(formData);
         if (res.success) {
@@ -111,12 +111,12 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                     </td>
                                     <td className={styles.thTd}>
                                         <div className={styles.assetImageContainer}>
-                                            {v.img_asset ? (
+                                            {v.img_vehiculo ? (
                                                 <img 
-                                                    src={`${STORAGE_URL}/${v.img_asset}`} 
+                                                    src={`${STORAGE_URL}/${v.img_vehiculo.split('|')[0]}`} 
                                                     alt="Vehiculo" 
                                                     className={styles.assetImage}
-                                                    onClick={() => window.open(`${STORAGE_URL}/${v.img_asset}`, '_blank')}
+                                                    onClick={() => window.open(`${STORAGE_URL}/${v.img_vehiculo!.split('|')[0]}`, '_blank')}
                                                 />
                                             ) : <span className={styles.noImage}>Sin foto</span>}
                                         </div>
@@ -127,14 +127,14 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                     <td className={styles.thTd}>{v.color}</td>
                                     <td className={styles.thTd}>{v.tipo_vehiculo?.tipo_vehiculo}</td>
                                     <td className={styles.thTd}>
-                                        {v.estado === 'activo' && <span className={styles.badgeActivo}>Activo</span>}
-                                        {v.estado === 'pendiente' && <span className={styles.badgePendiente}>Pendiente</span>}
-                                        {v.estado === 'inactivo' && <span className={styles.badgeInactivo}>Inactivo</span>}
+                                        {v.estado_aprobacion === 'activo' && <span className={styles.badgeActivo}>Activo</span>}
+                                        {v.estado_aprobacion === 'pendiente' && <span className={styles.badgePendiente}>Pendiente</span>}
+                                        {v.estado_aprobacion === 'inactivo' && <span className={styles.badgeInactivo}>Inactivo</span>}
                                     </td>
                                     <td className={styles.thTd}>
-                                        {v.estado === 'activo' ? (
+                                        {v.estado_aprobacion === 'activo' ? (
                                             <button onClick={() => onToggleStatus(v.placa, 'activo', 'vehiculo')} className={styles.btnInhabilitar}>Inhabilitar</button>
-                                        ) : v.estado === 'inactivo' ? (
+                                        ) : v.estado_aprobacion === 'inactivo' ? (
                                             <button onClick={() => onToggleStatus(v.placa, 'inactivo', 'vehiculo')} className={styles.btnReactivar}>Reactivar</button>
                                         ) : (
                                             <span className={styles.reviewText}>En revisión</span>

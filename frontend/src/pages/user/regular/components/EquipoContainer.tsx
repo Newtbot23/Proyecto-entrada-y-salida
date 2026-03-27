@@ -81,7 +81,7 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
         formData.append('tipo_equipo', 'propio');
         formData.append('estado', 'asignado');
         
-        if (form.foto) formData.append('foto', form.foto);
+        if (form.foto) formData.append('foto_general', form.foto);
 
         const res = await onCreate(formData);
         if (res.success) {
@@ -134,12 +134,12 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                                     </td>
                                     <td className={styles.thTd}>
                                         <div className={styles.assetImageContainer}>
-                                            {equipo.img_asset ? (
+                                            {equipo.img_serial ? (
                                                 <img 
-                                                    src={`${STORAGE_URL}/${equipo.img_asset}`} 
+                                                    src={`${STORAGE_URL}/${equipo.img_serial.split('|')[0]}`} 
                                                     alt="Equipo" 
                                                     className={styles.assetImage}
-                                                    onClick={() => window.open(`${STORAGE_URL}/${equipo.img_asset}`, '_blank')}
+                                                    onClick={() => window.open(`${STORAGE_URL}/${equipo.img_serial!.split('|')[0]}`, '_blank')}
                                                 />
                                             ) : <span className={styles.noImage}>Sin foto</span>}
                                         </div>

@@ -38,7 +38,7 @@ class AprobacionesActivosController extends Controller
         $equipos = DB::table('equipos')
             ->join('asignaciones', 'equipos.serial', '=', 'asignaciones.serial_equipo')
             ->join('usuarios', 'asignaciones.doc', '=', 'usuarios.doc')
-            ->join('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
+            ->leftJoin('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
             ->where('equipos.estado_aprobacion', 'pendiente')
             ->where('equipos.tipo_equipo', 'propio')
             ->select(

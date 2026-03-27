@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { searchVehiculo, registrarActividad } from '../../services/puertasService';
 import { toast } from 'sonner';
 import { useSpeech } from '../../hooks/useSpeech';
@@ -18,17 +18,82 @@ const VehiculosDashboard: React.FC = () => {
     const [selectedVehiculo, setSelectedVehiculo] = useState<string | null>(null);
     const [selectedEquipos, setSelectedEquipos] = useState<string[]>([]);
 
+    const lastScanRef = useRef<{ query: string, time: number } | null>(null);
+    const [isWaitingConfirm, setIsWaitingConfirm] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const timeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (!loading && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [loading, searchResult]);
+
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchQuery) return;
-        setLoading(true);
-        setSearchResult(null);
-        setTraeEquipo(false);
-        setSelectedVehiculo(null);
-        setSelectedEquipos([]);
 
+        // 1. Capturar valor del DOM físicamente, evadiendo el render cycle del estado React
+        const currentQuery = inputRef.current ? inputRef.current.value.trim() : '';
+        
+        // 2. Reset Físico Inmediato (Limpiar el input para el hardware antes del render)
+        if (inputRef.current) {
+            inputRef.current.value = '';
+            inputRef.current.focus();
+        }
+        // Igualmente informamos a React que el campo se vació para sincronizar
+        setSearchQuery('');
+
+        if (!currentQuery) {
+            return;
+        }
+
+        const now = Date.now();
+
+        // CAPA 1 y 2: Identificador del Intento y Validación de Tiempos
+        if (lastScanRef.current && lastScanRef.current.query === currentQuery) {
+            const timeDiff = now - lastScanRef.current.time;
+
+            if (timeDiff < 4000) {
+                if (timeDiff >= 800) {
+                    toast.warning('Espere 4 segundos para verificar los datos antes de confirmar');
+                }
+                return; // Return inmediato
+            } else if (timeDiff <= 10000) {
+                // Ejecución de confirmación prioritaria
+                if (searchResult && selectedVehiculo) {
+                    const accion = isVehiculoInside(selectedVehiculo) ? 'salida' : 'entrada';
+                    handleRegisterAction(accion);
+                    lastScanRef.current = null;
+                    setIsWaitingConfirm(false);
+                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                    return; // Muerte incondicional de la búsqueda duplicada
+                } else {
+                    toast.error('No hay resultados previos para confirmar. Busque nuevamente.');
+                    return;
+                }
+            }
+            // CAPA 3: Si pasó > 10000ms, dejamos que el código proceda a hacer una búsqueda nueva.
+        }
+
+        // CAPA 3: Ejecución de Búsqueda Nueva
+        if (lastScanRef.current?.query !== currentQuery) {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        }
+
+        lastScanRef.current = { query: currentQuery, time: now };
+        setIsWaitingConfirm(true);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = window.setTimeout(() => {
+            if (lastScanRef.current?.query === currentQuery) {
+                setIsWaitingConfirm(false);
+            }
+        }, 10000);
+
+        setLoading(true);
+        
         try {
-            const data = await searchVehiculo(searchQuery);
+            const data = await searchVehiculo(currentQuery);
             setSearchResult(data);
             
             // CASO A: EL USUARIO YA ESTÁ EN SEDE (Salida)
@@ -99,8 +164,13 @@ const VehiculosDashboard: React.FC = () => {
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Vehículo o usuario no encontrado');
+            setSearchResult(null);
+            setTraeEquipo(false);
+            setSelectedVehiculo(null);
+            setSelectedEquipos([]);
         } finally {
             setLoading(false);
+            setSearchQuery('');
         }
     };
 
@@ -185,7 +255,8 @@ const VehiculosDashboard: React.FC = () => {
                         className={styles.searchInput}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        disabled={loading}
+                        disabled={loading && !searchResult}
+                        ref={inputRef}
                     />
                     <button type="submit" className={styles.searchBtn} disabled={loading}>
                         {loading ? 'Buscando...' : 'Buscar'}
@@ -309,12 +380,22 @@ const VehiculosDashboard: React.FC = () => {
 
                                 <div className={styles.actionButtons}>
                                     {!estaAdentro ? (
-                                        <button onClick={() => handleRegisterAction('entrada')} className={styles.entryBtn} disabled={loading}>
-                                            Registrar Ingreso de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
+                                        <button 
+                                            onClick={() => handleRegisterAction('entrada')} 
+                                            className={styles.entryBtn} 
+                                            disabled={loading || isWaitingConfirm}
+                                            style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
+                                        >
+                                            {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Registrar Ingreso de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
                                         </button>
                                     ) : (
-                                        <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                            Registrar Salida de {selectedVehiculo} {traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}
+                                        <button 
+                                            onClick={() => handleRegisterAction('salida')} 
+                                            className={styles.exitBtn} 
+                                            disabled={loading || isWaitingConfirm}
+                                            style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
+                                        >
+                                            {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Registrar Salida de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
                                         </button>
                                     )}
                                 </div>
