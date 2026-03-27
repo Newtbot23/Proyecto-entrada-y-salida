@@ -69,43 +69,38 @@ const UserSidebar: React.FC<SidebarProps> = ({
                                 className={`${styles.accordionHeader} ${isInstructorOpen || activePath.includes('/instructor/') ? styles.active : ''}`}
                                 onClick={() => setIsInstructorOpen(!isInstructorOpen)}
                                 title={isCollapsed ? "Instructor" : ""}
-                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <span className={styles.navIcon}>
                                         <InstitutionIcon />
                                     </span>
-                                    {!isCollapsed && <span className={styles.navLabel}>Instructor</span>}
+                                    <span className={styles.navLabel}>Instructor</span>
                                 </div>
-                                {!isCollapsed && (
-                                    <span className={`${styles.chevronIcon} ${isInstructorOpen ? styles.rotated : ''}`}>
-                                        <ChevronRightIcon width={16} height={16} />
-                                    </span>
-                                )}
+                                <span className={`${styles.chevronIcon} ${isInstructorOpen ? styles.rotated : ''}`}>
+                                    <ChevronRightIcon width={16} height={16} />
+                                </span>
                             </button>
 
-                            {!isCollapsed && (
-                                <div className={`${styles.accordionContent} ${isInstructorOpen || activePath.includes('/instructor/') ? styles.open : ''}`}>
-                                    <ul className={styles.accordionList}>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/instructor/equipos"
-                                                className={`${styles.accordionLink} ${activePath === '/user/instructor/equipos' ? styles.active : ''}`}
-                                            >
-                                                Equipos Asignados
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/instructor/asistencia"
-                                                className={`${styles.accordionLink} ${activePath === '/user/instructor/asistencia' ? styles.active : ''}`}
-                                            >
-                                                Asistencia de Ficha
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
+                            <div className={`${styles.accordionContent} ${isInstructorOpen || activePath.includes('/instructor/') ? styles.open : ''}`}>
+                                <ul className={styles.accordionList}>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/instructor/equipos"
+                                            className={`${styles.accordionLink} ${activePath === '/user/instructor/equipos' ? styles.active : ''}`}
+                                        >
+                                            Equipos Asignados
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/instructor/asistencia"
+                                            className={`${styles.accordionLink} ${activePath === '/user/instructor/asistencia' ? styles.active : ''}`}
+                                        >
+                                            Asistencia de Ficha
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
                     )}
                 </ul>

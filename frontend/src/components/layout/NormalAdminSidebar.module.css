@@ -122,6 +122,16 @@
     justify-content: center;
 }
 
+.sidebar.collapsed .accordionHeader {
+    padding: var(--spacing-md);
+    justify-content: center;
+}
+
+.sidebar.collapsed .chevronIcon,
+.sidebar.collapsed .accordionContent {
+    display: none;
+}
+
 /* Toggle Button */
 .toggleBtn {
     position: absolute;
@@ -176,6 +186,19 @@
     .sidebar.collapsed .navLink {
         justify-content: flex-start;
         padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .sidebar.collapsed .accordionHeader {
+        justify-content: space-between;
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .sidebar.collapsed .chevronIcon {
+        display: flex;
+    }
+
+    .sidebar.collapsed .accordionContent {
+        display: block;
     }
 
     .sidebar.collapsed .logoIcon {

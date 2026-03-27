@@ -71,6 +71,7 @@ export interface Vehiculo {
     principal: number; // 1 for true, 0 for false
     es_predeterminado?: boolean;
     img_asset?: string;
+    img_vehiculo?: string;
     foto_general?: string;
     foto_detalle?: string;
     // Relations

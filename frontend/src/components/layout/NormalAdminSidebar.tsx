@@ -110,51 +110,46 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                                 className={`${styles.accordionHeader} ${isFichasOpen || activePath.includes('/fichas/') ? styles.active : ''}`}
                                 onClick={() => setIsFichasOpen(!isFichasOpen)}
                                 title={isCollapsed ? "Fichas" : ""}
-                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <span className={styles.navIcon}>
                                         <InstitutionIcon /> {/* Reusing InstitutionIcon or similar */}
                                     </span>
-                                    {!isCollapsed && <span className={styles.navLabel}>Fichas</span>}
+                                    <span className={styles.navLabel}>Fichas</span>
                                 </div>
-                                {!isCollapsed && (
-                                    <span className={`${styles.chevronIcon} ${isFichasOpen ? styles.rotated : ''}`}>
-                                        <ChevronRightIcon width={16} height={16} />
-                                    </span>
-                                )}
+                                <span className={`${styles.chevronIcon} ${isFichasOpen ? styles.rotated : ''}`}>
+                                    <ChevronRightIcon width={16} height={16} />
+                                </span>
                             </button>
 
-                            {!isCollapsed && (
-                                <div className={`${styles.accordionContent} ${isFichasOpen || activePath.includes('/fichas/') ? styles.open : ''}`}>
-                                    <ul className={styles.accordionList}>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/fichas/crear"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/crear' ? styles.active : ''}`}
-                                            >
-                                                Crear Ficha
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/fichas/asignar"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/asignar' ? styles.active : ''}`}
-                                            >
-                                                Asignar Usuarios
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/fichas/lista"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/lista' ? styles.active : ''}`}
-                                            >
-                                                Listar y Gestionar
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
+                            <div className={`${styles.accordionContent} ${isFichasOpen || activePath.includes('/fichas/') ? styles.open : ''}`}>
+                                <ul className={styles.accordionList}>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/fichas/crear"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/crear' ? styles.active : ''}`}
+                                        >
+                                            Crear Ficha
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/fichas/asignar"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/asignar' ? styles.active : ''}`}
+                                        >
+                                            Asignar Usuarios
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/fichas/lista"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/fichas/lista' ? styles.active : ''}`}
+                                        >
+                                            Listar y Gestionar
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
                     )}
 
@@ -165,59 +160,54 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                                 className={`${styles.accordionHeader} ${isEquiposOpen || activePath.includes('/equipos/') ? styles.active : ''}`}
                                 onClick={() => setIsEquiposOpen(!isEquiposOpen)}
                                 title={isCollapsed ? "Equipos" : ""}
-                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <span className={styles.navIcon}>
                                         <DevicesIcon />
                                     </span>
-                                    {!isCollapsed && <span className={styles.navLabel}>Equipos</span>}
+                                    <span className={styles.navLabel}>Equipos</span>
                                 </div>
-                                {!isCollapsed && (
-                                    <span className={`${styles.chevronIcon} ${isEquiposOpen ? styles.rotated : ''}`}>
-                                        <ChevronRightIcon width={16} height={16} />
-                                    </span>
-                                )}
+                                <span className={`${styles.chevronIcon} ${isEquiposOpen ? styles.rotated : ''}`}>
+                                    <ChevronRightIcon width={16} height={16} />
+                                </span>
                             </button>
 
-                            {!isCollapsed && (
-                                <div className={`${styles.accordionContent} ${isEquiposOpen || activePath.includes('/equipos/') ? styles.open : ''}`}>
-                                    <ul className={styles.accordionList}>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/equipos/registrar"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/registrar' ? styles.active : ''}`}
-                                            >
-                                                Registrar Equipos
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/equipos/asignar"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/asignar' ? styles.active : ''}`}
-                                            >
-                                                Asignar Equipos
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/equipos/historial"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/historial' ? styles.active : ''}`}
-                                            >
-                                                Historial de Asignaciones
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/equipos/gestion-lotes"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/gestion-lotes' ? styles.active : ''}`}
-                                            >
-                                                Gestión de Lotes
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
+                            <div className={`${styles.accordionContent} ${isEquiposOpen || activePath.includes('/equipos/') ? styles.open : ''}`}>
+                                <ul className={styles.accordionList}>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/equipos/registrar"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/registrar' ? styles.active : ''}`}
+                                        >
+                                            Registrar Equipos
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/equipos/asignar"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/asignar' ? styles.active : ''}`}
+                                        >
+                                            Asignar Equipos
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/equipos/historial"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/historial' ? styles.active : ''}`}
+                                        >
+                                            Historial de Asignaciones
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/equipos/gestion-lotes"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/equipos/gestion-lotes' ? styles.active : ''}`}
+                                        >
+                                            Gestión de Lotes
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
                     )}
 
@@ -228,43 +218,38 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                                 className={`${styles.accordionHeader} ${isReportesOpen || activePath.includes('/reportes/') ? styles.active : ''}`}
                                 onClick={() => setIsReportesOpen(!isReportesOpen)}
                                 title={isCollapsed ? "Reportes" : ""}
-                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <span className={styles.navIcon}>
                                         <ReportIcon />
                                     </span>
-                                    {!isCollapsed && <span className={styles.navLabel}>Reportes</span>}
+                                    <span className={styles.navLabel}>Reportes</span>
                                 </div>
-                                {!isCollapsed && (
-                                    <span className={`${styles.chevronIcon} ${isReportesOpen ? styles.rotated : ''}`}>
-                                        <ChevronRightIcon width={16} height={16} />
-                                    </span>
-                                )}
+                                <span className={`${styles.chevronIcon} ${isReportesOpen ? styles.rotated : ''}`}>
+                                    <ChevronRightIcon width={16} height={16} />
+                                </span>
                             </button>
 
-                            {!isCollapsed && (
-                                <div className={`${styles.accordionContent} ${isReportesOpen || activePath.includes('/reportes/') ? styles.open : ''}`}>
-                                    <ul className={styles.accordionList}>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/reportes/persona"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/persona' ? styles.active : ''}`}
-                                            >
-                                                Reporte por Persona
-                                            </Link>
-                                        </li>
-                                        <li className={styles.accordionItem}>
-                                            <Link
-                                                to="/user/normaladmin/reportes/diario"
-                                                className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/diario' ? styles.active : ''}`}
-                                            >
-                                                Reporte del Día
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
+                            <div className={`${styles.accordionContent} ${isReportesOpen || activePath.includes('/reportes/') ? styles.open : ''}`}>
+                                <ul className={styles.accordionList}>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/reportes/persona"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/persona' ? styles.active : ''}`}
+                                        >
+                                            Reporte por Persona
+                                        </Link>
+                                    </li>
+                                    <li className={styles.accordionItem}>
+                                        <Link
+                                            to="/user/normaladmin/reportes/diario"
+                                            className={`${styles.accordionLink} ${activePath === '/user/normaladmin/reportes/diario' ? styles.active : ''}`}
+                                        >
+                                            Reporte del Día
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
                     )}
 
@@ -275,48 +260,43 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
                                 className={`${styles.accordionHeader} ${isOtrosOpen || activePath.includes('/tables/') ? styles.active : ''}`}
                                 onClick={() => setIsOtrosOpen(!isOtrosOpen)}
                                 title={isCollapsed ? "Otros" : ""}
-                                style={{ padding: isCollapsed ? '0.75rem' : '0.75rem 1.5rem', justifyContent: isCollapsed ? 'center' : 'space-between' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <span className={styles.navIcon}>
                                         <InstitutionIcon />
                                     </span>
-                                    {!isCollapsed && <span className={styles.navLabel}>Otros</span>}
+                                    <span className={styles.navLabel}>Otros</span>
                                 </div>
-                                {!isCollapsed && (
-                                    <span className={`${styles.chevronIcon} ${isOtrosOpen ? styles.rotated : ''}`}>
-                                        <ChevronRightIcon width={16} height={16} />
-                                    </span>
-                                )}
+                                <span className={`${styles.chevronIcon} ${isOtrosOpen ? styles.rotated : ''}`}>
+                                    <ChevronRightIcon width={16} height={16} />
+                                </span>
                             </button>
 
-                            {!isCollapsed && (
-                                <div className={`${styles.accordionContent} ${isOtrosOpen || activePath.includes('/tables/') ? styles.open : ''}`}>
-                                    <ul className={styles.accordionList}>
-                                        {shortTables.map((tableName: string) => {
-                                            const tablePath = `/user/normaladmin/tables/${tableName}`;
-                                            const isActive = activePath === tablePath;
-                                            return (
-                                                <li key={tableName} className={styles.accordionItem}>
-                                                    <Link
-                                                        to={tablePath}
-                                                        className={`${styles.accordionLink} ${isActive ? styles.active : ''}`}
-                                                    >
-                                                        {tableName.replace(/_/g, ' ')}
-                                                    </Link>
-                                                </li>
-                                            );
-                                        })}
-                                        {shortTables.length === 0 && (
-                                            <li className={styles.accordionItem}>
-                                                <span style={{ display: 'block', padding: '0.5rem 1.5rem 0.5rem 3.5rem', color: '#9ca3af', fontSize: '0.85rem' }}>
-                                                    Sin tablas adicionales
-                                                </span>
+                            <div className={`${styles.accordionContent} ${isOtrosOpen || activePath.includes('/tables/') ? styles.open : ''}`}>
+                                <ul className={styles.accordionList}>
+                                    {shortTables.map((tableName: string) => {
+                                        const tablePath = `/user/normaladmin/tables/${tableName}`;
+                                        const isActive = activePath === tablePath;
+                                        return (
+                                            <li key={tableName} className={styles.accordionItem}>
+                                                <Link
+                                                    to={tablePath}
+                                                    className={`${styles.accordionLink} ${isActive ? styles.active : ''}`}
+                                                >
+                                                    {tableName.replace(/_/g, ' ')}
+                                                </Link>
                                             </li>
-                                        )}
-                                    </ul>
-                                </div>
-                            )}
+                                        );
+                                    })}
+                                    {shortTables.length === 0 && (
+                                        <li className={styles.accordionItem}>
+                                            <span style={{ display: 'block', padding: '0.5rem 1.5rem 0.5rem 3.5rem', color: '#9ca3af', fontSize: '0.85rem' }}>
+                                                Sin tablas adicionales
+                                            </span>
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
                         </li>
                     )}
                 </ul>

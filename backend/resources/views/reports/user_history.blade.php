@@ -56,9 +56,13 @@
                     @endif
                 </td>
                 <td>
-                    @if($reg->serial_equipo)
-                        {{ $reg->serial_equipo }}<br>
-                        <small style="color: #64748b;">{{ $reg->equipo_marca }} {{ $reg->equipo_modelo }}</small>
+                    @if($reg->equipos && count($reg->equipos) > 0)
+                        @foreach($reg->equipos as $eq)
+                            <div style="margin-bottom: 5px;">
+                                {{ $eq->serial }}<br>
+                                <small style="color: #64748b;">{{ $eq->marca }} {{ $eq->modelo }}</small>
+                            </div>
+                        @endforeach
                     @else
                         -
                     @endif

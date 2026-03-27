@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { searchPersona, registrarActividad } from '../../services/puertasService';
 import { toast } from 'sonner';
 import { useSpeech } from '../../hooks/useSpeech';
@@ -16,23 +16,93 @@ const PersonasDashboard: React.FC = () => {
     const [searchResult, setSearchResult] = useState<PersonaSearchResult | null>(null);
     const [selectedEquipos, setSelectedEquipos] = useState<string[]>([]);
 
+    const lastScanRef = useRef<{ doc: string, time: number } | null>(null);
+    const [isWaitingConfirm, setIsWaitingConfirm] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const timeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (!loading && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [loading, searchResult]);
+
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchDoc) return;
+
+        // 1. Capturar valor del DOM físicamente, evadiendo el render cycle del estado React
+        const currentDoc = inputRef.current ? inputRef.current.value.trim() : '';
+
+        // 2. Reset Físico Inmediato (Limpiar el input para el hardware antes del render)
+        if (inputRef.current) {
+            inputRef.current.value = '';
+            inputRef.current.focus();
+        }
+        // Igualmente informamos a React que el campo se vació para sincronizar
+        setSearchDoc('');
+
+        if (!currentDoc) {
+            return;
+        }
+
+        const now = Date.now();
+
+        // CAPA 1 y 2: Identificador del Intento y Validación de Tiempos
+        if (lastScanRef.current && lastScanRef.current.doc === currentDoc) {
+            const timeDiff = now - lastScanRef.current.time;
+
+            if (timeDiff < 4000) {
+                if (timeDiff >= 800) {
+                    toast.warning('Espere 4 segundos para verificar los datos antes de confirmar');
+                }
+                return; // Return inmediato
+            } else if (timeDiff <= 10000) {
+                // Ejecución de confirmación prioritaria
+                if (searchResult && searchResult.usuario.doc === currentDoc) {
+                    const accion = searchResult.estaAdentro ? 'salida' : 'entrada';
+                    handleRegisterAction(accion);
+                    lastScanRef.current = null;
+                    setIsWaitingConfirm(false);
+                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                    return; // Muerte incondicional de la búsqueda duplicada
+                } else {
+                    toast.error('No hay resultados previos para confirmar. Busque nuevamente.');
+                    return;
+                }
+            }
+            // CAPA 3: Si pasó > 10000ms, dejamos que el código proceda a hacer una búsqueda nueva.
+        }
+
+        // CAPA 3: Ejecución de Búsqueda Nueva
+        if (lastScanRef.current?.doc !== currentDoc) {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        }
+
+        lastScanRef.current = { doc: currentDoc, time: now };
+        setIsWaitingConfirm(true);
+
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = window.setTimeout(() => {
+            if (lastScanRef.current?.doc === currentDoc) {
+                setIsWaitingConfirm(false);
+            }
+        }, 10000);
+
         setLoading(true);
-        setSearchResult(null);
+        // NO hacemos setSearchResult(null)
         try {
-            const data = await searchPersona(searchDoc);
+            const data = await searchPersona(currentDoc);
             setSearchResult(data);
 
             // CASO A: EL USUARIO YA ESTÁ EN SEDE (Salida)
             if (data.registro_activo) {
                 const serialesIngresados = data.registro_activo.seriales_equipos;
                 setSelectedEquipos(serialesIngresados);
-                
+
                 // Feedback auditivo prioritario para salida
                 leerEnVozAlta(`Usuario en sede: ${data.usuario.nombre}. Registrado con ${serialesIngresados.length} equipos.`);
-                
+
                 setLoading(false);
                 return; // DETENER ejecución
             }
@@ -68,13 +138,14 @@ const PersonasDashboard: React.FC = () => {
             toast.error(error.message || 'Usuario no encontrado');
         } finally {
             setLoading(false);
+            setSearchDoc('');
         }
     };
 
     const handleToggleEquipo = (serial: string) => {
         // Solo permitir toggle si no está adentro (en modo entrada)
         if (searchResult?.registro_activo) return;
-        
+
         setSelectedEquipos(prev => {
             const isSelected = prev.includes(serial);
             if (isSelected) {
@@ -98,7 +169,7 @@ const PersonasDashboard: React.FC = () => {
                 id_registro: searchResult.registro_activo?.id
             });
             toast.success(result.message);
-            
+
             // Voz
             const msg = searchResult.estaAdentro ? 'Salida' : 'Entrada';
             let extraVoz = '';
@@ -131,7 +202,8 @@ const PersonasDashboard: React.FC = () => {
                         className={styles.searchInput}
                         value={searchDoc}
                         onChange={(e) => setSearchDoc(e.target.value)}
-                        disabled={loading}
+                        disabled={loading && !searchResult}
+                        ref={inputRef}
                     />
                     <button type="submit" className={styles.searchBtn} disabled={loading}>
                         {loading ? 'Buscando...' : 'Buscar'}
@@ -192,10 +264,10 @@ const PersonasDashboard: React.FC = () => {
                                                     )}
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                         {eq.img_serial && (
-                                                            <img 
-                                                                src={`${STORAGE_URL}/${eq.img_serial.split('|')[0]}`} 
-                                                                alt="Equipo" 
-                                                                style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }} 
+                                                            <img
+                                                                src={`${STORAGE_URL}/${eq.img_serial.split('|')[0]}`}
+                                                                alt="Equipo"
+                                                                style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
                                                             />
                                                         )}
                                                         <div>
@@ -215,12 +287,22 @@ const PersonasDashboard: React.FC = () => {
 
                         <div className={styles.actionButtons}>
                             {!searchResult.estaAdentro ? (
-                                <button onClick={() => handleRegisterAction('entrada')} className={styles.entryBtn} disabled={loading}>
-                                    Confirmar Entrada {selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}
+                                <button
+                                    onClick={() => handleRegisterAction('entrada')}
+                                    className={styles.entryBtn}
+                                    disabled={loading || isWaitingConfirm}
+                                    style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
+                                >
+                                    {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Confirmar Entrada ${selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}`}
                                 </button>
                             ) : (
-                                <button onClick={() => handleRegisterAction('salida')} className={styles.exitBtn} disabled={loading}>
-                                    Confirmar Salida {selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}
+                                <button
+                                    onClick={() => handleRegisterAction('salida')}
+                                    className={styles.exitBtn}
+                                    disabled={loading || isWaitingConfirm}
+                                    style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
+                                >
+                                    {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Confirmar Salida ${selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}`}
                                 </button>
                             )}
                         </div>
