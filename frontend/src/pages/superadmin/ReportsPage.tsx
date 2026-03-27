@@ -5,7 +5,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { reportService } from '../../services/reportService';
 import { getInstitutions } from '../../services/institutionService';
-import type { Institution } from '../../types/institution';
+import type { Institution } from '../../types';
 
 const ReportsPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

@@ -3,7 +3,7 @@
  * Handles CRUD operations for SuperAdmin management.
  */
 import { apiClient } from '../config/api';
-import type { Admin, AdminFormData } from '../types/admin';
+import type { Admin, AdminFormData } from '../types';
 
 // ============================================================================
 // FUNCIONES

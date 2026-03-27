@@ -157,17 +157,18 @@ const RegisterAdmin: React.FC = () => {
 
         try {
             const payload = {
-                id_entidad: entidadId,
-                id_plan_lic: planId,
-                doc: formData.doc,
-                id_tip_doc: formData.id_tip_doc,
-                primer_nombre: formData.primer_nombre,
-                segundo_nombre: formData.segundo_nombre,
-                primer_apellido: formData.primer_apellido,
-                segundo_apellido: formData.segundo_apellido,
-                user_telefono: formData.telefono,
-                user_correo: formData.correo,
-                contrasena: formData.contrasena,
+                nit: String(entidadId),
+                id_plan: Number(planId),
+                admin_user: {
+                    doc: Number(formData.doc),
+                    primer_nombre: formData.primer_nombre,
+                    segundo_nombre: formData.segundo_nombre || undefined,
+                    primer_apellido: formData.primer_apellido,
+                    segundo_apellido: formData.segundo_apellido || undefined,
+                    telefono: formData.telefono,
+                    correo: formData.correo,
+                    contrasena: formData.contrasena,
+                },
             };
 
             await registrationService.completeEntityRegistration(payload);

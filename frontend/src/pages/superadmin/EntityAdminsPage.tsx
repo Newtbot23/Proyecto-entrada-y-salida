@@ -8,7 +8,7 @@ import styles from './EntityAdminsPage.module.css';
 import { AdminFormModal } from '../../components/modals/AdminFormModal';
 import { Pagination } from '../../components/common/Pagination';
 import { apiClient } from '../../config/api';
-import type { AdminFormData } from '../../types/admin';
+import type { AdminFormData } from '../../types';
 
 interface EntityAdmin {
     doc: string;

@@ -5,20 +5,12 @@ import styles from './DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
-    title: string;
-    userName: string;
-    roleLabel: string;
-    role: 'superadmin' | 'admin';
-    onLogout: () => void;
+    role?: 'superadmin' | 'admin';
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     children,
-    title,
-    userName,
-    roleLabel,
-    role,
-    onLogout
+    role
 }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileSidebarOpen] = useState(false);
@@ -33,16 +25,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 isOpen={isMobileSidebarOpen}
                 isCollapsed={isSidebarCollapsed}
                 onToggle={toggleSidebar}
-                role={role}
+                userType={role === 'superadmin' ? 'superadmin' : 'normal'}
             />
 
             <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
-                <Header
-                    title={title}
-                    userName={userName}
-                    role={roleLabel}
-                    onLogout={onLogout}
-                />
+                <Header />
 
                 <div className={styles.contentWrapper}>
                     {children}

@@ -4,19 +4,8 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 const AdminUsersPage: React.FC = () => {
     const userData = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/login');
-    };
-
     return (
-        <DashboardLayout
-            title="Gestión de Usuarios"
-            userName={userData.nombre || 'Admin'}
-            roleLabel="Administrador"
-            role="admin"
-            onLogout={handleLogout}
-        >
+        <DashboardLayout>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div>

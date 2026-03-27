@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './Plans.module.css';
-import type { PlanFeature } from '../../types/plans';
+import type { PlanFeature } from '../../types';
 
 interface PlanFeaturesProps {
     features?: PlanFeature[];

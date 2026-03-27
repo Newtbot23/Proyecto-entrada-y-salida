@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './Pagination.module.css';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
-import type { PaginationMeta } from '../../types/institution';
+import type { PaginationMeta } from '../../types';
 
 interface PaginationProps {
     meta: PaginationMeta;

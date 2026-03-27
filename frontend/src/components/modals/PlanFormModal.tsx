@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import styles from './PlanFormModal.module.css';
-import type { LicensePlan, PlanFormMode, PlanFormData } from '../../types/licensePlan';
+import type { LicensePlan, PlanFormMode, PlanFormData } from '../../types';
 
 interface PlanFormModalProps {
     isOpen: boolean;

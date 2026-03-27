@@ -416,3 +416,18 @@ export interface PricingPlan {
     is_popular?: boolean;
     button_text?: string;
 }
+
+// Aliases for backward compatibility with old type file imports
+export type Institution = Entidad & {
+    id?: number | string;
+    status?: string;
+    activeLicensesCount?: number;
+    created_at?: string;
+    updated_at?: string;
+};
+export type InstitutionFormData = CreateEntityDTO;
+
+export interface PlanFeature {
+    text: string;
+    included: boolean;
+}
