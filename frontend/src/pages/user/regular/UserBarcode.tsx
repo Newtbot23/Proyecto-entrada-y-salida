@@ -52,7 +52,8 @@ const UserBarcode: React.FC = () => {
         // User Data
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(16);
-        doc.text(`Usuario: ${user.nombre}`, 20, 60);
+        const userName = user.nombre || [user.primer_nombre, user.primer_apellido].filter(Boolean).join(' ') || 'Usuario Default';
+        doc.text(`Usuario: ${userName}`, 20, 60);
         doc.text(`Documento: ${user.id || user.doc || 'N/A'}`, 20, 70);
 
         // Barcode Title

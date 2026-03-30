@@ -17,9 +17,9 @@ interface VehiculoContainerProps {
 
 const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
-export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({ 
+export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
     vehiculos, loading, catalogos, isSubmitting, isOcrLoading,
-    onToggleStatus, onSetDefault, onCreate, onPerformOCR 
+    onToggleStatus, onSetDefault, onCreate, onPerformOCR
 }) => {
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({
@@ -28,19 +28,32 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
         marca_vehiculo_id: '',
         modelo: '',
         color: '',
-        foto: null as File | null
+        foto: null as File | null,
+        foto_placa: null as File | null
     });
     const [placaError, setPlacaError] = useState<string | null>(null);
 
-    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setForm(prev => ({ ...prev, foto: e.target.files![0] }));
+        }
+    };
+
+    const handlePlateImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            setForm(prev => ({ ...prev, foto: file }));
+            setForm(prev => ({ ...prev, foto_placa: file }));
             setPlacaError(null);
 
             const res = await onPerformOCR(file);
             if (res.success && res.plate) {
-                setForm(prev => ({ ...prev, placa: res.plate! }));
+                if (form.placa) {
+                    if (form.placa !== res.plate) {
+                        alert(`¡Atención! La placa detectada en la imagen (${res.plate}) no coincide con la placa que ingresaste (${form.placa}).`);
+                    }
+                } else {
+                    setForm(prev => ({ ...prev, placa: res.plate! }));
+                }
             }
         }
     };
@@ -56,11 +69,12 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
         formData.append('modelo', form.modelo);
         formData.append('color', form.color);
         if (form.foto) formData.append('foto_general', form.foto);
+        if (form.foto_placa) formData.append('foto_detalle', form.foto_placa);
 
         const res = await onCreate(formData);
         if (res.success) {
             setShowModal(false);
-            setForm({ placa: '', tipo_vehiculo_id: '', marca_vehiculo_id: '', modelo: '', color: '', foto: null });
+            setForm({ placa: '', tipo_vehiculo_id: '', marca_vehiculo_id: '', modelo: '', color: '', foto: null, foto_placa: null });
         } else if (res.error) {
             setPlacaError(res.error);
         }
@@ -101,7 +115,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                             {vehiculos.map((v) => (
                                 <tr key={v.placa} className={styles.row}>
                                     <td className={styles.thTd}>
-                                        <button 
+                                        <button
                                             onClick={() => !v.es_predeterminado && onSetDefault(v.placa, 'vehiculo')}
                                             className={`${styles.starButton} ${v.es_predeterminado ? styles.starButtonVehiculoActive : ''}`}
                                             title={v.es_predeterminado ? "Vehículo principal" : "Marcar como principal"}
@@ -112,11 +126,11 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                     <td className={styles.thTd}>
                                         <div className={styles.assetImageContainer}>
                                             {v.img_vehiculo ? (
-                                                <img 
-                                                    src={`${STORAGE_URL}/${v.img_vehiculo.split('|')[0]}`} 
-                                                    alt="Vehiculo" 
+                                                <img
+                                                    src={`${STORAGE_URL}/${v.img_vehiculo.split(/[,|]/)[0]}`}
+                                                    alt="Vehiculo"
                                                     className={styles.assetImage}
-                                                    onClick={() => window.open(`${STORAGE_URL}/${v.img_vehiculo!.split('|')[0]}`, '_blank')}
+                                                    onClick={() => window.open(`${STORAGE_URL}/${v.img_vehiculo!.split(/[,|]/)[0]}`, '_blank')}
                                                 />
                                             ) : <span className={styles.noImage}>Sin foto</span>}
                                         </div>
@@ -152,24 +166,30 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                     <div className={styles.modalContent}>
                         <h3 className={styles.modalTitle}>Registrar Nuevo Vehículo</h3>
                         <form onSubmit={handleSubmit} className={styles.formGrid}>
-                            
-                            {/* FOTO OCR - Span full width */}
-                            <div className={styles.formGroupFull}>
-                                <label className={styles.label}>Foto del Vehículo (Opcional):</label>
-                                <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
-                                {isOcrLoading && <p className={styles.ocrLoadingVehiculo}>Analizando placa...</p>}
+
+                            {/* FOTO VEHICULO Y FOTO PLACA OCR */}
+                            <div className={styles.formGroupFull} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label className={styles.label}>Foto del Vehículo:</label>
+                                    <input type="file" accept="image/*" onChange={handleImageSelect} className={styles.input} />
+                                </div>
+                                <div>
+                                    <label className={styles.label}>Foto de la Placa:</label>
+                                    <input type="file" accept="image/*" onChange={handlePlateImageSelect} className={styles.input} />
+                                    {isOcrLoading && <p className={styles.ocrLoadingVehiculo}>Analizando placa...</p>}
+                                </div>
                             </div>
 
                             {/* PLACA */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Placa:</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={form.placa}
                                     onChange={e => setForm(prev => ({ ...prev, placa: alphanumericNoSpaces(e.target.value) }))}
                                     placeholder="Ej: ABC123"
                                     className={`${styles.input} ${placaError ? styles.inputError : ''}`}
-                                    required 
+                                    required
                                 />
                                 {placaError && <p className={styles.errorText}>{placaError}</p>}
                             </div>
@@ -177,7 +197,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                             {/* TIPO VEHICULO */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Tipo de Vehículo:</label>
-                                <select 
+                                <select
                                     className={styles.input}
                                     value={form.tipo_vehiculo_id}
                                     onChange={e => setForm(prev => ({ ...prev, tipo_vehiculo_id: e.target.value }))}
@@ -193,7 +213,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                             {/* MARCA */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Marca:</label>
-                                <select 
+                                <select
                                     className={styles.input}
                                     value={form.marca_vehiculo_id}
                                     onChange={e => setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }))}
@@ -209,24 +229,24 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                             {/* MODELO */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Modelo:</label>
-                                <input 
-                                    type="text" 
-                                    className={styles.input} 
-                                    value={form.modelo} 
-                                    onChange={e => setForm(prev => ({ ...prev, modelo: alphanumeric(e.target.value) }))} 
-                                    required 
+                                <input
+                                    type="text"
+                                    className={styles.input}
+                                    value={form.modelo}
+                                    onChange={e => setForm(prev => ({ ...prev, modelo: alphanumeric(e.target.value) }))}
+                                    required
                                 />
                             </div>
 
                             {/* COLOR */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Color:</label>
-                                <input 
-                                    type="text" 
-                                    className={styles.input} 
-                                    value={form.color} 
-                                    onChange={e => setForm(prev => ({ ...prev, color: alphanumeric(e.target.value) }))} 
-                                    required 
+                                <input
+                                    type="text"
+                                    className={styles.input}
+                                    value={form.color}
+                                    onChange={e => setForm(prev => ({ ...prev, color: alphanumeric(e.target.value) }))}
+                                    required
                                 />
                             </div>
 

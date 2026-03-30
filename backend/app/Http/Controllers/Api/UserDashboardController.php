@@ -223,10 +223,10 @@ class UserDashboardController extends Controller
                 $pathDetalle = $request->file('foto_detalle')->store('vehiculos', 'public');
             }
 
-            // Concatenar rutas con pipe |
+            // Concatenar rutas con coma ,
             $rutaFinal = $pathGeneral;
             if ($pathDetalle) {
-                $rutaFinal = $rutaGeneral = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
+                $rutaFinal = $pathGeneral ? $pathGeneral . ',' . $pathDetalle : $pathDetalle;
             }
 
             Vehiculos::create([

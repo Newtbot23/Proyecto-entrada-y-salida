@@ -54,10 +54,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Context
     Route::get('/user', function (Request $request) {
         $user = $request->user();
-        $isInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
-            ->where('tipo_participante', 'instructor')
-            ->exists();
-        $user->es_instructor = $isInstructor;
+        
+        if ($user instanceof \App\Models\Usuarios) {
+            $isInstructor = DetalleFichaUsuarios::where('doc', $user->doc)
+                ->where('tipo_participante', 'instructor')
+                ->exists();
+            $user->es_instructor = $isInstructor;
+            $user->setAttribute('nombre', trim($user->primer_nombre . ' ' . $user->primer_apellido));
+        }
+        
         return $user;
     });
 

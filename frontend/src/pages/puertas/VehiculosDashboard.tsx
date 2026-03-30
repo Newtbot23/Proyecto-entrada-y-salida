@@ -22,79 +22,112 @@ const VehiculosDashboard: React.FC = () => {
     const [isWaitingConfirm, setIsWaitingConfirm] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const timeoutRef = useRef<number | null>(null);
+    const confirmBtnRef = useRef<HTMLButtonElement>(null);
+    
+    // NUEVA REFERENCIA: Validar doble escaneo por placa o documento
+    const documentoEsperado = useRef<string | null>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                documentoEsperado.current = null;
+                setSearchResult(null);
+                setSearchQuery('');
+                setSelectedVehiculo(null);
+                setSelectedEquipos([]);
+                setTraeEquipo(false);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                    inputRef.current.focus();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         if (!loading && inputRef.current) {
             inputRef.current.focus();
-            inputRef.current.select();
         }
     }, [loading, searchResult]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. Capturar valor del DOM físicamente, evadiendo el render cycle del estado React
-        const currentQuery = inputRef.current ? inputRef.current.value.trim() : '';
-        
-        // 2. Reset Físico Inmediato (Limpiar el input para el hardware antes del render)
+        // 1. Capturar valor del DOM y aplicar trim para evitar espacios invisibles
+        const rawValor = inputRef.current ? inputRef.current.value : '';
+        const currentQuery = rawValor.trim();
+
+        // 2. Limpieza Obligatoria post-escaneo (DOM y Estado)
         if (inputRef.current) {
             inputRef.current.value = '';
             inputRef.current.focus();
         }
-        // Igualmente informamos a React que el campo se vació para sincronizar
         setSearchQuery('');
 
         if (!currentQuery) {
             return;
         }
 
-        const now = Date.now();
+        // VALIDACIÓN DE REFERENCIA TEMPORAL (Segundo Escaneo)
+        if (documentoEsperado.current) {
+            if (isWaitingConfirm) {
+                toast.warning('Espere a que se habilite el botón de confirmación (4 segundos).');
+                return;
+            }
+            
+            const docGuardado = String(documentoEsperado.current).trim();
+            const docEscaneado = String(currentQuery).trim();
 
-        // CAPA 1 y 2: Identificador del Intento y Validación de Tiempos
-        if (lastScanRef.current && lastScanRef.current.query === currentQuery) {
-            const timeDiff = now - lastScanRef.current.time;
+            console.log('Validación -> Esperado:', docGuardado, '(', typeof docGuardado, ') | Escaneado:', docEscaneado, '(', typeof docEscaneado, ')');
 
-            if (timeDiff < 4000) {
-                if (timeDiff >= 800) {
-                    toast.warning('Espere 4 segundos para verificar los datos antes de confirmar');
-                }
-                return; // Return inmediato
-            } else if (timeDiff <= 10000) {
-                // Ejecución de confirmación prioritaria
-                if (searchResult && selectedVehiculo) {
-                    const accion = isVehiculoInside(selectedVehiculo) ? 'salida' : 'entrada';
-                    handleRegisterAction(accion);
-                    lastScanRef.current = null;
-                    setIsWaitingConfirm(false);
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    return; // Muerte incondicional de la búsqueda duplicada
-                } else {
-                    toast.error('No hay resultados previos para confirmar. Busque nuevamente.');
+            if (docGuardado === docEscaneado) {
+                if (!selectedVehiculo) {
+                    toast.error('Seleccione un vehículo antes de confirmar.');
                     return;
                 }
+                const accion = isVehiculoInside(selectedVehiculo) ? 'salida' : 'entrada';
+                handleRegisterAction(accion);
+            } else {
+                toast.error('El escaneo no coincide con el registro actual. Búsqueda cancelada.');
+                documentoEsperado.current = null;
+                setSearchResult(null);
+                setSearchQuery('');
+                setSelectedVehiculo(null);
+                setSelectedEquipos([]);
+                setTraeEquipo(false);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                    inputRef.current.focus();
+                }
             }
-            // CAPA 3: Si pasó > 10000ms, dejamos que el código proceda a hacer una búsqueda nueva.
+            return; // DETIENE CUALQUIER OTRA BÚSQUEDA
         }
 
-        // CAPA 3: Ejecución de Búsqueda Nueva
-        if (lastScanRef.current?.query !== currentQuery) {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        }
+        const now = Date.now();
 
         lastScanRef.current = { query: currentQuery, time: now };
         setIsWaitingConfirm(true);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = window.setTimeout(() => {
-            if (lastScanRef.current?.query === currentQuery) {
-                setIsWaitingConfirm(false);
+            setIsWaitingConfirm(false);
+            // Mantenemos el foco en el input explícitamente
+            if (inputRef.current) {
+                inputRef.current.focus();
             }
-        }, 10000);
+        }, 4000);
 
         setLoading(true);
         
         try {
             const data = await searchVehiculo(currentQuery);
             setSearchResult(data);
+            
+            // GUARDAMOS EL QUERY EXITOSO EN LA REFERENCIA TEMPORAL (placa o doc)
+            documentoEsperado.current = currentQuery;
             
             // CASO A: EL USUARIO YA ESTÁ EN SEDE (Salida)
             // Priorizamos si hay un registro activo (especialmente si es búsqueda por placa)
@@ -170,6 +203,10 @@ const VehiculosDashboard: React.FC = () => {
             setSelectedEquipos([]);
         } finally {
             setLoading(false);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+                inputRef.current.focus();
+            }
             setSearchQuery('');
         }
     };
@@ -231,11 +268,16 @@ const VehiculosDashboard: React.FC = () => {
             setSelectedVehiculo(null);
             setSelectedEquipos([]);
             setTraeEquipo(false);
+            documentoEsperado.current = null; // Limpieza post confirmación
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Error al registrar actividad');
         } finally {
             setLoading(false);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+                inputRef.current.focus();
+            }
         }
     };
 
@@ -383,19 +425,21 @@ const VehiculosDashboard: React.FC = () => {
                                         <button 
                                             onClick={() => handleRegisterAction('entrada')} 
                                             className={styles.entryBtn} 
-                                            disabled={loading || isWaitingConfirm}
+                                            disabled={loading || isWaitingConfirm || !selectedVehiculo}
+                                            ref={confirmBtnRef}
                                             style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
                                         >
-                                            {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Registrar Ingreso de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
+                                            {isWaitingConfirm ? 'Espere 4 seg...' : `Registrar Ingreso de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
                                         </button>
                                     ) : (
                                         <button 
                                             onClick={() => handleRegisterAction('salida')} 
                                             className={styles.exitBtn} 
-                                            disabled={loading || isWaitingConfirm}
+                                            disabled={loading || isWaitingConfirm || !selectedVehiculo}
+                                            ref={confirmBtnRef}
                                             style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
                                         >
-                                            {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Registrar Salida de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
+                                            {isWaitingConfirm ? 'Espere 4 seg...' : `Registrar Salida de ${selectedVehiculo} ${traeEquipo && selectedEquipos.length > 0 ? `(Con ${selectedEquipos.length} equipos)` : ''}`}
                                         </button>
                                     )}
                                 </div>

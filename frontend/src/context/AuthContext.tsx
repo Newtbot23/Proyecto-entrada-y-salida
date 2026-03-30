@@ -5,6 +5,8 @@ export interface User {
     id?: number | string;
     doc?: string;
     nombre: string;
+    primer_nombre?: string;
+    primer_apellido?: string;
     rol: string;
     id_rol: number;
     correo: string;

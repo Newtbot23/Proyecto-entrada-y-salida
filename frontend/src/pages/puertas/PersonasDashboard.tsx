@@ -20,80 +20,106 @@ const PersonasDashboard: React.FC = () => {
     const [isWaitingConfirm, setIsWaitingConfirm] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const timeoutRef = useRef<number | null>(null);
+    const confirmBtnRef = useRef<HTMLButtonElement>(null);
+    
+    // NUEVA REFERENCIA: Validar doble escaneo
+    const documentoEsperado = useRef<string | null>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                documentoEsperado.current = null;
+                setSearchResult(null);
+                setSearchDoc('');
+                setSelectedEquipos([]);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                    inputRef.current.focus();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         if (!loading && inputRef.current) {
             inputRef.current.focus();
-            inputRef.current.select();
         }
     }, [loading, searchResult]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. Capturar valor del DOM físicamente, evadiendo el render cycle del estado React
-        const currentDoc = inputRef.current ? inputRef.current.value.trim() : '';
+        // 1. Capturar valor del DOM y aplicar trim para evitar espacios invisibles
+        const rawValor = inputRef.current ? inputRef.current.value : '';
+        const currentDoc = rawValor.trim();
 
-        // 2. Reset Físico Inmediato (Limpiar el input para el hardware antes del render)
+        // 2. Limpieza Obligatoria post-escaneo (DOM y Estado)
         if (inputRef.current) {
             inputRef.current.value = '';
             inputRef.current.focus();
         }
-        // Igualmente informamos a React que el campo se vació para sincronizar
         setSearchDoc('');
 
         if (!currentDoc) {
             return;
         }
 
-        const now = Date.now();
+        // VALIDACIÓN DE REFERENCIA TEMPORAL (Segundo Escaneo)
+        if (documentoEsperado.current) {
+            if (isWaitingConfirm) {
+                toast.warning('Espere a que se habilite el botón de confirmación (4 segundos).');
+                return;
+            }
+            
+            const docGuardado = String(documentoEsperado.current).trim();
+            const docEscaneado = String(currentDoc).trim();
 
-        // CAPA 1 y 2: Identificador del Intento y Validación de Tiempos
-        if (lastScanRef.current && lastScanRef.current.doc === currentDoc) {
-            const timeDiff = now - lastScanRef.current.time;
+            console.log('Validación -> Esperado:', docGuardado, '(', typeof docGuardado, ') | Escaneado:', docEscaneado, '(', typeof docEscaneado, ')');
 
-            if (timeDiff < 4000) {
-                if (timeDiff >= 800) {
-                    toast.warning('Espere 4 segundos para verificar los datos antes de confirmar');
-                }
-                return; // Return inmediato
-            } else if (timeDiff <= 10000) {
-                // Ejecución de confirmación prioritaria
-                if (searchResult && searchResult.usuario.doc === currentDoc) {
-                    const accion = searchResult.estaAdentro ? 'salida' : 'entrada';
-                    handleRegisterAction(accion);
-                    lastScanRef.current = null;
-                    setIsWaitingConfirm(false);
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    return; // Muerte incondicional de la búsqueda duplicada
-                } else {
-                    toast.error('No hay resultados previos para confirmar. Busque nuevamente.');
-                    return;
+            if (docGuardado === docEscaneado) {
+                // Coincide exactamente: Confirmar
+                const accion = searchResult?.estaAdentro ? 'salida' : 'entrada';
+                handleRegisterAction(accion);
+            } else {
+                // NO coincide: Error fatal visual y reset de cero
+                toast.error('El documento escaneado no coincide con el registro actual. Búsqueda cancelada.');
+                documentoEsperado.current = null;
+                setSearchResult(null);
+                setSearchDoc('');
+                setSelectedEquipos([]);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (inputRef.current) {
+                    inputRef.current.value = '';
+                    inputRef.current.focus();
                 }
             }
-            // CAPA 3: Si pasó > 10000ms, dejamos que el código proceda a hacer una búsqueda nueva.
+            return; // DETIENE CUALQUIER OTRA BÚSQUEDA
         }
 
-        // CAPA 3: Ejecución de Búsqueda Nueva
-        if (lastScanRef.current?.doc !== currentDoc) {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        }
+        const now = Date.now();
 
         lastScanRef.current = { doc: currentDoc, time: now };
         setIsWaitingConfirm(true);
 
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = window.setTimeout(() => {
-            if (lastScanRef.current?.doc === currentDoc) {
-                setIsWaitingConfirm(false);
+            setIsWaitingConfirm(false);
+            if (inputRef.current) {
+                inputRef.current.focus();
             }
-        }, 10000);
+        }, 4000);
 
         setLoading(true);
         // NO hacemos setSearchResult(null)
         try {
             const data = await searchPersona(currentDoc);
             setSearchResult(data);
+            
+            // GUARDAMOS EL DOCUMENTO EXITOSO PARA LA PRÓXIMA COMPROBACIÓN
+            documentoEsperado.current = data.usuario.doc;
 
             // CASO A: EL USUARIO YA ESTÁ EN SEDE (Salida)
             if (data.registro_activo) {
@@ -138,6 +164,10 @@ const PersonasDashboard: React.FC = () => {
             toast.error(error.message || 'Usuario no encontrado');
         } finally {
             setLoading(false);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+                inputRef.current.focus();
+            }
             setSearchDoc('');
         }
     };
@@ -181,11 +211,16 @@ const PersonasDashboard: React.FC = () => {
             setSearchResult(null);
             setSearchDoc('');
             setSelectedEquipos([]);
+            documentoEsperado.current = null; // Limpieza post confirmación
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Error al registrar actividad');
         } finally {
             setLoading(false);
+            if (inputRef.current) {
+                inputRef.current.value = '';
+                inputRef.current.focus();
+            }
         }
     };
 
@@ -291,18 +326,20 @@ const PersonasDashboard: React.FC = () => {
                                     onClick={() => handleRegisterAction('entrada')}
                                     className={styles.entryBtn}
                                     disabled={loading || isWaitingConfirm}
+                                    ref={confirmBtnRef}
                                     style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
                                 >
-                                    {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Confirmar Entrada ${selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}`}
+                                    {isWaitingConfirm ? 'Espere 4 seg...' : `Confirmar Entrada ${selectedEquipos.length > 0 ? `(${selectedEquipos.length} Equipos)` : ''}`}
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => handleRegisterAction('salida')}
                                     className={styles.exitBtn}
                                     disabled={loading || isWaitingConfirm}
+                                    ref={confirmBtnRef}
                                     style={isWaitingConfirm ? { backgroundColor: '#fef08a', color: '#854d0e', borderColor: '#eab308', cursor: 'wait' } : {}}
                                 >
-                                    {isWaitingConfirm ? 'Escanea de nuevo para confirmar...' : `Confirmar Salida ${selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}`}
+                                    {isWaitingConfirm ? 'Espere 4 seg...' : `Confirmar Salida ${selectedEquipos.length > 0 ? ` (${selectedEquipos.length} Equipos)` : ''}`}
                                 </button>
                             )}
                         </div>
