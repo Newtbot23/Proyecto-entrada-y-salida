@@ -46,7 +46,10 @@ const FichasCreate: React.FC = () => {
         e.preventDefault();
         setSuccessMessage('');
         setErrorDetails(null);
-        createMutation.mutate(formData);
+        createMutation.mutate({
+            ...formData,
+            id_jornada: Number(formData.id_jornada)
+        } as any);
     };
 
     if (isLoadingCatalogs) return <div className={styles.loading}>Cargando catálogos...</div>;

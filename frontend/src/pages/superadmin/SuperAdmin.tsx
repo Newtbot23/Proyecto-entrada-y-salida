@@ -7,7 +7,7 @@ import Header from '../../components/layout/Header';
 import { PlusIcon, EditIcon, TrashIcon } from '../../components/common/Icons';
 import { AdminFormModal } from '../../components/modals/AdminFormModal';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
-import type { Admin, AdminFormData } from '../../types/admin';
+import type { Admin, AdminFormData } from '../../types';
 import { getAdmins, createAdmin, updateAdmin, deleteAdmin as deleteAdminApi } from '../../services/adminService';
 
 const SuperAdmin: React.FC = () => {

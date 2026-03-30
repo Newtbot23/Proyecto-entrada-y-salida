@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import styles from './AdminFormModal.module.css';
-import type { Admin, AdminFormData } from '../../types/admin';
+import type { Admin, AdminFormData } from '../../types';
 
 interface AdminFormModalProps {
     isOpen: boolean;

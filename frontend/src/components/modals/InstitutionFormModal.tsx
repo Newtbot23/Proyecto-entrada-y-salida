@@ -18,7 +18,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import styles from './InstitutionFormModal.module.css';
-import type { Institution, InstitutionFormData } from '../../types/institution';
+import type { Institution, InstitutionFormData } from '../../types';
 
 // ============================================================================
 // INTERFACES Y TIPOS

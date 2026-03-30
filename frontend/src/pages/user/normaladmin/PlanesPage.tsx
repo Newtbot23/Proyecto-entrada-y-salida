@@ -2,21 +2,8 @@ import React from 'react';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 
 const AdminPlanesPage: React.FC = () => {
-    const userData = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/login');
-    };
-
     return (
-        <DashboardLayout
-            title="Mi Plan y Licencia"
-            userName={userData.nombre || 'Admin'}
-            roleLabel="Administrador"
-            role="admin"
-            onLogout={handleLogout}
-        >
+        <DashboardLayout>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <h2>Estado de tu Plan</h2>
                 <p>Aquí puedes ver los detalles de tu suscripción actual.</p>

@@ -3,7 +3,7 @@ import styles from './LicenseTable.module.css';
 import { type LicenseData } from '../../services/licenseDashboardService';
 import { LicenseDetailsModal } from '../modals/LicenseDetailsModal';
 import { Pagination } from '../common/Pagination';
-import type { PaginationMeta } from '../../types/institution';
+import type { PaginationMeta } from '../../types';
 
 interface LicenseTableProps {
     data: LicenseData[];
@@ -72,7 +72,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, paginationMeta, onPag
                                 <td>{row.fecha_vencimiento}</td>
                                 <td>
                                     <div className={styles.actions}>
-                                        {row.estado === 'publish' && (
+                                        {row.estado === 'activo' && (
                                             <button
                                                 className={styles.actionBtn}
                                                 onClick={() => onUpdateStatus?.(row.id, 'inactivo')}
@@ -83,7 +83,7 @@ const LicenseTable: React.FC<LicenseTableProps> = ({ data, paginationMeta, onPag
                                         {row.estado === 'inactivo' && (
                                             <button
                                                 className={styles.actionBtn}
-                                                onClick={() => onUpdateStatus?.(row.id, 'publish')}
+                                                onClick={() => onUpdateStatus?.(row.id, 'activo')}
                                             >
                                                 Reactivar
                                             </button>

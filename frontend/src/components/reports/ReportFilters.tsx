@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ReportFilters.module.css';
 import { ChevronDownIcon } from '../common/Icons';
-import type { ReportFilters as ReportFiltersType } from '../../types/report';
+import type { ReportFilters as ReportFiltersType } from '../../types';
 import { getInstitutionsForFilter, getLicenseTypesForFilter } from '../../services/reportService';
 
 interface ReportFiltersProps {

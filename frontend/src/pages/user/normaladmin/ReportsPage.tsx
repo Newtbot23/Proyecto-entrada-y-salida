@@ -2,13 +2,6 @@ import React from 'react';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 
 const AdminReportsPage: React.FC = () => {
-    const userData = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-
-    const handleLogout = () => {
-        sessionStorage.clear();
-        window.location.replace('/login');
-    };
-
     const reportCards = [
         { title: 'Reporte de Asistencia', description: 'Entradas y salidas detalladas por rango de fecha.' },
         { title: 'Reporte de Incidencias', description: 'Novedades reportadas durante el turno.' },
@@ -16,13 +9,7 @@ const AdminReportsPage: React.FC = () => {
     ];
 
     return (
-        <DashboardLayout
-            title="Reportes"
-            userName={userData.nombre || 'Admin'}
-            roleLabel="Administrador"
-            role="admin"
-            onLogout={handleLogout}
-        >
+        <DashboardLayout>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <h2>Centro de Reportes</h2>
                 <p>Genera y exporta la información de tu entidad.</p>

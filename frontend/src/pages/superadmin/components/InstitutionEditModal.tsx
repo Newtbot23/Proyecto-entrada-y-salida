@@ -16,7 +16,7 @@ interface InstitutionEditModalProps {
     errors: Partial<Record<string, string>>;
     serverError: string | null;
     isSaving: boolean;
-    onChange: (field: string, value: string) => void;
+    onChange: (field: "nombre_entidad" | "nit" | "correo" | "telefono" | "direccion" | "nombre_titular", value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
 }
 

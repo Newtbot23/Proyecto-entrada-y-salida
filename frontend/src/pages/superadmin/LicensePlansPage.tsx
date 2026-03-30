@@ -12,7 +12,7 @@ import {
     updateLicensePlan,
     disableLicensePlan
 } from '../../services/licensePlanService';
-import type { LicensePlan, PlanFormMode, PlanFormData } from '../../types/licensePlan';
+import type { LicensePlan, PlanFormMode, PlanFormData } from '../../types';
 
 const LicensePlansPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -33,7 +33,7 @@ const LicensePlansPage: React.FC = () => {
     const handleSavePlan = async (formData: PlanFormData) => {
         try {
             if (formMode === 'edit' && selectedPlan) {
-                await updateLicensePlan(selectedPlan.id, formData);
+                await updateLicensePlan(String(selectedPlan.id), formData);
             } else {
                 await createLicensePlan(formData);
             }
@@ -47,7 +47,7 @@ const LicensePlansPage: React.FC = () => {
     const handleDeletePlan = async () => {
         if (!selectedPlan) return;
         try {
-            await disableLicensePlan(selectedPlan.id);
+            await disableLicensePlan(String(selectedPlan.id));
             queryClient.invalidateQueries({ queryKey: ['licensePlans'] });
             setIsDeleteModalOpen(false);
         } catch (error) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal } from '../common/Modal';
 import styles from './InstitutionDetailsModal.module.css';
-import type { Institution } from '../../types/institution';
+import type { Institution } from '../../types';
 
 interface InstitutionDetailsModalProps {
     isOpen: boolean;
