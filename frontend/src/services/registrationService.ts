@@ -1,11 +1,11 @@
 import { apiClient } from '../config/api';
 import type { 
     ApiResponse, 
-    Entidad, 
     CreateEntityDTO, 
-    CompleteRegistrationDTO, 
+    CompleteRegistrationPayload, 
     Usuario, 
-    QrRegistrationResponse 
+    QrRegistrationResponse,
+    CreateEntityResponse
 } from '../types';
 
 export const registrationService = {
@@ -13,10 +13,10 @@ export const registrationService = {
      * Step 1: Create an Entity
      * Returns the created entity data including its ID.
      */
-    createEntity: async (entityData: CreateEntityDTO): Promise<Entidad> => {
+    createEntity: async (entityData: CreateEntityDTO): Promise<CreateEntityResponse> => {
         try {
             // apiClient returns response.data directly if it exists
-            return await apiClient.post<Entidad, CreateEntityDTO>('/registration/entidades', entityData);
+            return await apiClient.post<CreateEntityResponse, CreateEntityDTO>('/registration/entidades', entityData);
         } catch (error) {
             console.error('Error creating entity:', error);
             throw error;
@@ -27,9 +27,9 @@ export const registrationService = {
      * Step 2: Complete registration for an existing entity
      * Creates the License and Admin User in one transaction.
      */
-    completeEntityRegistration: async (payload: CompleteRegistrationDTO): Promise<ApiResponse<any>> => {
+    completeEntityRegistration: async (payload: CompleteRegistrationPayload): Promise<ApiResponse<any>> => {
         try {
-            return await apiClient.post<ApiResponse<any>, CompleteRegistrationDTO>('/registration/complete-entity', payload);
+            return await apiClient.post<ApiResponse<any>, CompleteRegistrationPayload>('/registration/complete-entity', payload);
         } catch (error) {
             console.error('Error completing registration:', error);
             throw error;

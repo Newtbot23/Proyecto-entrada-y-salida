@@ -408,7 +408,7 @@ const VehiculosDashboard: React.FC = () => {
                                                                         />
                                                                     )}
                                                                     <div>
-                                                                        <p style={{ fontWeight: 'bold', margin: 0, fontSize: '0.9rem', color: '#111827' }}>{eq.marca}</p>
+                                                                        <p style={{ fontWeight: 'bold', margin: 0, fontSize: '0.9rem', color: '#111827' }}>{typeof eq.marca === 'object' ? (eq.marca as any)?.marca : eq.marca}</p>
                                                                         <p style={{ fontSize: '0.8rem', color: '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
                                                                     </div>
                                                                 </div>

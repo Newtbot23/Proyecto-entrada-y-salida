@@ -11,7 +11,7 @@ class DetalleFichaUsuarios extends Model
 
     public function ficha()
     {
-        return $this->belongsTo(Fichas::class, 'id_ficha', 'id');
+        return $this->belongsTo(Ficha::class, 'id_ficha', 'id');
     }
 
     public function usuario()

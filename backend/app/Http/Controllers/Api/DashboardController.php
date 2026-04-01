@@ -8,8 +8,8 @@ use App\Models\PagosLicencia;
 use App\Models\Registros;
 use App\Models\RegistrosEquipos;
 use App\Models\Vehiculos;
-use App\Models\Equipos;
-use App\Models\Asignaciones;
+use App\Models\Equipo;
+use App\Models\Asignacion;
 use Illuminate\Http\Request;
 use App\Models\Usuarios;
 use App\Models\Entidades;
@@ -89,7 +89,7 @@ class DashboardController extends Controller
             })->count();
 
             // 2. Equipos propios traídos (asignados a usuarios de la entidad)
-            $equiposCount = Asignaciones::whereHas('usuario', function ($query) use ($nit) {
+            $equiposCount = Asignacion::whereHas('usuario', function ($query) use ($nit) {
                 $query->where('nit_entidad', $nit);
             })->count();
 

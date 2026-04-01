@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { FichasService } from '../../../../services/fichasService';
+import { EquiposService } from '../../../../services/equiposService';
+import { AreasService } from '../../../../services/areasService';
 import styles from './FichasAssign.module.css';
 
 interface Usuario {
@@ -19,6 +21,9 @@ const FichasAssign: React.FC = () => {
     const queryClient = useQueryClient();
 
     const [selectedFichaId, setSelectedFichaId] = useState<string>('');
+    const [selectedFichaObj, setSelectedFichaObj] = useState<any | null>(null);
+    const [editingAmbiente, setEditingAmbiente] = useState<string>('');
+    const [savingAmbiente, setSavingAmbiente] = useState(false);
     const [availableUsers, setAvailableUsers] = useState<Usuario[]>([]);
     const [cartUsers, setCartUsers] = useState<Usuario[]>([]);
     const [successMsg, setSuccessMsg] = useState<string>('');
@@ -39,6 +44,12 @@ const FichasAssign: React.FC = () => {
         queryFn: FichasService.getFichasSinUsuarios,
     });
 
+    const { data: catalogs } = useQuery({
+        queryKey: ['fichas-catalogs'],
+        queryFn: () => FichasService.getCatalogs()
+    });
+    const ambientes = catalogs?.ambientes ?? [];
+
     const {
         data: assignableUsersData,
         isLoading: isLoadingUsers,
@@ -47,6 +58,14 @@ const FichasAssign: React.FC = () => {
     } = useQuery({
         queryKey: ['usuariosAsignables'],
         queryFn: FichasService.getUsuariosAsignables,
+    });
+
+    // ── Query: mapa de usuarios administrativos (doc -> area_nombre) ──
+    // Used to show the 'Administrativo' badge and push them to the bottom.
+    const { data: adminMap = {} } = useQuery({
+        queryKey: ['administrativos'],
+        queryFn: AreasService.getAdministrativos,
+        staleTime: 60_000,
     });
 
     // ── Sincronizar datos con estado local ────────────────────
@@ -79,6 +98,8 @@ const FichasAssign: React.FC = () => {
     // ── Handlers ─────────────────────────────────────────────
     const handleSelectFicha = async (ficha: any) => {
         setSelectedFichaId(String(ficha.id));
+        setSelectedFichaObj(ficha);
+        setEditingAmbiente(ficha.numero_ambiente ?? '');
         setFichaSearch(String(ficha.numero_ficha));
         setIsFichaDropdownOpen(false);
         setCartUsers([]); // Reset temporal
@@ -100,6 +121,8 @@ const FichasAssign: React.FC = () => {
 
     const handleClearFicha = () => {
         setSelectedFichaId('');
+        setSelectedFichaObj(null);
+        setEditingAmbiente('');
         setFichaSearch('');
         setCartUsers([]);
         if (assignableUsersData) setAvailableUsers(assignableUsersData);
@@ -188,14 +211,21 @@ const FichasAssign: React.FC = () => {
     const canSave =
         selectedFichaId !== '' && !mutation.isPending;
 
-    // Lista filtrada: la columna derecha la renderiza, handleDragEnd la usa para lookup
-    const filteredAvailableUsers = availableUsers.filter(
-        (u) =>
-            String(u.doc).includes(searchTerm) ||
-            `${u.primer_nombre} ${u.segundo_nombre ?? ''} ${u.primer_apellido} ${u.segundo_apellido ?? ''}`
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())
-    );
+    // Lista filtrada y ORDENADA: admins al fondo para no estorbar al instructor.
+    const filteredAvailableUsers = availableUsers
+        .filter(
+            (u) =>
+                String(u.doc).includes(searchTerm) ||
+                `${u.primer_nombre} ${u.segundo_nombre ?? ''} ${u.primer_apellido} ${u.segundo_apellido ?? ''}`
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            const aIsAdmin = Boolean((adminMap as any)[a.doc]);
+            const bIsAdmin = Boolean((adminMap as any)[b.doc]);
+            if (aIsAdmin === bIsAdmin) return 0;
+            return aIsAdmin ? 1 : -1; // admins van al final
+        });
 
     // Filtrado de Fichas para el ComboBox (Búsqueda por número)
     const filteredFichas = availableFichas?.filter((f: any) => 
@@ -301,6 +331,90 @@ const FichasAssign: React.FC = () => {
                         )}
                     </div>
 
+                    {/* ── Info de la Ficha seleccionada ── */}
+                    {selectedFichaObj && (
+                        <div style={{
+                            marginTop: '1rem',
+                            background: 'linear-gradient(135deg, #16a34a10, #16a34a08)',
+                            border: '1px solid #16a34a40',
+                            borderLeft: '4px solid #16a34a',
+                            borderRadius: '0.5rem',
+                            padding: '1rem 1.25rem',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '1.5rem',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '150px' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Programa</span>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{selectedFichaObj.programa?.programa ?? '—'}</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '150px' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Jornada</span>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>
+                                    <i className="fas fa-clock" style={{ color: '#f59e0b', marginRight: '0.35rem' }}></i>
+                                    {selectedFichaObj.jornada?.jornada ?? '—'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '200px' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ambiente Actual</span>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>
+                                    <i className="fas fa-map-marker-alt" style={{ color: '#3b82f6', marginRight: '0.35rem' }}></i>
+                                    {selectedFichaObj.ambiente?.ambiente ?? selectedFichaObj.numero_ambiente ?? '—'}
+                                </span>
+                            </div>
+                            {/* Selector de cambio de ambiente */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, minWidth: '220px' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cambiar Ambiente</span>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <select
+                                        className={styles.select}
+                                        value={editingAmbiente}
+                                        onChange={(e) => setEditingAmbiente(e.target.value)}
+                                        disabled={savingAmbiente}
+                                        style={{ fontSize: '0.85rem' }}
+                                    >
+                                        <option value="">-- Seleccionar --</option>
+                                        {ambientes.map((a: any) => (
+                                            <option key={a.numero_ambiente} value={a.numero_ambiente}>
+                                                {a.ambiente} ({a.numero_ambiente})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        style={{
+                                            padding: '0.4rem 0.9rem',
+                                            fontSize: '0.82rem',
+                                            fontWeight: 700,
+                                            background: '#16a34a',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.4rem',
+                                            cursor: 'pointer',
+                                            opacity: (savingAmbiente || !editingAmbiente || editingAmbiente === selectedFichaObj.numero_ambiente) ? 0.5 : 1,
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                        disabled={savingAmbiente || !editingAmbiente || editingAmbiente === selectedFichaObj.numero_ambiente}
+                                        onClick={async () => {
+                                            setSavingAmbiente(true);
+                                            try {
+                                                await EquiposService.updateFichaAmbiente(Number(selectedFichaId), editingAmbiente);
+                                                setSelectedFichaObj((prev: any) => ({
+                                                    ...prev,
+                                                    numero_ambiente: editingAmbiente,
+                                                    ambiente: ambientes.find((a: any) => a.numero_ambiente === editingAmbiente)
+                                                }));
+                                                queryClient.invalidateQueries({ queryKey: ['fichasSinUsuarios'] });
+                                            } catch {}
+                                            setSavingAmbiente(false);
+                                        }}
+                                    >
+                                        {savingAmbiente ? 'Guardando...' : 'Guardar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* Tablero Drag & Drop */}
                     <DragDropContext onDragEnd={handleDragEnd}>
                         <div className={styles.dashboard}>
@@ -455,6 +569,16 @@ const FichasAssign: React.FC = () => {
                                                                         <span className={styles.userDoc}>
                                                                             CC: {user.doc}
                                                                         </span>
+                                                                        {/* Badge Administrativo */}
+                                                                        {(adminMap as any)[user.doc] && (
+                                                                            <span
+                                                                                className={styles.badgeInstructorPrevio}
+                                                                                style={{ background: '#6366f1' }}
+                                                                                title={`Área: ${(adminMap as any)[user.doc]?.area_nombre}`}
+                                                                            >
+                                                                                🏢 {(adminMap as any)[user.doc]?.area_nombre ?? 'Administrativo'}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                     {user.es_instructor_previo && (
                                                                         <span className={styles.badgeInstructorPrevio} title="Este usuario ya es instructor en otras fichas">

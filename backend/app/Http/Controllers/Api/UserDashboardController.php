@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Vehiculos;
-use App\Models\Equipos;
-use App\Models\Asignaciones;
+use App\Models\Equipo;
+use App\Models\Asignacion;
 use App\Models\TiposVehiculo;
 use App\Models\MarcasEquipo;
 use App\Models\SistemasOperativos;
@@ -76,7 +76,7 @@ class UserDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
         }
 
-        $equipos = Asignaciones::with(['equipo.marca', 'equipo.sistema_operativo'])
+        $equipos = Asignacion::with(['equipo.marca', 'equipo.sistema_operativo'])
             ->where('doc', $user->doc)
             ->whereHas('equipo')
             ->get()
@@ -277,7 +277,7 @@ class UserDashboardController extends Controller
                 $rutaFinal = $pathGeneral ? $pathGeneral . '|' . $pathDetalle : $pathDetalle;
             }
 
-            Equipos::create([
+            Equipo::create([
                 'serial' => $request->serial,
                 'tipo_equipo' => 'propio',
                 'placa_sena' => 'N/A', // Placa sena defaults to N/A for propio
@@ -291,7 +291,7 @@ class UserDashboardController extends Controller
                 'img_serial' => $rutaFinal,
             ]);
 
-            Asignaciones::create([
+            Asignacion::create([
                 'doc' => $user->doc,
                 'serial_equipo' => $request->serial,
                 'numero_ambiente' => null,
@@ -334,7 +334,7 @@ class UserDashboardController extends Controller
 
             } elseif ($tipo === 'equipo') {
                 // Para equipos, validamos que el usuario tenga la asignación
-                $item = Equipos::where('serial', $id)
+                $item = Equipo::where('serial', $id)
                     ->whereHas('asignaciones', function($q) use ($user) {
                         $q->where('doc', $user->doc);
                     })
@@ -394,7 +394,7 @@ class UserDashboardController extends Controller
 
             } elseif ($tipo === 'equipo') {
                 // Check ownership in asignaciones
-                $item = Asignaciones::where('serial_equipo', $id)
+                $item = Asignacion::where('serial_equipo', $id)
                     ->where('doc', $user->doc)
                     ->first();
 
@@ -403,7 +403,7 @@ class UserDashboardController extends Controller
                 }
 
                 // Reset all for this user
-                Asignaciones::where('doc', $user->doc)
+                Asignacion::where('doc', $user->doc)
                     ->update(['es_predeterminado' => 0]);
 
                 // Set new default

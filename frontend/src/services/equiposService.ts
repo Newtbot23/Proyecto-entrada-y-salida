@@ -99,9 +99,27 @@ export const EquiposService = {
     },
 
     /**
-     * Get equipment filtered by batch name or those without batch.
+     * Get equipment filtered by batch ID.
      */
-    getEquiposByLote: async (lote: string | 'sin_lote'): Promise<any[]> => {
-        return await apiClient.get<any[]>(`/equipos/por-lote?lote=${lote}`);
+    getEquiposByLote: async (idLote: number | string): Promise<any[]> => {
+        return await apiClient.get<any[]>(`/equipos/por-lote?id_lote=${idLote}`);
+    },
+
+    /**
+     * Link or unlink a batch (lote) to a classroom (ambiente).
+     */
+    updateLoteAmbiente: async (loteId: number, idAmbiente: string | null): Promise<any> => {
+        return await apiClient.patch(`/equipos/lotes/${loteId}/ambiente`, {
+            id_ambiente: idAmbiente
+        });
+    },
+
+    /**
+     * Update the linked ambiente of a Ficha.
+     */
+    updateFichaAmbiente: async (fichaId: number, numeroAmbiente: string): Promise<any> => {
+        return await apiClient.patch(`/fichas/${fichaId}/ambiente`, {
+            numero_ambiente: numeroAmbiente
+        });
     }
 };

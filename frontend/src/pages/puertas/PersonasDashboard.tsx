@@ -306,7 +306,7 @@ const PersonasDashboard: React.FC = () => {
                                                             />
                                                         )}
                                                         <div>
-                                                            <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{eq.marca} - {eq.modelo}</p>
+                                                            <p style={{ fontWeight: 'bold', margin: 0, paddingRight: '1.5rem' }}>{typeof eq.marca === 'object' ? (eq.marca as any)?.marca : eq.marca} - {eq.modelo}</p>
                                                             <p style={{ fontSize: '0.85rem', color: isSelected ? '#1d4ed8' : '#374151', margin: '0.25rem 0' }}>SN: {eq.serial}</p>
                                                             <p style={{ fontSize: '0.85rem', color: '#374151', margin: 0 }}>{eq.tipo_equipo}</p>
                                                         </div>
