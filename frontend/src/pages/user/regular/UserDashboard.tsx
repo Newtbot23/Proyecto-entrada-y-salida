@@ -145,13 +145,13 @@ const UserDashboard: React.FC = () => {
     return (
         <div className={styles.root}>
             <DashboardHeader 
-                nombre={user.primer_nombre} 
+                nombre={user.primer_nombre || user.nombre || 'Usuario'} 
                 sessionInfo={sessionInfo || null} 
             />
 
             <DashboardCards 
-                primerNombre={user.primer_nombre}
-                primerApellido={user.primer_apellido}
+                primerNombre={user.primer_nombre || user.nombre || 'Usuario'}
+                primerApellido={user.primer_apellido || ''}
                 correo={user.correo}
             />
 

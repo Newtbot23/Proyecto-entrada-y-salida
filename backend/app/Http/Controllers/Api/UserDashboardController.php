@@ -12,6 +12,7 @@ use App\Models\Equipo;
 use App\Models\Asignacion;
 use App\Models\TiposVehiculo;
 use App\Models\MarcasEquipo;
+use App\Models\MarcaVehiculo;
 use App\Models\SistemasOperativos;
 use App\Http\Requests\Api\Vehiculos\StoreVehiculoRequest;
 use App\Http\Requests\Api\Equipos\StoreEquipoRequest;
@@ -29,8 +30,11 @@ class UserDashboardController extends Controller
     public function getCatalogs()
     {
         $tiposVehiculo = TiposVehiculo::select('id', 'tipo_vehiculo as nombre')->get();
-        $marcasEquipo = MarcasEquipo::select('id', 'marca as nombre')->get();
+        $marcasEquipo  = MarcasEquipo::select('id', 'marca as nombre')->get();
         $sistemasOperativos = SistemasOperativos::select('id', 'sistema_operativo as nombre')->get();
+
+        // Marcas de vehículo agrupadas por tipo para selects dependientes
+        $marcasVehiculo = MarcaVehiculo::select('id', 'nombre', 'id_tipo_vehiculo')->get();
 
         // Synthetic catalog for equipment types (categories)
         $tiposEquipo = [
@@ -43,11 +47,32 @@ class UserDashboardController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'tipos_vehiculo' => $tiposVehiculo,
-                'marcas_equipo' => $marcasEquipo,
-                'sistemas_operativos' => $sistemasOperativos,
-                'tipos_equipo' => $tiposEquipo
+                'tipos_vehiculo'     => $tiposVehiculo,
+                'marcas_vehiculo'    => $marcasVehiculo,
+                'marcas_equipo'      => $marcasEquipo,
+                'sistemas_operativos'=> $sistemasOperativos,
+                'tipos_equipo'       => $tiposEquipo
             ]
+        ]);
+    }
+
+    /**
+     * Devuelve las marcas de vehículo filtradas por tipo.
+     * GET /api/user/marcas-vehiculo?id_tipo_vehiculo={id}
+     */
+    public function getMarcasPorTipo(Request $request)
+    {
+        $idTipo = $request->query('id_tipo_vehiculo');
+
+        $query = MarcaVehiculo::select('id', 'nombre', 'id_tipo_vehiculo');
+
+        if ($idTipo) {
+            $query->where('id_tipo_vehiculo', $idTipo);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $query->orderBy('nombre')->get()
         ]);
     }
 
@@ -230,14 +255,14 @@ class UserDashboardController extends Controller
             }
 
             Vehiculos::create([
-                'placa' => strtoupper($request->placa),
-                'id_tipo_vehiculo' => $request->id_tipo_vehiculo,
-                'doc' => $user->doc,
-                'marca' => $request->marca,
-                'modelo' => $request->modelo,
-                'color' => $request->color,
-                'descripcion' => $request->descripcion ?? '',
-                'img_vehiculo' => $rutaFinal,
+                'placa'           => strtoupper($request->placa),
+                'id_tipo_vehiculo'=> $request->id_tipo_vehiculo,
+                'id_marca'        => $request->id_marca,
+                'doc'             => $user->doc,
+                'modelo'          => $request->modelo,
+                'color'           => $request->color,
+                'descripcion'     => $request->descripcion ?? '',
+                'img_vehiculo'    => $rutaFinal,
             ]);
 
             return response()->json([

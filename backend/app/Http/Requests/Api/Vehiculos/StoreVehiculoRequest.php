@@ -24,7 +24,7 @@ class StoreVehiculoRequest extends FormRequest
         return [
             'placa' => 'required|string|max:10|unique:vehiculos,placa',
             'id_tipo_vehiculo' => 'required|integer',
-            'marca' => 'required|string|max:100',
+            'id_marca' => 'required|integer|exists:marcas_vehiculo,id',
             'modelo' => 'required|string|max:100',
             'color' => 'required|string|max:50',
             'descripcion' => 'nullable|string',

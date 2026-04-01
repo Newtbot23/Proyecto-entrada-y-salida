@@ -110,6 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User Dashboard Routes
     Route::get('/user/catalogs', [UserDashboardController::class, 'getCatalogs']);
+    Route::get('/user/marcas-vehiculo', [UserDashboardController::class, 'getMarcasPorTipo']);
     Route::get('/user/vehiculos', [UserDashboardController::class, 'getVehiculos']);
     Route::get('/user/equipos', [UserDashboardController::class, 'getEquipos']);
     Route::get('/user/entradas', [UserDashboardController::class, 'getEntradas']);

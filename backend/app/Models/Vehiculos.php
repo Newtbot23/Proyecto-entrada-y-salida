@@ -14,8 +14,8 @@ class Vehiculos extends Model
     protected $fillable = [
         'placa',
         'id_tipo_vehiculo',
+        'id_marca',
         'doc',
-        'marca',
         'modelo',
         'color',
         'descripcion',
@@ -27,6 +27,11 @@ class Vehiculos extends Model
     public function tipo_vehiculo()
     {
         return $this->belongsTo(TiposVehiculo::class, 'id_tipo_vehiculo', 'id');
+    }
+
+    public function marca()
+    {
+        return $this->belongsTo(MarcaVehiculo::class, 'id_marca', 'id');
     }
 
     public function usuario()

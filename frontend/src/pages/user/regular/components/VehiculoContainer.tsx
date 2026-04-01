@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import styles from '../UserDashboard.module.css';
 import type { Vehiculo, UserDashboardCatalog } from '../../../../types';
 import { alphanumeric, alphanumericNoSpaces } from '../../../../utils/inputFormatters';
@@ -22,6 +22,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
     onToggleStatus, onSetDefault, onCreate, onPerformOCR
 }) => {
     const [showModal, setShowModal] = useState(false);
+    const [placaError, setPlacaError] = useState<string | null>(null);
     const [form, setForm] = useState({
         placa: '',
         tipo_vehiculo_id: '',
@@ -31,7 +32,16 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
         foto: null as File | null,
         foto_placa: null as File | null
     });
-    const [placaError, setPlacaError] = useState<string | null>(null);
+
+    // ── Selects dependientes ─────────────────────────────────────────────────
+    // Solo muestra las marcas que pertenecen al tipo de vehículo seleccionado.
+    // Se recalcula automáticamente cada vez que cambia tipo_vehiculo_id o el catálogo.
+    const marcasFiltradas = useMemo(() => {
+        if (!form.tipo_vehiculo_id || !catalogos?.marcas_vehiculo) return [];
+        return catalogos.marcas_vehiculo.filter(
+            (m) => String(m.id_tipo_vehiculo) === String(form.tipo_vehiculo_id)
+        );
+    }, [form.tipo_vehiculo_id, catalogos?.marcas_vehiculo]);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -136,7 +146,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                         </div>
                                     </td>
                                     <td className={`${styles.thTd} ${styles.boldCell}`}>{v.placa}</td>
-                                    <td className={styles.thTd}>{v.marca_vehiculo?.nombre || v.marca}</td>
+                                    <td className={styles.thTd}>{v.marca?.nombre ?? '—'}</td>
                                     <td className={styles.thTd}>{v.modelo}</td>
                                     <td className={styles.thTd}>{v.color}</td>
                                     <td className={styles.thTd}>{v.tipo_vehiculo?.tipo_vehiculo}</td>
@@ -200,28 +210,43 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                 <select
                                     className={styles.input}
                                     value={form.tipo_vehiculo_id}
-                                    onChange={e => setForm(prev => ({ ...prev, tipo_vehiculo_id: e.target.value }))}
+                                    onChange={e => setForm(prev => ({
+                                        ...prev,
+                                        tipo_vehiculo_id: e.target.value,
+                                        marca_vehiculo_id: '', // ← reset al cambiar tipo
+                                    }))}
                                     required
                                 >
                                     <option value="">Seleccione...</option>
                                     {(catalogos?.tipos_vehiculo || []).map(t => (
-                                        <option key={String(t.id)} value={t.id}>{t.nombre?.toUpperCase()}</option>
+                                        <option key={String(t.id)} value={t.id}>
+                                            {t.nombre?.toUpperCase()}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* MARCA */}
+                            {/* MARCA — dependiente del tipo seleccionado */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Marca:</label>
                                 <select
                                     className={styles.input}
                                     value={form.marca_vehiculo_id}
                                     onChange={e => setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }))}
+                                    disabled={!form.tipo_vehiculo_id}
                                     required
                                 >
-                                    <option value="">Seleccione...</option>
-                                    {(catalogos?.marcas_vehiculo || []).map(m => (
-                                        <option key={String(m.id)} value={m.id}>{m.nombre?.toUpperCase()}</option>
+                                    <option value="">
+                                        {form.tipo_vehiculo_id
+                                            ? marcasFiltradas.length === 0
+                                                ? 'Sin marcas disponibles'
+                                                : 'Seleccione una marca...'
+                                            : 'Primero seleccione el tipo'}
+                                    </option>
+                                    {marcasFiltradas.map(m => (
+                                        <option key={String(m.id)} value={m.id}>
+                                            {m.nombre?.toUpperCase()}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

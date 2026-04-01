@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             CatalogsSeeder::class,
             NavesSeeder::class,
             JornadasSeeder::class,
+            MarcasVehiculoSeeder::class,
         ]);
     }
 }
