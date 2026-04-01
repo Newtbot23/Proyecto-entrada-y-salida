@@ -4,10 +4,12 @@ import autoTable from 'jspdf-autotable';
 import { useQuery } from '@tanstack/react-query';
 import { reportService } from '../../../services/reportService';
 import type { DailyReportEntry } from '../../../types';
+import { Modal } from '../../../components/common/Modal';
 
 const ReporteDiario = () => {
     // Default to today
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedRecord, setSelectedRecord] = useState<DailyReportEntry | null>(null);
 
     const { data: records = [], isLoading: loading, error } = useQuery<DailyReportEntry[]>({
         queryKey: ['dailyReport', selectedDate],
@@ -113,11 +115,15 @@ const ReporteDiario = () => {
                                 <th style={{ padding: '0.75rem 1rem', color: '#4b5563', fontWeight: '600' }}>Hora Salida</th>
                                 <th style={{ padding: '0.75rem 1rem', color: '#4b5563', fontWeight: '600' }}>Vehículo (Placa)</th>
                                 <th style={{ padding: '0.75rem 1rem', color: '#4b5563', fontWeight: '600' }}>Equipo (Serial)</th>
+                                <th style={{ padding: '0.75rem 1rem', color: '#4b5563', fontWeight: '600', textAlign: 'center' }}>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
                             {records.map((record, index) => (
-                                <tr key={record.id || index} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb' }}>
+                                <tr 
+                                    key={record.id || index} 
+                                    style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb' }}
+                                >
                                     <td style={{ padding: '1rem', fontWeight: '500' }}>{record.doc}</td>
                                     <td style={{ padding: '1rem' }}>{record.usuario_nombre}</td>
                                     <td style={{ padding: '1rem', color: '#059669', fontWeight: '500' }}>{record.hora_entrada}</td>
@@ -138,6 +144,41 @@ const ReporteDiario = () => {
                                             </span>
                                         ) : '-'}
                                     </td>
+                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                        <button
+                                            onClick={() => setSelectedRecord(record)}
+                                            title="Ver detalle del ingreso"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: '0.5rem',
+                                                border: '1px solid #d1d5db',
+                                                backgroundColor: '#ffffff',
+                                                color: '#3b82f6',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                            }}
+                                            onMouseEnter={e => { 
+                                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#3b82f6'; 
+                                                (e.currentTarget as HTMLButtonElement).style.color = 'white';
+                                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82f6';
+                                            }}
+                                            onMouseLeave={e => { 
+                                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#ffffff'; 
+                                                (e.currentTarget as HTMLButtonElement).style.color = '#3b82f6';
+                                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#d1d5db';
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -151,6 +192,118 @@ const ReporteDiario = () => {
                         <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Intenta consultar un día diferente.</p>
                     </div>
                 )
+            )}
+
+            {selectedRecord && (
+                <Modal
+                    isOpen={!!selectedRecord}
+                    onClose={() => setSelectedRecord(null)}
+                    title={`Detalles de Ingreso - ${selectedRecord.usuario_nombre}`}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                        {/* Usuario */}
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            {selectedRecord.usuario_imagen ? (
+                                <img 
+                                    src={`http://localhost:8000/storage/${selectedRecord.usuario_imagen}`} 
+                                    alt="Foto usuario" 
+                                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #3b82f6' }} 
+                                />
+                            ) : (
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', border: '2px solid #d1d5db' }}>
+                                    <svg width="40" height="40" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+                                </div>
+                            )}
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 'bold', color: '#111827' }}>{selectedRecord.usuario_nombre}</h4>
+                                <p style={{ margin: 0, color: '#4b5563', fontSize: '0.875rem' }}>Documento: {selectedRecord.doc}</p>
+                                <p style={{ margin: 0, color: '#4b5563', fontSize: '0.875rem' }}>
+                                    Entrada: <span style={{ color: '#059669', fontWeight: '500' }}>{selectedRecord.hora_entrada}</span> | Salida: <span style={{ color: selectedRecord.hora_salida ? '#dc2626' : '#d97706', fontWeight: '500' }}>{selectedRecord.hora_salida || 'Aún adentro'}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Fichas */}
+                        {selectedRecord.fichas_detalle && selectedRecord.fichas_detalle.length > 0 && (
+                            <div>
+                                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.25rem' }}>Información de Ficha</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {selectedRecord.fichas_detalle.map((ficha, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#f0fdf4', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '0.25rem', backgroundColor: '#bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534', fontSize: '1.25rem' }}>
+                                                🏢
+                                            </div>
+                                            <div style={{ fontSize: '0.875rem', color: '#14532d' }}>
+                                                <p style={{ margin: 0 }}><strong>Ficha:</strong> {ficha.numero_ficha}</p>
+                                                <p style={{ margin: 0 }}><strong>Ambiente:</strong> {ficha.ambiente || 'No asignado'}</p>
+                                                <p style={{ margin: 0 }}><strong>Instructor:</strong> {ficha.instructor || 'No asignado'}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Vehiculo */}
+                        {selectedRecord.vehiculo_detalle && (
+                            <div>
+                                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.25rem' }}>Vehículo Ingresado</h4>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #bfdbfe' }}>
+                                    {selectedRecord.vehiculo_detalle.imagen ? (
+                                        <img 
+                                            src={`http://localhost:8000/storage/${selectedRecord.vehiculo_detalle.imagen}`} 
+                                            alt="Foto vehiculo" 
+                                            style={{ width: '80px', height: '80px', borderRadius: '0.25rem', objectFit: 'cover' }} 
+                                        />
+                                    ) : (
+                                        <div style={{ width: '80px', height: '80px', borderRadius: '0.25rem', backgroundColor: '#bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                                            🚗
+                                        </div>
+                                    )}
+                                    <div style={{ fontSize: '0.875rem', color: '#1e3a8a' }}>
+                                        <p style={{ margin: 0 }}><strong>Placa:</strong> {selectedRecord.vehiculo_detalle.placa}</p>
+                                        <p style={{ margin: 0 }}><strong>Marca:</strong> {selectedRecord.vehiculo_detalle.marca} - <strong>Modelo:</strong> {selectedRecord.vehiculo_detalle.modelo}</p>
+                                        <p style={{ margin: 0 }}><strong>Color:</strong> {selectedRecord.vehiculo_detalle.color} {selectedRecord.vehiculo_detalle.tipo && ` - Tipo: ${selectedRecord.vehiculo_detalle.tipo}`}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Equipos */}
+                        {selectedRecord.equipos_detalle && selectedRecord.equipos_detalle.length > 0 && (
+                            <div>
+                                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.25rem' }}>Equipos Ingresados ({selectedRecord.equipos_detalle.length})</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {selectedRecord.equipos_detalle.map((equipo, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#fef3c7', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #fde68a' }}>
+                                            {equipo.imagen ? (
+                                                <img 
+                                                    src={`http://localhost:8000/storage/${equipo.imagen}`} 
+                                                    alt="Foto equipo" 
+                                                    style={{ width: '60px', height: '60px', borderRadius: '0.25rem', objectFit: 'cover' }} 
+                                                />
+                                            ) : (
+                                                <div style={{ width: '60px', height: '60px', borderRadius: '0.25rem', backgroundColor: '#fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b45309' }}>
+                                                    💻
+                                                </div>
+                                            )}
+                                            <div style={{ fontSize: '0.875rem', color: '#92400e' }}>
+                                                <p style={{ margin: 0 }}><strong>Serial:</strong> {equipo.serial}</p>
+                                                <p style={{ margin: 0 }}><strong>Marca:</strong> {equipo.marca || '-'} - <strong>Modelo:</strong> {equipo.modelo || '-'}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {!selectedRecord.vehiculo_detalle && (!selectedRecord.equipos_detalle || selectedRecord.equipos_detalle.length === 0) && (
+                            <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px dashed #d1d5db', textAlign: 'center' }}>
+                                No se registraron vehículos ni equipos en este ingreso.
+                            </p>
+                        )}
+                    </div>
+                </Modal>
             )}
         </div>
     );

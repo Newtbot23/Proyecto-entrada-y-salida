@@ -28,6 +28,7 @@ export interface Entidad {
 export interface Usuario {
     doc: number;
     id_tip_doc: number;
+    nombre?: string;
     primer_nombre: string;
     segundo_nombre?: string;
     primer_apellido: string;
@@ -57,12 +58,18 @@ export interface TipoVehiculo {
     tipo_vehiculo: string;
 }
 
+export interface MarcaVehiculo {
+    id: number;
+    nombre: string;
+    id_tipo_vehiculo: number;
+}
+
 export interface Vehiculo {
     id: number;
     placa: string;
     id_tipo_vehiculo: number;
+    id_marca: number;
     doc: number;
-    marca: string;
     modelo: string;
     color: string;
     descripcion?: string;
@@ -76,7 +83,7 @@ export interface Vehiculo {
     foto_detalle?: string;
     // Relations
     tipo_vehiculo?: TipoVehiculo;
-    marca_vehiculo?: { id: number; nombre: string };
+    marca?: MarcaVehiculo;
     usuario?: Usuario;
 }
 
@@ -232,8 +239,9 @@ export interface QrRegistrationResponse {
 }
 
 export interface UserDashboardCatalog {
+    /** El backend hace SELECT id, tipo_vehiculo AS nombre → shape: { id, nombre } */
     tipos_vehiculo: { id: number; nombre: string }[];
-    marcas_vehiculo: { id: number; nombre: string }[];
+    marcas_vehiculo: MarcaVehiculo[]; // todas las marcas con id_tipo_vehiculo para filtrado
     tipos_equipo: { id: number; nombre: string }[];
     marcas_equipo: { id: number; nombre: string }[];
     sistemas_operativos: { id: number; nombre: string }[];
@@ -313,11 +321,32 @@ export interface DailyReportEntry {
     id: number;
     doc: number;
     usuario_nombre: string;
+    usuario_imagen?: string;
     fecha: string;
     hora_entrada: string;
     hora_salida?: string;
     placa?: string;
+    vehiculo_detalle?: {
+        placa: string;
+        marca: string;
+        modelo: string;
+        color: string;
+        imagen?: string;
+        tipo?: string;
+    };
     seriales_equipos?: string;
+    equipos_detalle?: Array<{
+        serial: string;
+        modelo?: string;
+        estado?: string;
+        marca?: string;
+        imagen?: string;
+    }>;
+    fichas_detalle?: Array<{
+        numero_ficha: string;
+        ambiente?: string;
+        instructor?: string;
+    }>;
 }
 
 // Licenses and Plans

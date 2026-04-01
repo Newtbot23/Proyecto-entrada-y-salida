@@ -79,11 +79,22 @@ const NormalAdminSidebar: React.FC<SidebarProps> = ({
         );
     }
 
+    let logoText = 'Administración';
+    let logoIcon = 'AD';
+
+    if (userRole === 3) {
+        logoText = 'Control Personas';
+        logoIcon = 'CP';
+    } else if (userRole === 4) {
+        logoText = 'Control Vehículos';
+        logoIcon = 'CV';
+    }
+
     return (
         <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}>
             <div className={styles.logoArea}>
-                <span className={styles.logoText}>Administración</span>
-                <span className={styles.logoIcon}>AD</span>
+                <span className={styles.logoText}>{logoText}</span>
+                <span className={styles.logoIcon}>{logoIcon}</span>
             </div>
 
             <nav className={styles.nav}>

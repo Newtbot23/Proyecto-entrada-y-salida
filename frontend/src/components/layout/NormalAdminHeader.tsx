@@ -11,6 +11,8 @@ const routeTitles: Record<string, string> = {
     reports: 'Reportes',
     'registro-personas': 'Registro Completo',
     tables: 'Tablas de Usuarios',
+    personas: 'Control de Personas',
+    vehiculos: 'Control de Vehículos',
 };
 
 const NormalAdminHeader: React.FC = () => {
@@ -18,9 +20,19 @@ const NormalAdminHeader: React.FC = () => {
     const { user, logout } = useAuth();
 
     const pathParts = location.pathname.split('/').filter(Boolean);
-    const view = pathParts[2] || pathParts[0]; // /user/normaladmin/<view> or /dashboard
+    // Para rutas tipo /user/normaladmin/<view> o /puertas/<view>
+    const view = pathParts[2] || pathParts[1] || pathParts[0]; 
 
     const title = routeTitles[view] ?? 'Panel';
+
+    const getRoleName = () => {
+        if (user?.rol) return user.rol;
+        const roleId = Number(user?.id_rol);
+        if (roleId === 3) return 'Puertas Personas';
+        if (roleId === 4) return 'Puertas Vehículos';
+        if (roleId === 1) return 'Administrador';
+        return 'Usuario';
+    };
 
     return (
         <header className={styles.header}>
@@ -31,7 +43,7 @@ const NormalAdminHeader: React.FC = () => {
             <div className={styles.rightSection}>
                 <div className={styles.userInfo}>
                     <span className={styles.userRole}>
-                        {user?.rol ?? 'Administrador'}
+                        {getRoleName()}
                     </span>
                     <span className={styles.userName}>
                         {user?.nombre ?? '—'}

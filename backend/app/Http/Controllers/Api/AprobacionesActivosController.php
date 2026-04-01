@@ -19,13 +19,14 @@ class AprobacionesActivosController extends Controller
         $vehiculos = DB::table('vehiculos')
             ->join('usuarios', 'vehiculos.doc', '=', 'usuarios.doc')
             ->join('tipos_vehiculo', 'vehiculos.id_tipo_vehiculo', '=', 'tipos_vehiculo.id')
+            ->leftJoin('marcas_vehiculo', 'vehiculos.id_marca', '=', 'marcas_vehiculo.id')
             ->where('vehiculos.estado_aprobacion', 'pendiente')
             ->select(
                 'vehiculos.placa as id', // unificar identificador
                 'vehiculos.placa',
                 DB::raw("'vehiculo' as tipo_activo"),
                 'tipos_vehiculo.tipo_vehiculo as descripcion_tipo',
-                'vehiculos.marca',
+                'marcas_vehiculo.nombre as marca',
                 'usuarios.primer_nombre as usuario_nombres',
                 'usuarios.primer_apellido as usuario_apellidos',
                 'usuarios.doc as usuario_doc',

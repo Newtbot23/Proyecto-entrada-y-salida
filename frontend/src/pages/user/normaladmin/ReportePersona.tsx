@@ -28,6 +28,8 @@ interface Usuario {
 
 const ReportePersona: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [includeExtras, setIncludeExtras] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,14 @@ const ReportePersona: React.FC = () => {
         setUser(null);
 
         try {
-            const response = await apiClient.get<any>(`/reports/person?query=${encodeURIComponent(searchTerm)}&include_extras=${includeExtras}`);
+            const params = new URLSearchParams({
+                query: searchTerm,
+                include_extras: includeExtras ? 'true' : 'false'
+            });
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+
+            const response = await apiClient.get<any>(`/reports/person?${params.toString()}`);
             if (response && response.usuario) {
                 setUser(response.usuario);
                 setRecords(response.registros || []);
@@ -134,6 +143,33 @@ const ReportePersona: React.FC = () => {
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                         placeholder="Ej. 12345678 o Juan Perez"
                         style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+                    />
+                </div>
+
+                <div style={{ flex: '1', minWidth: '150px' }}>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+                        Fecha Inicio (Opcional)
+                    </label>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        max={endDate || new Date().toISOString().split('T')[0]}
+                        style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', backgroundColor: 'white' }}
+                    />
+                </div>
+
+                <div style={{ flex: '1', minWidth: '150px' }}>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+                        Fecha Fin (Opcional)
+                    </label>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        min={startDate}
+                        max={new Date().toISOString().split('T')[0]}
+                        style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', backgroundColor: 'white' }}
                     />
                 </div>
 

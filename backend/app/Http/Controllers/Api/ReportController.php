@@ -73,6 +73,8 @@ class ReportController extends Controller
         try {
             $query = $request->query('query'); // Can be doc or name
             $includeExtras = filter_var($request->query('include_extras', false), FILTER_VALIDATE_BOOLEAN);
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
             
             if (!$query) {
                 return response()->json(['success' => false, 'message' => 'Parámetro de búsqueda requerido'], 400);
@@ -101,9 +103,17 @@ class ReportController extends Controller
 
             // Fetch records
             $registrosQuery = DB::table('registros')
-                ->where('registros.doc', $usuario->doc)
-                ->orderBy('registros.fecha', 'desc')
-                ->orderBy('registros.hora_entrada', 'desc');
+                ->where('registros.doc', $usuario->doc);
+                
+            if ($startDate) {
+                $registrosQuery->whereDate('registros.fecha', '>=', $startDate);
+            }
+            if ($endDate) {
+                $registrosQuery->whereDate('registros.fecha', '<=', $endDate);
+            }
+
+            $registrosQuery->orderBy('registros.fecha', 'desc')
+                           ->orderBy('registros.hora_entrada', 'desc');
 
             if ($includeExtras) {
                 $registros = $registrosQuery->get()->map(function($r) {
@@ -139,7 +149,12 @@ class ReportController extends Controller
             $date = $request->query('date', Carbon::today()->toDateString());
             $nit = $request->user()->nit_entidad;
 
-            $registros = \App\Models\Registros::with(['equipos_registrados', 'usuario'])
+            $registros = \App\Models\Registros::with([
+                'equipos_registrados.equipo.marca', 
+                'usuario.fichas.ambiente',
+                'usuario.fichas.instructores',
+                'vehiculo.tipo_vehiculo'
+            ])
                 ->whereDate('fecha', $date)
                 ->whereHas('usuario', function($q) use ($nit) {
                     $q->where('nit_entidad', $nit);
@@ -147,15 +162,49 @@ class ReportController extends Controller
                 ->orderBy('hora_entrada', 'desc')
                 ->get()
                 ->map(function($r) {
+                    $equiposDetalle = $r->equipos_registrados->map(function($re) {
+                        return [
+                            'serial' => $re->serial_equipo,
+                            'modelo' => $re->equipo ? $re->equipo->modelo : null,
+                            'estado' => $re->equipo ? $re->equipo->estado : null,
+                            'marca' => ($re->equipo && $re->equipo->marca) ? $re->equipo->marca->marca : null,
+                            'imagen' => $re->equipo ? $re->equipo->img_serial : null
+                        ];
+                    });
+
+                    $fichasDetalle = $r->usuario->fichas->map(function($ficha) {
+                        $instructorName = null;
+                        if ($ficha->instructores && $ficha->instructores->isNotEmpty()) {
+                            $instructor = $ficha->instructores->first();
+                            $instructorName = trim($instructor->primer_nombre . ' ' . $instructor->segundo_nombre . ' ' . $instructor->primer_apellido . ' ' . $instructor->segundo_apellido);
+                        }
+                        return [
+                            'numero_ficha' => $ficha->numero_ficha,
+                            'ambiente' => $ficha->ambiente ? $ficha->ambiente->ambiente : null,
+                            'instructor' => $instructorName
+                        ];
+                    });
+
                     return [
                         'id' => $r->id,
                         'doc' => $r->doc,
                         'usuario_nombre' => trim($r->usuario->primer_nombre . ' ' . $r->usuario->segundo_nombre . ' ' . $r->usuario->primer_apellido . ' ' . $r->usuario->segundo_apellido),
+                        'usuario_imagen' => $r->usuario->imagen,
                         'fecha' => $r->fecha,
                         'hora_entrada' => $r->hora_entrada,
                         'hora_salida' => $r->hora_salida,
                         'placa' => $r->placa,
-                        'seriales_equipos' => $r->equipos_registrados->pluck('serial_equipo')->join(', ') ?: '-'
+                        'vehiculo_detalle' => $r->vehiculo ? [
+                            'placa' => $r->vehiculo->placa,
+                            'marca' => $r->vehiculo->marca,
+                            'modelo' => $r->vehiculo->modelo,
+                            'color' => $r->vehiculo->color,
+                            'imagen' => $r->vehiculo->img_vehiculo,
+                            'tipo' => $r->vehiculo->tipo_vehiculo ? $r->vehiculo->tipo_vehiculo->tipo_vehiculo : null,
+                        ] : null,
+                        'seriales_equipos' => $r->equipos_registrados->pluck('serial_equipo')->join(', ') ?: '-',
+                        'equipos_detalle' => $equiposDetalle,
+                        'fichas_detalle' => $fichasDetalle->toArray()
                     ];
                 });
 
