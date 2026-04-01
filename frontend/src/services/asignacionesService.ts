@@ -9,10 +9,10 @@ export interface MasiveAssignmentResponse {
 }
 
 export const AsignacionesService = {
-    asignarMasivamente: async (idFicha: number | string, loteImportacion: string): Promise<MasiveAssignmentResponse> => {
+    asignarMasivamente: async (idFicha: number | string, idLote: number | string): Promise<MasiveAssignmentResponse> => {
         return await apiClient.post<MasiveAssignmentResponse>('/asignaciones/masivas', {
             id_ficha: idFicha,
-            lote_importacion: loteImportacion
+            id_lote: idLote
         });
     },
     getHistorialAsignaciones: async (): Promise<any[]> => {

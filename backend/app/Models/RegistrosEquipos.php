@@ -16,5 +16,6 @@ class RegistrosEquipos extends Model
 
     public function equipo()
     {
-        return $this->belongsTo(Equipos::class, 'serial_equipo', 'serial');
-    }}
+        return $this->belongsTo(Equipo::class, 'serial_equipo', 'serial');
+    }
+}

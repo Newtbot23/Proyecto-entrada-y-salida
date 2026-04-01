@@ -3,11 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { EquiposService } from '../../../../services/equiposService';
+import { FichasService } from '../../../../services/fichasService';
 import styles from './GestionLotes.module.css';
 
 const GestionLotes: React.FC = () => {
     const queryClient = useQueryClient();
     const [selectedLote, setSelectedLote] = useState<string>('');
+    const [selectedLoteId, setSelectedLoteId] = useState<number | null>(null);
+    const [selectedAmbiente, setSelectedAmbiente] = useState<string>('');
     const [newName, setNewName] = useState<string>('');
     const [isEditing, setIsEditing] = useState(false);
     const [sinLoteList, setSinLoteList] = useState<any[]>([]);
@@ -19,6 +22,13 @@ const GestionLotes: React.FC = () => {
         queryKey: ['lotes'],
         queryFn: () => EquiposService.getLotes()
     });
+
+    const { data: catalogs } = useQuery({
+        queryKey: ['fichas-catalogs'],
+        queryFn: () => FichasService.getCatalogs()
+    });
+
+    const ambientes = catalogs?.ambientes ?? [];
 
     const { data: equiposSinLote, isLoading: loadingSinLote } = useQuery({
         queryKey: ['equipos-sin-lote'],
@@ -44,6 +54,16 @@ const GestionLotes: React.FC = () => {
             setLoteList([]);
         }
     }, [equiposDelLote, selectedLote]);
+
+    // Sync ambiente when lote changes
+    useEffect(() => {
+        if (selectedLoteId && lotes) {
+            const loteObj = lotes.find((l: any) => l.id === selectedLoteId);
+            setSelectedAmbiente(loteObj?.id_ambiente ?? '');
+        } else {
+            setSelectedAmbiente('');
+        }
+    }, [selectedLoteId, lotes]);
 
     // 3. Mutations
     const moveMutation = useMutation({
@@ -80,6 +100,20 @@ const GestionLotes: React.FC = () => {
         }
     });
 
+    const ambienteMutation = useMutation({
+        mutationFn: (id_ambiente: string | null) =>
+            EquiposService.updateLoteAmbiente(selectedLoteId!, id_ambiente),
+        onSuccess: () => {
+            setMessage({ type: 'success', text: 'Ambiente del lote actualizado correctamente.' });
+            queryClient.invalidateQueries({ queryKey: ['lotes'] });
+            setTimeout(() => setMessage(null), 3000);
+        },
+        onError: (err: any) => {
+            setMessage({ type: 'error', text: err.response?.data?.message || 'Error al vincular el ambiente' });
+            setTimeout(() => setMessage(null), 3000);
+        }
+    });
+
     // 4. Drag & Drop Logic
     const onDragEnd = (result: DropResult) => {
         const { source, destination, draggableId } = result;
@@ -111,6 +145,9 @@ const GestionLotes: React.FC = () => {
         }
     };
 
+    // Derived: selected lote object from list
+    const selectedLoteObj = lotes?.find((l: any) => l.id === selectedLoteId);
+
     return (
         <div className={styles.container}>
             <header className={styles.header}>
@@ -129,25 +166,28 @@ const GestionLotes: React.FC = () => {
                     <label className={styles.label}>
                         Lote a gestionar {loadingLotes && <small>(Cargando...)</small>}
                     </label>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <select 
                             className={styles.select}
-                            value={selectedLote}
+                            value={selectedLoteId ?? ''}
                             onChange={(e) => {
-                                setSelectedLote(e.target.value);
+                                const id = e.target.value ? Number(e.target.value) : null;
+                                const loteObj = lotes?.find((l: any) => l.id === id);
+                                setSelectedLoteId(id);
+                                setSelectedLote(loteObj?.id ?? '');
                                 setIsEditing(false);
                             }}
                             disabled={loadingLotes || isEditing}
                         >
                             <option value="">-- Selecciona un lote --</option>
                             {lotes?.map((l: any) => (
-                                <option key={l.lote_importacion} value={l.lote_importacion}>
-                                    {l.lote_importacion} ({l.total} equipos)
+                                <option key={l.id} value={l.id}>
+                                    {l.codigo_lote} — {l.descripcion || 'Sin descripción'} ({l.equipos_count ?? 0} equipos)
                                 </option>
                             ))}
                         </select>
 
-                        {selectedLote && !isEditing && (
+                        {selectedLoteId && !isEditing && (
                             <button 
                                 className={styles.btnAction} 
                                 onClick={() => setIsEditing(true)}
@@ -157,6 +197,37 @@ const GestionLotes: React.FC = () => {
                             </button>
                         )}
                     </div>
+
+                    {/* Ambiente de Ubicación */}
+                    {selectedLoteId && (
+                        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <label className={styles.label} style={{ margin: 0, minWidth: '160px' }}>
+                                <i className="fas fa-map-marker-alt" style={{ color: '#3b82f6', marginRight: '0.4rem' }}></i>
+                                Ambiente de Ubicación
+                            </label>
+                            <select
+                                className={styles.select}
+                                style={{ maxWidth: '320px' }}
+                                value={selectedAmbiente}
+                                onChange={(e) => setSelectedAmbiente(e.target.value)}
+                                disabled={ambienteMutation.isPending}
+                            >
+                                <option value="">— Sin ambiente asignado —</option>
+                                {ambientes.map((a: any) => (
+                                    <option key={a.numero_ambiente} value={a.numero_ambiente}>
+                                        {a.ambiente} ({a.numero_ambiente})
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                className={styles.btnAction}
+                                onClick={() => ambienteMutation.mutate(selectedAmbiente || null)}
+                                disabled={ambienteMutation.isPending || selectedAmbiente === (selectedLoteObj?.id_ambiente ?? '')}
+                            >
+                                {ambienteMutation.isPending ? 'Guardando...' : 'Guardar Ambiente'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {isEditing && (
@@ -231,7 +302,7 @@ const GestionLotes: React.FC = () => {
                                                         >
                                                             <span className={styles.categoria}>{equipo.categoria_equipo}</span>
                                                             <span className={styles.serial}>{equipo.serial}</span>
-                                                            <span className={styles.modelo}>{equipo.marca} {equipo.modelo}</span>
+                                                            <span className={styles.modelo}>{equipo.marca?.marca ?? 'Genérica'} {equipo.modelo}</span>
                                                         </div>
                                                     )}
                                                 </Draggable>
@@ -273,7 +344,7 @@ const GestionLotes: React.FC = () => {
                                                         >
                                                             <span className={styles.categoria}>{equipo.categoria_equipo}</span>
                                                             <span className={styles.serial}>{equipo.serial}</span>
-                                                            <span className={styles.modelo}>{equipo.marca} {equipo.modelo}</span>
+                                                            <span className={styles.modelo}>{equipo.marca?.marca ?? 'Genérica'} {equipo.modelo}</span>
                                                         </div>
                                                     )}
                                                 </Draggable>

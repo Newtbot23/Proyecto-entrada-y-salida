@@ -172,7 +172,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/equipos/lotes/renombrar', [App\Http\Controllers\Api\EquipoController::class, 'renombrarLote']);
     Route::put('/equipos/{id}/mover-lote', [App\Http\Controllers\Api\EquipoController::class, 'moverEquipoLote']);
     Route::get('/equipos/por-lote', [App\Http\Controllers\Api\EquipoController::class, 'getEquiposByLote']);
+    Route::patch('/equipos/lotes/{id}/ambiente', [App\Http\Controllers\Api\EquipoController::class, 'updateLote']);
+    Route::patch('/fichas/{id}/ambiente', [FichaController::class, 'updateAmbiente']);
     // Asignaciones Management
-    Route::post('/asignaciones/masivas', [App\Http\Controllers\Api\AsignacionesController::class, 'asignarMasivamente']);
-    Route::get('/asignaciones/historial', [App\Http\Controllers\Api\AsignacionesController::class, 'obtenerHistorial']);
+    Route::post('/asignaciones/masivas', [App\Http\Controllers\Api\AsignacionController::class, 'asignarMasivamente']);
+    Route::get('/asignaciones/historial', [App\Http\Controllers\Api\AsignacionController::class, 'obtenerHistorial']);
+
+    // Areas Management (Personal Administrativo)
+    Route::get('/areas/administrativos', [App\Http\Controllers\Api\AreaController::class, 'getUsuariosAdministrativos']);
+    Route::get('/areas', [App\Http\Controllers\Api\AreaController::class, 'index']);
+    Route::post('/areas', [App\Http\Controllers\Api\AreaController::class, 'store']);
+    Route::get('/areas/{id}/usuarios', [App\Http\Controllers\Api\AreaController::class, 'getUsuarios']);
+    Route::post('/areas/{id}/asignar', [App\Http\Controllers\Api\AreaController::class, 'asignarUsuarios']);
 });

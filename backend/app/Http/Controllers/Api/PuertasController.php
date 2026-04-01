@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Usuarios;
-use App\Models\Equipos;
-use App\Models\Asignaciones;
+use App\Models\Equipo;
+use App\Models\Asignacion;
 use App\Models\Vehiculos;
 use App\Models\Registros;
 use App\Models\RegistrosEquipos;
@@ -42,7 +42,7 @@ class PuertasController extends Controller
         }
 
         // Get 'propio' equipment for this user
-        $equipos = Asignaciones::where('doc', $doc)
+        $equipos = Asignacion::where('doc', $doc)
             ->whereHas('equipo', function($q) {
                 $q->where('tipo_equipo', 'propio')
                   ->where('estado_aprobacion', 'activo');
@@ -133,7 +133,7 @@ class PuertasController extends Controller
         $doc = $vehiculos->first()->doc;
 
         // Fetch 'propio' equipment for this user
-        $equipos = Asignaciones::where('doc', $doc)
+        $equipos = Asignacion::where('doc', $doc)
             ->whereHas('equipo', function($q) {
                 $q->where('tipo_equipo', 'propio')
                   ->where('estado_aprobacion', 'activo');

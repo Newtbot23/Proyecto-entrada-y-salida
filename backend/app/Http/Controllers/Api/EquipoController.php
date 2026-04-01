@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Equipos;
+use App\Models\Equipo;
+use App\Models\Lote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class EquipoController extends Controller
 {
@@ -52,7 +54,7 @@ class EquipoController extends Controller
         }
 
         try {
-            $equipo = Equipos::create($data);
+            $equipo = Equipo::create($data);
             return response()->json([
                 'message' => 'Equipo registrado exitosamente',
                 'equipo' => $equipo
@@ -67,23 +69,16 @@ class EquipoController extends Controller
      */
     public function importarCsv(Request $request)
     {
-        // "Opción Nuclear" para forzar respuesta JSON
         $request->headers->set('Accept', 'application/json');
 
         try {
-            // Validación relajada para evitar errores MIME de Excel
+            // Strict MIME type validation
             $request->validate([
-                'archivo' => 'required|file',
-                'lote_importacion' => 'required|string|max:255|unique:equipos,lote_importacion'
+                'archivo' => 'required|file|mimes:csv,txt',
+                'lote_descripcion' => 'nullable|string|max:255'
             ]);
 
             $file = $request->file('archivo');
-
-            // Validación manual de extensión
-            $extension = strtolower($file->getClientOriginalExtension());
-            if ($extension !== 'csv') {
-                return response()->json(['success' => false, 'message' => 'El archivo debe ser un CSV válido.'], 422);
-            }
 
             $handle = fopen($file->getRealPath(), 'r');
             $header = fgetcsv($handle);
@@ -93,16 +88,18 @@ class EquipoController extends Controller
                 return response()->json(['success' => false, 'message' => 'El archivo está vacío o no tiene cabeceras.'], 400);
             }
 
-            $loteId = $request->input('lote_importacion');
             $importedCount = 0;
-            $rowNumber = 1;
 
             DB::beginTransaction();
 
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowNumber++;
+            // 1. Create the Lote record
+            $lote = Lote::create([
+                'codigo_lote' => 'LOTE-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
+                'descripcion' => $request->lote_descripcion ?? 'Importación masiva: ' . $file->getClientOriginalName(),
+                'fecha_importacion' => now()
+            ]);
 
-                // Validar estructura mínima de la fila
+            while (($row = fgetcsv($handle)) !== false) {
                 if (count($row) < 5) continue;
 
                 $serial = trim($row[0] ?? '');
@@ -116,26 +113,14 @@ class EquipoController extends Controller
 
                 if (empty($categoria) || empty($modelo) || empty($desc)) continue;
 
-                // Autogeneración de serial para Herramientas/Otros
                 if (empty($serial) && in_array($categoria, ['Herramientas', 'Otros'])) {
                     $serial = "GEN-IMP-" . Auth::id() . "-" . now()->timestamp . bin2hex(random_bytes(2));
                 }
 
-                // Mapeo seguro de Marcas
-                $idMarca = null;
-                if (!empty($marcaNombre)) {
-                    $marca = DB::table('marcas_equipo')->where('marca', $marcaNombre)->first();
-                    $idMarca = $marca ? $marca->id : null;
-                }
+                $idMarca = $marcaNombre ? DB::table('marcas_equipo')->where('marca', $marcaNombre)->value('id') : null;
+                $idSo = $soNombre ? DB::table('sistemas_operativos')->where('sistema_operativo', $soNombre)->value('id') : null;
 
-                // Mapeo seguro de Sistemas Operativos
-                $idSo = null;
-                if (!empty($soNombre)) {
-                    $os = DB::table('sistemas_operativos')->where('sistema_operativo', $soNombre)->first();
-                    $idSo = $os ? $os->id : null;
-                }
-
-                Equipos::create([
+                Equipo::create([
                     'serial' => $serial,
                     'categoria_equipo' => $categoria,
                     'tipo_equipo' => 'sena',
@@ -146,7 +131,8 @@ class EquipoController extends Controller
                     'tipo_equipo_desc' => $desc,
                     'caracteristicas' => $caract ?: 'Importado masivamente',
                     'id_sistema_operativo' => $idSo,
-                    'lote_importacion' => $loteId,
+                    'id_lote' => $lote->id,
+                    'estado_aprobacion' => 'aprobado',
                 ]);
 
                 $importedCount++;
@@ -158,7 +144,7 @@ class EquipoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Se importaron {$importedCount} equipos correctamente.",
-                'data' => ['count' => $importedCount]
+                'lote' => $lote
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -166,25 +152,38 @@ class EquipoController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error en la importación: ' . $th->getMessage(),
-                'line' => $th->getLine()
+                'message' => 'Error en la importación: ' . $th->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get unique batches with equipment counts.
+     * Get unique batches with equipment counts and their linked ambiente.
      */
     public function getLotes()
     {
-        $lotes = DB::table('equipos')
-            ->select('lote_importacion', DB::raw('count(*) as total'))
-            ->whereNotNull('lote_importacion')
-            ->where('tipo_equipo', '!=', 'propio')
-            ->groupBy('lote_importacion')
-            ->get();
-
+        $lotes = Lote::withCount('equipos')->with('ambiente')->get();
         return response()->json($lotes);
+    }
+
+    /**
+     * Update a Lote's linked ambiente.
+     */
+    public function updateLote(Request $request, $id)
+    {
+        $request->validate([
+            'id_ambiente' => 'nullable|string|exists:ambientes,numero_ambiente',
+            'descripcion' => 'nullable|string|max:255',
+        ]);
+
+        $lote = Lote::findOrFail($id);
+        $lote->update($request->only(['id_ambiente', 'descripcion']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lote actualizado correctamente.',
+            'lote'    => $lote->load('ambiente')
+        ]);
     }
 
     /**
@@ -214,11 +213,11 @@ class EquipoController extends Controller
     public function moverEquipoLote(Request $request, $id)
     {
         $request->validate([
-            'nuevo_lote' => 'nullable|string|max:255'
+            'nuevo_lote' => 'nullable|exists:lotes,id'
         ]);
 
-        $equipo = Equipos::findOrFail($id);
-        $equipo->update(['lote_importacion' => $request->nuevo_lote]);
+        $equipo = Equipo::findOrFail($id);
+        $equipo->update(['id_lote' => $request->nuevo_lote]);
 
         return response()->json([
             'success' => true,
@@ -232,16 +231,14 @@ class EquipoController extends Controller
      */
     public function getEquiposByLote(Request $request)
     {
-        $lote = $request->query('lote'); // Puede ser un nombre de lote o null/string 'null'
+        $loteId = $request->query('id_lote');
 
-        $query = DB::table('equipos')
-            ->leftJoin('marcas_equipo', 'equipos.id_marca', '=', 'marcas_equipo.id')
-            ->select('equipos.*', 'marcas_equipo.marca');
+        $query = Equipo::with(['lote', 'marca', 'sistema_operativo']);
 
-        if ($lote === 'sin_lote' || $lote === null) {
-            $query->whereNull('lote_importacion');
+        if ($loteId === 'sin_lote' || $loteId === null) {
+            $query->whereNull('id_lote');
         } else {
-            $query->where('lote_importacion', $lote);
+            $query->where('id_lote', $loteId);
         }
 
         // Excluir equipos marcados como propios

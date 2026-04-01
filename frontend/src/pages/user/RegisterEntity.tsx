@@ -166,8 +166,8 @@ const RegisterEntity: React.FC = () => {
 
             setNavData({
                 planId,
-                entidadId: entityData.nit,
-                entidadNombre: formData.nombre_entidad
+                entidadId: entityData.id,
+                entidadNombre: entityData.entidad.nombre_entidad
             });
             setShowModal(true);
         } catch (err: any) {

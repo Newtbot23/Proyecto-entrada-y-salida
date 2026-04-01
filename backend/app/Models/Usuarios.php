@@ -93,18 +93,33 @@ class Usuarios extends Authenticatable
 
     public function fichas()
     {
-        return $this->belongsToMany(Fichas::class, 'detalle_ficha_usuarios', 'doc', 'id_ficha')
+        return $this->belongsToMany(Ficha::class, 'detalle_ficha_usuarios', 'doc', 'id_ficha')
                     ->withPivot('id', 'tipo_participante')
                     ->withTimestamps();
     }
 
     public function asignaciones()
     {
-        return $this->hasMany(Asignaciones::class, 'doc', 'doc');
+        return $this->hasMany(Asignacion::class, 'doc', 'doc');
     }
 
     public function vehiculos()
     {
         return $this->hasMany(Vehiculos::class, 'doc', 'doc');
+    }
+
+    /**
+     * Administrative areas this user belongs to.
+     */
+    public function areas()
+    {
+        return $this->belongsToMany(
+            Area::class,
+            'area_usuario',
+            'id_usuario',
+            'id_area',
+            'doc',
+            'id'
+        );
     }
 }

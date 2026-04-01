@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Equipos extends Model
+class Equipo extends Model
 {
+    use HasFactory;
+
     protected $table = 'equipos';
+
     protected $primaryKey = 'serial';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -18,14 +22,13 @@ class Equipos extends Model
         'placa_sena',
         'id_marca',
         'estado',
-        'estado_aprobacion',
         'modelo',
         'tipo_equipo_desc',
         'caracteristicas',
         'id_sistema_operativo',
         'img_serial',
-        'doc',
-        'lote_importacion'
+        'id_lote',
+        'estado_aprobacion'
     ];
 
     public function marca()
@@ -37,9 +40,13 @@ class Equipos extends Model
     {
         return $this->belongsTo(SistemasOperativos::class, 'id_sistema_operativo', 'id');
     }
+    public function lote()
+    {
+        return $this->belongsTo(Lote::class, 'id_lote');
+    }
 
     public function asignaciones()
     {
-        return $this->hasMany(Asignaciones::class, 'serial_equipo', 'serial');
+        return $this->hasMany(Asignacion::class, 'serial_equipo', 'serial');
     }
 }

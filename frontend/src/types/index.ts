@@ -217,6 +217,11 @@ export interface CreateEntityDTO {
     nit: string;
 }
 
+export interface CreateEntityResponse {
+    entidad: Entidad;
+    id: string; // The NIT of the created entity
+}
+
 export interface CompleteRegistrationDTO {
     nit: string;
     id_plan: number;
@@ -231,6 +236,21 @@ export interface CompleteRegistrationDTO {
         contrasena: string;
     };
 }
+
+export interface CompleteRegistrationPayload {
+    id_entidad: string; // NIT de la entidad
+    id_plan_lic: number; // ID del plan de licencia
+    doc: string;
+    id_tip_doc: number;
+    primer_nombre: string;
+    segundo_nombre?: string;
+    primer_apellido: string;
+    segundo_apellido?: string;
+    user_telefono: string;
+    user_correo: string;
+    contrasena: string;
+}
+
 
 export interface QrRegistrationResponse {
     qr_code: string;

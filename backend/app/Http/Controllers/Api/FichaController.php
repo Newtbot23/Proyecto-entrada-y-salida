@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Fichas;
+use App\Models\Ficha;
 use App\Models\DetalleFichaUsuarios;
 use App\Models\Usuarios;
 use App\Models\Programas;
 use App\Models\Ambientes;
 use App\Models\Jornadas;
-use App\Models\Asignaciones;
+use App\Models\Asignacion;
 use App\Models\Entidades;
+use App\Models\Lote;
+use App\Http\Controllers\Api\AsignacionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +48,7 @@ class FichaController extends Controller
     {
         try {
             // Traer TODAS las fichas ordenadas: primero las vacías, luego por número
-            $fichas = Fichas::with('programa:id,programa')
+            $fichas = Ficha::with('programa:id,programa')
                 ->withCount('usuarios')
                 ->orderBy('usuarios_count', 'asc')
                 ->orderBy('numero_ficha', 'asc')
@@ -127,7 +129,7 @@ class FichaController extends Controller
     public function index()
     {
         try {
-            $fichas = Fichas::with(['programa:id,programa', 'ambiente:numero_ambiente,ambiente', 'jornada:id,jornada'])
+            $fichas = Ficha::with(['programa:id,programa', 'ambiente:numero_ambiente,ambiente', 'jornada:id,jornada'])
                 ->withCount('usuarios')
                 ->orderByRaw("FIELD(estado, 'lectiva', 'productiva', 'finalizada')")
                 ->get();
@@ -155,7 +157,7 @@ class FichaController extends Controller
         ]);
 
         try {
-            $ficha = Fichas::create($request->all());
+            $ficha = Ficha::create($request->all());
 
             return response()->json([
                 'success' => true,
@@ -174,7 +176,7 @@ class FichaController extends Controller
     public function getUsuarios($id)
     {
         try {
-            $ficha = Fichas::findOrFail($id);
+            $ficha = Ficha::findOrFail($id);
             $usuarios = $ficha->usuarios()->get();
 
             return response()->json([
@@ -198,7 +200,7 @@ class FichaController extends Controller
         ]);
 
         try {
-            $ficha = Fichas::findOrFail($id);
+            $ficha = Ficha::findOrFail($id);
             
             // Paso A: Obtener roles actuales para preservarlos
             $rolesActuales = DetalleFichaUsuarios::where('id_ficha', $id)
@@ -215,6 +217,20 @@ class FichaController extends Controller
 
             // Paso C: Ejecutar la sincronización
             $ficha->usuarios()->sync($datosSincronizacion);
+
+            // AUTO-ASSIGNMENT TRIGGER:
+            // Si el ambiente de la ficha tiene un Lote vinculado, asignar equipos
+            // automáticamente a los aprendices nuevos (la lógica incremental
+            // de ejecutarAsignacion se encarga de ignorar a los que ya tienen equipo).
+            // Se ignoran errores silenciosamente para no bloquear la respuesta al usuario.
+            try {
+                $loteAmbiente = Lote::where('id_ambiente', $ficha->numero_ambiente)->first();
+                if ($loteAmbiente) {
+                    AsignacionController::ejecutarAsignacion($ficha, $loteAmbiente);
+                }
+            } catch (\Throwable) {
+                // Auto-assignment is best-effort; never block the user sync operation
+            }
 
             return response()->json([
                 'success' => true,
@@ -318,7 +334,7 @@ class FichaController extends Controller
     public function buscarPorNumero($numero)
     {
         try {
-            $ficha = Fichas::where('numero_ficha', $numero)
+            $ficha = Ficha::where('numero_ficha', $numero)
                 ->with('programa:id,programa')
                 ->first();
 
@@ -345,23 +361,26 @@ class FichaController extends Controller
     public function getUsuariosDeFicha($id)
     {
         try {
-            $ficha = Fichas::findOrFail($id);
+            $ficha = Ficha::findOrFail($id);
 
             // Obtenemos los usuarios con los datos del pivote para conocer el rol (aprendiz/instructor)
             // Fix N+1: eager load entidad and active asignaciones with their equipment
             $usuarios = $ficha->usuarios()
                 ->select(
                     'usuarios.doc', 
+                    'usuarios.id_tip_doc',
                     'usuarios.primer_nombre', 
                     'usuarios.segundo_nombre', 
                     'usuarios.primer_apellido', 
                     'usuarios.segundo_apellido',
+                    'usuarios.correo',
+                    'usuarios.telefono',
                     'usuarios.nit_entidad',
                     'usuarios.imagen',
                     'detalle_ficha_usuarios.tipo_participante',
                     'detalle_ficha_usuarios.id as detalle_id'
                 )
-                ->with(['entidad', 'asignaciones' => function($q) {
+                ->with(['entidad', 'tipoDoc', 'asignaciones' => function($q) {
                     $q->where('estado', 'activo')->with('equipo.marca');
                 }])
                 ->get();
@@ -392,8 +411,7 @@ class FichaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener usuarios de la ficha',
-                'error' => $e->getMessage()
+                'message' => 'Error al obtener los usuarios de la ficha: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -403,7 +421,7 @@ class FichaController extends Controller
         $request->validate(['estado' => 'required|in:lectiva,productiva,finalizada']);
         
         try {
-            $ficha = Fichas::findOrFail($id);
+            $ficha = Ficha::findOrFail($id);
             $ficha->update(['estado' => $request->estado]);
 
             return response()->json([
@@ -415,6 +433,101 @@ class FichaController extends Controller
                 'success' => false,
                 'message' => 'Error al actualizar el estado',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateAmbiente(Request $request, $id)
+    {
+        $request->validate([
+            'numero_ambiente' => 'required|string|exists:ambientes,numero_ambiente',
+        ]);
+
+        try {
+            $ficha = Ficha::with('usuarios')->findOrFail($id);
+
+            $ambienteViejo = $ficha->numero_ambiente;
+            $ambienteNuevo = $request->numero_ambiente;
+
+            // Sin cambio real
+            if ($ambienteViejo === $ambienteNuevo) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El ambiente no cambió.',
+                    'ficha'   => $ficha->load(['ambiente:numero_ambiente,ambiente', 'jornada:id,jornada'])
+                ]);
+            }
+
+            DB::transaction(function () use ($ficha, $ambienteViejo, $ambienteNuevo) {
+
+                // ──────────────────────────────────────────────────────────
+                // PASO 1: LIMPIEZA del salón viejo
+                // Liberar los equipos del lote del ambiente anterior.
+                // ──────────────────────────────────────────────────────────
+                $loteViejo = Lote::where('id_ambiente', $ambienteViejo)->first();
+
+                if ($loteViejo) {
+                    // Solo aprendices (los instructores no reciben equipos)
+                    $docsAprendices = $ficha->usuarios
+                        ->filter(fn ($u) => $u->pivot->tipo_participante !== 'instructor')
+                        ->pluck('doc');
+
+                    // Asignaciones EN_USO de esos aprendices en el lote viejo
+                    $asignacionesActivas = Asignacion::whereIn('doc', $docsAprendices)
+                        ->where('id_lote', $loteViejo->id)
+                        ->where('estado', Asignacion::ESTADO_EN_USO)
+                        ->with('equipo')
+                        ->get();
+
+                    foreach ($asignacionesActivas as $asig) {
+                        // Marcar asignación como devuelta
+                        $asig->update(['estado' => Asignacion::ESTADO_DEVUELTO]);
+
+                        // Liberar el equipo si ya no tiene otras asignaciones EN_USO
+                        if ($asig->equipo) {
+                            $otrasActivas = Asignacion::where('serial_equipo', $asig->serial_equipo)
+                                ->where('estado', Asignacion::ESTADO_EN_USO)
+                                ->where('id', '!=', $asig->id)
+                                ->exists();
+
+                            if (!$otrasActivas) {
+                                $asig->equipo->update(['estado' => 'no_asignado']);
+                            }
+                        }
+                    }
+                }
+
+                // ──────────────────────────────────────────────────────────
+                // PASO 2: Actualizar el ambiente de la ficha
+                // ──────────────────────────────────────────────────────────
+                $ficha->update(['numero_ambiente' => $ambienteNuevo]);
+
+                // ──────────────────────────────────────────────────────────
+                // PASO 3: REASIGNACIÓN en el nuevo salón
+                // Si el nuevo ambiente tiene un Lote vinculado, disparar el engine.
+                // La lógica incremental de ejecutarAsignacion omitirá a los que
+                // ya tengan equipo en esa jornada.
+                // ──────────────────────────────────────────────────────────
+                $loteNuevo = Lote::where('id_ambiente', $ambienteNuevo)->first();
+
+                if ($loteNuevo) {
+                    // Recargar ficha con usuarios y pivot (necesario para el engine)
+                    $fichaActualizada = Ficha::with('usuarios')->find($ficha->id);
+                    AsignacionController::ejecutarAsignacion($fichaActualizada, $loteNuevo);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ambiente de la ficha actualizado correctamente.',
+                'ficha'   => $ficha->fresh()->load(['ambiente:numero_ambiente,ambiente', 'jornada:id,jornada'])
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el ambiente',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -445,7 +558,7 @@ class FichaController extends Controller
 
             // 2. CONSULTA OPTIMIZADA (Eager Loading Constrained)
             // Traemos la ficha con sus aprendices y SUS registros filtrados por mes/año
-            $ficha = Fichas::with(['usuarios' => function ($query) use ($mes, $anio) {
+            $ficha = Ficha::with(['usuarios' => function ($query) use ($mes, $anio) {
                 $query->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz')
                     ->select('usuarios.doc', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')
                     ->with(['registros' => function ($regQuery) use ($mes, $anio) {
@@ -521,7 +634,7 @@ class FichaController extends Controller
         ]);
 
         try {
-            $ficha = Fichas::findOrFail($id);
+            $ficha = Ficha::findOrFail($id);
             $ficha->update([
                 'hora_limite_llegada' => $request->hora_limite_llegada
             ]);
@@ -599,7 +712,7 @@ class FichaController extends Controller
                 ], 404);
             }
 
-            $ficha = Fichas::with('programa:id,programa')->find($detalle->id_ficha);
+            $ficha = Ficha::with('programa:id,programa')->find($detalle->id_ficha);
 
             return response()->json([
                 'success' => true,
@@ -649,7 +762,7 @@ class FichaController extends Controller
             $fichaId = $detalleInstructor->id_ficha;
 
             // 2. CONSULTA OPTIMIZADA (Eager Loading Constrained)
-            $ficha = Fichas::with(['usuarios' => function ($query) use ($mes, $anio) {
+            $ficha = Ficha::with(['usuarios' => function ($query) use ($mes, $anio) {
                 $query->where('detalle_ficha_usuarios.tipo_participante', 'aprendiz')
                     ->select('usuarios.doc', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'imagen')
                     ->with(['registros' => function ($regQuery) use ($mes, $anio) {
@@ -714,7 +827,7 @@ class FichaController extends Controller
             }
 
             $fichaId = $detalleInstructor->id_ficha;
-            $ficha = Fichas::find($fichaId);
+            $ficha = Ficha::find($fichaId);
 
             // 2. OBTENER LOS EQUIPOS ASIGNADOS A LOS APRENDICES DE ESA FICHA
             $equipos = Usuarios::whereHas('fichas', function($q) use ($fichaId) {

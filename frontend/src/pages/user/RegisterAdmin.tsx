@@ -8,7 +8,7 @@ import styles from './Registration.module.css';
 const RegisterAdmin: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { planId, entidadId, entidadNombre } = (location.state as { planId?: string; entidadId?: number; entidadNombre?: string }) || {};
+    const { planId, entidadId, entidadNombre } = (location.state as { planId?: string | number; entidadId?: string; entidadNombre?: string }) || {};
 
     const [formData, setFormData] = useState({
         doc: '',
@@ -157,19 +157,20 @@ const RegisterAdmin: React.FC = () => {
 
         try {
             const payload = {
-                nit: String(entidadId),
-                id_plan: Number(planId),
-                admin_user: {
-                    doc: Number(formData.doc),
-                    primer_nombre: formData.primer_nombre,
-                    segundo_nombre: formData.segundo_nombre || undefined,
-                    primer_apellido: formData.primer_apellido,
-                    segundo_apellido: formData.segundo_apellido || undefined,
-                    telefono: formData.telefono,
-                    correo: formData.correo,
-                    contrasena: formData.contrasena,
-                },
+                id_entidad: String(entidadId),
+                id_plan_lic: Number(planId),
+                doc: formData.doc,
+                id_tip_doc: Number(formData.id_tip_doc),
+                primer_nombre: formData.primer_nombre,
+                segundo_nombre: formData.segundo_nombre || undefined,
+                primer_apellido: formData.primer_apellido,
+                segundo_apellido: formData.segundo_apellido || undefined,
+                user_telefono: formData.telefono,
+                user_correo: formData.correo,
+                contrasena: formData.contrasena,
             };
+
+            console.log("Payload a enviar al backend:", payload);
 
             await registrationService.completeEntityRegistration(payload);
             // If no error was thrown, registration succeeded
