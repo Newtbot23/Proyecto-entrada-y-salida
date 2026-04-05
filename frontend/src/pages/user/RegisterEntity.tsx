@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { registrationService } from '../../services/registrationService';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
+import { ApiError } from '../../config/api';
+import type { CreateEntityDTO } from '../../types';
 import styles from './Registration.module.css';
 
 const RegisterEntity: React.FC = () => {
@@ -9,7 +12,7 @@ const RegisterEntity: React.FC = () => {
     const navigate = useNavigate();
     const { planId } = (location.state as { planId?: string }) || {};
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<CreateEntityDTO>({
         nombre_entidad: '',
         correo: '',
         direccion: '',
@@ -18,11 +21,10 @@ const RegisterEntity: React.FC = () => {
         nit: '',
     });
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [navData, setNavData] = useState<{ planId?: string; entidadId?: number | string; entidadNombre?: string } | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
+    const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CreateEntityDTO, string>>>({});
+    const [generalError, setGeneralError] = useState<string | null>(null);
 
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -37,11 +39,10 @@ const RegisterEntity: React.FC = () => {
         NIT: /^[0-9]{8,15}(-[0-9])?$/,
         EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         ENTITY_NAME: /^[^0-9]+$/, // No numbers
-        REP_LEGAL_NAME: /^[^0-9]{8,}$/, // No numbers, min 8 chars
         DIRECCION: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s,.\-#]+$/,
     };
 
-    const validateField = (field: keyof typeof formData, value: string) => {
+    const validateField = (field: keyof CreateEntityDTO, value: string) => {
         let error: string | undefined;
 
         switch (field) {
@@ -75,13 +76,13 @@ const RegisterEntity: React.FC = () => {
                 if (!value.trim())
                     error = 'El teléfono es obligatorio';
                 else if (!REGEX.PHONE.test(value))
-                    error = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                    error = 'Debe tener 10 dígitos e iniciar por 3 o 60';
                 break;
             case 'nit':
                 if (!value.trim())
                     error = 'El NIT es obligatorio';
                 else if (!REGEX.NIT.test(value))
-                    error = 'El NIT debe tener entre 8 y 15 números, y puede incluir un dígito de verificación opcional (Ej: 12345678-9)';
+                    error = 'El NIT debe tener entre 8 y 15 números';
                 break;
         }
 
@@ -90,7 +91,7 @@ const RegisterEntity: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        const field = name as keyof typeof formData;
+        const field = name as keyof CreateEntityDTO;
 
         setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -104,110 +105,81 @@ const RegisterEntity: React.FC = () => {
     };
 
     const validateForm = (): boolean => {
-        const newErrors: Partial<Record<keyof typeof formData, string>> = {};
+        const newErrors: Partial<Record<keyof CreateEntityDTO, string>> = {};
 
-        if (!formData.nombre_entidad.trim()) {
-            newErrors.nombre_entidad = 'El nombre de la entidad es obligatorio';
-        } else if (!REGEX.ENTITY_NAME.test(formData.nombre_entidad)) {
-            newErrors.nombre_entidad = 'El nombre de la entidad no puede contener números';
-        }
-
-        if (!formData.correo.trim()) {
-            newErrors.correo = 'El correo es obligatorio';
-        } else if (!REGEX.EMAIL.test(formData.correo)) {
-            newErrors.correo = 'Formato de correo inválido';
-        }
-
-        if (!formData.direccion.trim()) {
-            newErrors.direccion = 'La dirección es obligatoria';
-        } else if (!REGEX.DIRECCION.test(formData.direccion)) {
-            newErrors.direccion = 'La dirección contiene caracteres no permitidos';
-        }
-
-        if (!formData.nombre_titular.trim()) {
-            newErrors.nombre_titular = 'El nombre del representante legal es obligatorio';
-        } else if (/\d/.test(formData.nombre_titular)) {
-            newErrors.nombre_titular = 'El nombre no puede contener números';
-        } else if (formData.nombre_titular.trim().length < 8) {
-            newErrors.nombre_titular = 'El nombre debe tener al menos 8 caracteres';
-        }
-
-        if (!formData.telefono.trim()) {
-            newErrors.telefono = 'El teléfono es obligatorio';
-        } else if (!REGEX.PHONE.test(formData.telefono)) {
-            newErrors.telefono = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
-        }
-
-        if (!formData.nit.trim()) {
-            newErrors.nit = 'El NIT es obligatorio';
-        } else if (!REGEX.NIT.test(formData.nit)) {
-            newErrors.nit = 'El NIT debe tener entre 8 y 15 números, y puede incluir un dígito de verificación opcional (Ej: 12345678-9)';
-        }
+        if (!formData.nombre_entidad.trim()) newErrors.nombre_entidad = 'El nombre de la entidad es obligatorio';
+        if (!formData.correo.trim()) newErrors.correo = 'El correo es obligatorio';
+        if (!formData.direccion.trim()) newErrors.direccion = 'La dirección es obligatoria';
+        if (!formData.nombre_titular.trim()) newErrors.nombre_titular = 'El nombre del representante legal es obligatorio';
+        if (!formData.telefono.trim()) newErrors.telefono = 'El teléfono es obligatorio';
+        if (!formData.nit.trim()) newErrors.nit = 'El NIT es obligatorio';
 
         setFieldErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-        setFieldErrors({});
-
-        try {
-            // apiClient.post() returns the unwrapped data directly.
-            // If the call doesn't throw, the entity was created successfully.
-            const entityData = await registrationService.createEntity(formData);
-
+    // --- MUTATION REFACTOR (TanStack Query v5) ---
+    const mutation = useMutation({
+        mutationFn: (data: CreateEntityDTO) => registrationService.createEntity(data),
+        onSuccess: (entityData) => {
             setNavData({
                 planId,
                 entidadId: entityData.id,
                 entidadNombre: entityData.entidad.nombre_entidad
             });
             setShowModal(true);
-        } catch (err: any) {
-            console.error('Registration error:', err);
-            if (err.status === 422 && err.errors) {
+        },
+        onError: (err: any) => {
+            console.error('Registration failure:', err);
+            
+            if (err instanceof ApiError && err.status === 422 && err.errors) {
                 // Map backend array errors to single string like the frontend ones
-                const mappedErrors: Partial<Record<keyof typeof formData, string>> = {};
+                const mappedErrors: Partial<Record<keyof CreateEntityDTO, string>> = {};
                 for (const key in err.errors) {
-                    mappedErrors[key as keyof typeof formData] = err.errors[key][0];
+                    mappedErrors[key as keyof CreateEntityDTO] = err.errors[key][0];
                 }
                 setFieldErrors(mappedErrors);
-                setError('Por favor corrija los errores resaltados.');
+                setGeneralError('Por favor corrija los errores resaltados.');
             } else {
-                setError(err.message || 'Error al crear la entidad. Por favor verifique el formulario.');
+                setGeneralError(err.message || 'Error al crear la entidad. Por favor verifique el formulario.');
             }
-        } finally {
-            setLoading(false);
         }
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setGeneralError(null);
+
+        if (!validateForm()) {
+            setGeneralError('Por favor complete todos los campos requeridos correctamente.');
+            return;
+        }
+
+        mutation.mutate(formData);
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.card}>
                 <h2 className={styles.title}>Registro de Entidad</h2>
-                <p className={styles.subtitle}>ID del Plan Seleccionado: {planId}</p>
+                <p className={styles.subtitle}>Configuración para el Plan #{planId}</p>
 
-                {error && <div className={styles.error}>{error}</div>}
+                {generalError && <div className={styles.error}>{generalError}</div>}
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
-                        <label>Nombre de la Entidad</label>
+                        <label>Nombre de la Entidad <span className={styles.required}>*</span></label>
                         <input
                             type="text"
                             name="nombre_entidad"
                             value={formData.nombre_entidad}
                             onChange={handleChange}
                             className={fieldErrors.nombre_entidad ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.nombre_entidad && <span className={styles.fieldError}>{fieldErrors.nombre_entidad}</span>}
                     </div>
+
                     <div className={styles.formGroup}>
                         <label>Correo Electrónico <span className={styles.required}>*</span></label>
                         <input
@@ -216,9 +188,11 @@ const RegisterEntity: React.FC = () => {
                             value={formData.correo}
                             onChange={handleChange}
                             className={fieldErrors.correo ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.correo && <span className={styles.fieldError}>{fieldErrors.correo}</span>}
                     </div>
+
                     <div className={styles.formGroup}>
                         <label>Dirección <span className={styles.required}>*</span></label>
                         <input
@@ -227,9 +201,11 @@ const RegisterEntity: React.FC = () => {
                             value={formData.direccion}
                             onChange={handleChange}
                             className={fieldErrors.direccion ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.direccion && <span className={styles.fieldError}>{fieldErrors.direccion}</span>}
                     </div>
+
                     <div className={styles.formGroup}>
                         <label>Nombre del Representante Legal <span className={styles.required}>*</span></label>
                         <input
@@ -238,9 +214,11 @@ const RegisterEntity: React.FC = () => {
                             value={formData.nombre_titular}
                             onChange={handleChange}
                             className={fieldErrors.nombre_titular ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.nombre_titular && <span className={styles.fieldError}>{fieldErrors.nombre_titular}</span>}
                     </div>
+
                     <div className={styles.formGroup}>
                         <label>Teléfono <span className={styles.required}>*</span></label>
                         <input
@@ -250,9 +228,11 @@ const RegisterEntity: React.FC = () => {
                             value={formData.telefono}
                             onChange={handleChange}
                             className={fieldErrors.telefono ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono}</span>}
                     </div>
+
                     <div className={styles.formGroup}>
                         <label>NIT <span className={styles.required}>*</span></label>
                         <input
@@ -262,12 +242,17 @@ const RegisterEntity: React.FC = () => {
                             value={formData.nit}
                             onChange={handleChange}
                             className={fieldErrors.nit ? styles.inputError : ''}
+                            disabled={mutation.isPending}
                         />
                         {fieldErrors.nit && <span className={styles.fieldError}>{fieldErrors.nit}</span>}
                     </div>
 
-                    <button type="submit" className={styles.button} disabled={loading || showModal}>
-                        {loading ? 'Procesando...' : 'Siguiente: Registrar Administrador'}
+                    <button 
+                        type="submit" 
+                        className={styles.button} 
+                        disabled={mutation.isPending || showModal}
+                    >
+                        {mutation.isPending ? 'Procesando...' : 'Siguiente: Registrar Administrador'}
                     </button>
                 </form>
             </div>

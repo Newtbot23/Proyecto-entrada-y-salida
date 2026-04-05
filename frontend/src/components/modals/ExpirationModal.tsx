@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ExpirationModalProps {
     isOpen: boolean;
 }
 
 const ExpirationModal: React.FC<ExpirationModalProps> = ({ isOpen }) => {
+    const navigate = useNavigate();
     if (!isOpen) return null;
 
     return (
@@ -77,7 +79,7 @@ const ExpirationModal: React.FC<ExpirationModalProps> = ({ isOpen }) => {
                 </div>
 
                 <button
-                    onClick={() => window.location.href = '/login'}
+                    onClick={() => navigate('/login')}
                     style={{
                         backgroundColor: '#dc2626',
                         color: 'white',

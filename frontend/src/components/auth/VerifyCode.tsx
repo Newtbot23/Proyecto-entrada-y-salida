@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../../config/api';
 import styles from './AuthFlows.module.css';
 
@@ -213,13 +213,12 @@ const VerifyCode = () => {
                     </button>
 
                     <div className={styles.backLinkContainer}>
-                        <a
-                            href={`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`}
+                        <Link
+                            to={`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`}
                             className={styles.backLink}
-                            onClick={(e) => { e.preventDefault(); navigate(`/forgot-password?email=${encodeURIComponent(email)}&type=${typeParam}`); }}
                         >
                             ¿No recibiste el código? Volver a intentar
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>

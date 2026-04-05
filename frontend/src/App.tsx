@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import SuperAdminLogin from './pages/superadmin/SuperAdminLogin';
 import { PlansPage } from './pages/Plans/PlansPage';
 import PublicDashboardPage from './pages/PublicDashboardPage';
@@ -50,85 +50,86 @@ import { Toaster } from 'sonner';
 
 function App() {
   return (
-    <AuthProvider>
-      <DocumentTitleUpdater />
-      <Toaster richColors position="top-right" />
-      <Routes>
-        {/* Public Landing Page */}
-        <Route path="/" element={<PublicDashboardPage />} />
-        <Route path="/plans" element={<PlansPage />} />
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
 
-        {/* Normal Admin Flow */}
-        <Route path="/login" element={<NormalAdminLogin />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-code" element={<VerifyCode />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register-entity" element={<RegisterEntity />} />
-        <Route path="/register-admin" element={<RegisterAdmin />} />
-        <Route path="/register-user" element={<RegisterUser />} />
+      <AuthProvider>
+        <DocumentTitleUpdater />
+        <Toaster richColors position="top-right" />
+        <Routes>
+          {/* Public Landing Page */}
+          <Route path="/" element={<PublicDashboardPage />} />
+          <Route path="/plans" element={<PlansPage />} />
 
-        {/* Protected Normal Admin Area */}
+          {/* Normal Admin Flow */}
+          <Route path="/login" element={<NormalAdminLogin />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-code" element={<VerifyCode />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/register-entity" element={<RegisterEntity />} />
+          <Route path="/register-admin" element={<RegisterAdmin />} />
+          <Route path="/register-user" element={<RegisterUser />} />
 
-        <Route path="/dashboard" element={<NormalAdminDashboard />} />
-        <Route path="/user/normaladmin/dashboard" element={<Navigate to="/dashboard" replace />} /> {/* Alias if needed */}
+          {/* Protected Normal Admin Area */}
 
-        <Route element={<NormalAdminLayout />}>
-          <Route path="/user/normaladmin/registro-personas" element={<RegistroPersonasView />} />
-          <Route path="/user/normaladmin/tables/:tableName" element={<DynamicCrud />} />
-          <Route path="/user/normaladmin/reportes/persona" element={<ReportePersona />} />
-          <Route path="/user/normaladmin/reportes/diario" element={<ReporteDiario />} />
-          <Route path="/user/normaladmin/aprobaciones" element={<AprobacionesActivos />} />
-          <Route path="/user/normaladmin/fichas/crear" element={<FichasCreate />} />
-          <Route path="/user/normaladmin/fichas/asignar" element={<FichasAssign />} />
-          <Route path="/user/normaladmin/fichas/lista" element={<FichasList />} />
-          <Route path="/user/normaladmin/fichas/areas" element={<GestionAreas />} />
-          <Route path="/user/normaladmin/equipos/registrar" element={<RegistrarEquipos />} />
-          <Route path="/user/normaladmin/equipos/asignar" element={<AsignarEquipos />} />
-          <Route path="/user/normaladmin/equipos/gestion-lotes" element={<GestionLotes />} />
-          <Route path="/user/normaladmin/equipos/historial" element={<HistorialAsignaciones />} />
-        </Route>
+          <Route path="/dashboard" element={<NormalAdminDashboard />} />
+          <Route path="/user/normaladmin/dashboard" element={<Navigate to="/dashboard" replace />} /> {/* Alias if needed */}
 
-        {/* Regular User Flow */}
-        <Route element={<UserLayout />}>
-          <Route path="/user/dashboard" element={<UserDashboard />} />
-          <Route path="/user/historial" element={<UserHistory />} />
-          <Route path="/user/codigo" element={<UserBarcode />} />
-          <Route path="/user/instructor/asistencia" element={<AsistenciaFicha />} />
-          <Route path="/user/instructor/equipos" element={<EquiposAsignados />} />
-        </Route>
+          <Route element={<NormalAdminLayout />}>
+            <Route path="/user/normaladmin/registro-personas" element={<RegistroPersonasView />} />
+            <Route path="/user/normaladmin/tables/:tableName" element={<DynamicCrud />} />
+            <Route path="/user/normaladmin/reportes/persona" element={<ReportePersona />} />
+            <Route path="/user/normaladmin/reportes/diario" element={<ReporteDiario />} />
+            <Route path="/user/normaladmin/aprobaciones" element={<AprobacionesActivos />} />
+            <Route path="/user/normaladmin/fichas/crear" element={<FichasCreate />} />
+            <Route path="/user/normaladmin/fichas/asignar" element={<FichasAssign />} />
+            <Route path="/user/normaladmin/fichas/lista" element={<FichasList />} />
+            <Route path="/user/normaladmin/fichas/areas" element={<GestionAreas />} />
+            <Route path="/user/normaladmin/equipos/registrar" element={<RegistrarEquipos />} />
+            <Route path="/user/normaladmin/equipos/asignar" element={<AsignarEquipos />} />
+            <Route path="/user/normaladmin/equipos/gestion-lotes" element={<GestionLotes />} />
+            <Route path="/user/normaladmin/equipos/historial" element={<HistorialAsignaciones />} />
+          </Route>
 
-        <Route path="/license-payment" element={<LicensePayment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/payment-cancel" element={<PaymentCancel />} />
+          {/* Regular User Flow */}
+          <Route element={<UserLayout />}>
+            <Route path="/user/dashboard" element={<UserDashboard />} />
+            <Route path="/user/historial" element={<UserHistory />} />
+            <Route path="/user/codigo" element={<UserBarcode />} />
+            <Route path="/user/instructor/asistencia" element={<AsistenciaFicha />} />
+            <Route path="/user/instructor/equipos" element={<EquiposAsignados />} />
+          </Route>
 
-        {/* Super Admin Routes */}
-        <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+          <Route path="/license-payment" element={<LicensePayment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancel" element={<PaymentCancel />} />
 
-        {/* Protected Super Admin Area */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
-          <Route path="/superadmin/admins" element={<SuperAdmin />} />
-          <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
-          <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
-          <Route path="/superadmin/entities-admins" element={<AdminEntitiesPage />} />
-          <Route path="/superadmin/entities-admins/:nit" element={<EntityAdminsPage />} />
+          {/* Super Admin Routes */}
+          <Route path="/superadmin/login" element={<SuperAdminLogin />} />
 
-          <Route path="/superadmin/reports" element={<ReportsPage />} />
-        </Route>
+          {/* Protected Super Admin Area */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+            <Route path="/superadmin/admins" element={<SuperAdmin />} />
+            <Route path="/superadmin/license-plans" element={<LicensePlansPage />} />
+            <Route path="/superadmin/institutions" element={<InstitutionsPage />} />
+            <Route path="/superadmin/entities-admins" element={<AdminEntitiesPage />} />
+            <Route path="/superadmin/entities-admins/:nit" element={<EntityAdminsPage />} />
 
-
-        {/* Legacy/Specific Redirects if needed */}
-        <Route path="/normaladmin/login" element={<Navigate to="/login" replace />} />
-        <Route path="/normaladmin/dashboard" element={<Navigate to="/dashboard" replace />} />
-        {/* Protected Puertas Area */}
-        <Route element={<PuertasLayout />}>
-          <Route path="/puertas/personas" element={<PersonasDashboard />} />
-          <Route path="/puertas/vehiculos" element={<VehiculosDashboard />} />
-        </Route>
-      </Routes>
-    </AuthProvider>
+            <Route path="/superadmin/reports" element={<ReportsPage />} />
+          </Route>
 
 
+          {/* Legacy/Specific Redirects if needed */}
+          <Route path="/normaladmin/login" element={<Navigate to="/login" replace />} />
+          <Route path="/normaladmin/dashboard" element={<Navigate to="/dashboard" replace />} />
+          {/* Protected Puertas Area */}
+          <Route element={<PuertasLayout />}>
+            <Route path="/puertas/personas" element={<PersonasDashboard />} />
+            <Route path="/puertas/vehiculos" element={<VehiculosDashboard />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

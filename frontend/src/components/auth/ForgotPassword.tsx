@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { apiClient } from '../../config/api';
 import styles from './AuthFlows.module.css';
 
@@ -101,13 +101,12 @@ const ForgotPassword = () => {
           </button>
 
           <div className={styles.backLinkContainer}>
-            <a
-              href={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
+            <Link
+              to={typeParam === 'superadmin' ? "/superadmin/login" : "/login"}
               className={styles.backLink}
-              onClick={(e) => { e.preventDefault(); navigate(typeParam === 'superadmin' ? '/superadmin/login' : '/login'); }}
             >
               Volver al Inicio de Sesión
-            </a>
+            </Link>
           </div>
         </form>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import styles from '../Registration.module.css'; // Reusing registration styles for consistency
 import { loginNormalAdmin } from '../../../services/authService';
 
@@ -98,15 +98,15 @@ const NormalAdminLogin: React.FC = () => {
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                        <a href="/forgot-password?type=usuario" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
+                        <Link to="/forgot-password?type=usuario" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
                             ¿Olvidaste tu contraseña?
-                        </a>
-                        <a href="/register-user" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
+                        </Link>
+                        <Link to="/register-user" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
                             Registrarse
-                        </a>
-                        <a href="/plans" style={{ color: '#008f39', fontSize: '0.875rem' }}>
+                        </Link>
+                        <Link to="/plans" style={{ color: '#008f39', fontSize: '0.875rem' }}>
                             Volver a Planes
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>

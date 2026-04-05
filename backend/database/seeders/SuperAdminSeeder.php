@@ -15,16 +15,16 @@ class SuperAdminSeeder extends Seeder
         public function run(): void
     {
         // Evita duplicados
-        if (!Admins::where('correo', 'admin@correo.com')->exists()) {
+        if (!Admins::where('correo', 'esquivel7809@gmail.com')->exists()) {
 
             Admins::create([
                 'doc' => '99999',
-                'correo' => 'admin@gmail.com',
-                'contrasena' => Hash::make('1234567'),
+                'correo' => 'esquivel7809@gmail.com',
+                'contrasena' => Hash::make('Qwerty2299576%&'),
                 'nombre' => 'Super Admin',
                 'telefono' => '123456',
             ]);
         }
     }
-    }
 
+}

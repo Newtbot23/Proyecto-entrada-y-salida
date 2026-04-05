@@ -71,4 +71,11 @@ class Ficha extends Model
     {
         return $this->hasMany(DetalleFichaUsuarios::class, 'id_ficha', 'id');
     }
+    public function instructores()
+    {
+        return $this->belongsToMany(Usuarios::class, 'detalle_ficha_usuarios', 'id_ficha', 'doc')
+                    ->wherePivot('tipo_participante', 'instructor')
+                    ->withPivot('id', 'tipo_participante')
+                    ->withTimestamps();
+    }
 }

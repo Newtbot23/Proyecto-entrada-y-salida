@@ -77,15 +77,17 @@ const RegisterAdmin: React.FC = () => {
             case 'primer_nombre':
             case 'primer_apellido':
                 if (!value.trim()) errorMsg = 'Este campo es obligatorio';
+                else if (value.trim().length < 2) errorMsg = 'Debe tener al menos 2 caracteres';
                 else if (!REGEX.NAME.test(value)) errorMsg = 'No puede contener números';
                 break;
             case 'segundo_nombre':
             case 'segundo_apellido':
-                if (value && !REGEX.NAME.test(value)) errorMsg = 'No puede contener números';
+                if (value && value.trim().length < 2) errorMsg = 'Debe tener al menos 2 caracteres';
+                else if (value && !REGEX.NAME.test(value)) errorMsg = 'No puede contener números';
                 break;
             case 'telefono':
                 if (!value.trim()) errorMsg = 'El teléfono es obligatorio';
-                else if (!REGEX.PHONE.test(value)) errorMsg = 'Debe ser un número válido en Colombia (10 dígitos, iniciar en 3 o 60)';
+                else if (!REGEX.PHONE.test(value)) errorMsg = 'Debe tener 10 dígitos e iniciar por 3 o 60';
                 break;
             case 'correo':
                 if (!value.trim()) errorMsg = 'El correo es obligatorio';
@@ -128,8 +130,10 @@ const RegisterAdmin: React.FC = () => {
 
         if (!REGEX.DOC.test(formData.doc)) errors.doc = 'El documento debe tener entre 7 y 10 dígitos numéricos';
         if (!formData.id_tip_doc) errors.id_tip_doc = 'Seleccione un tipo de documento';
-        if (!formData.primer_nombre.trim() || !REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = 'Nombre inválido';
-        if (!formData.primer_apellido.trim() || !REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = 'Apellido inválido';
+        if (!formData.primer_nombre.trim() || formData.primer_nombre.trim().length < 2 || !REGEX.NAME.test(formData.primer_nombre)) errors.primer_nombre = 'Nombre inválido (min 2 caracteres)';
+        if (!formData.primer_apellido.trim() || formData.primer_apellido.trim().length < 2 || !REGEX.NAME.test(formData.primer_apellido)) errors.primer_apellido = 'Apellido inválido (min 2 caracteres)';
+        if (formData.segundo_nombre && formData.segundo_nombre.trim().length < 2) errors.segundo_nombre = 'Mínimo 2 caracteres';
+        if (formData.segundo_apellido && formData.segundo_apellido.trim().length < 2) errors.segundo_apellido = 'Mínimo 2 caracteres';
         if (!REGEX.PHONE.test(formData.telefono)) errors.telefono = 'Teléfono inválido';
         if (!REGEX.EMAIL.test(formData.correo)) errors.correo = 'Correo inválido';
         if (!REGEX.PASSWORD.test(formData.contrasena)) errors.contrasena = 'La contraseña no cumple los requisitos';
