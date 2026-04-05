@@ -79,7 +79,7 @@ const VehiculoFormSelects: React.FC<VehiculoFormSelectsProps> = ({
                     <option value="">— Seleccione un tipo —</option>
                     {catalogs.tipos_vehiculo.map((tipo) => (
                         <option key={tipo.id} value={tipo.id}>
-                            {tipo.tipo_vehiculo}
+                            {tipo.nombre}
                         </option>
                     ))}
                 </select>

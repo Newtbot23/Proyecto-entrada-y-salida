@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import styles from './SuperAdminLogin.module.css';
 import { loginSuperAdmin } from '../../services/authService';
 
 const SuperAdminLogin: React.FC = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ const SuperAdminLogin: React.FC = () => {
             sessionStorage.setItem('authUser', JSON.stringify(data.admin));
 
             // Redirect to dashboard
-            window.location.href = '/superadmin/dashboard';
+            navigate('/superadmin/dashboard');
 
         } catch (err: any) {
             console.error('Login error:', err);
@@ -87,9 +89,9 @@ const SuperAdminLogin: React.FC = () => {
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                        <a href="/forgot-password?type=superadmin" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block' }}>
+                        <Link to="/forgot-password?type=superadmin" style={{ color: '#008f39', fontSize: '0.875rem', display: 'block' }}>
                             ¿Olvidaste tu contraseña?
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>

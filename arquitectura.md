@@ -18,18 +18,3 @@ Actúa siempre como un Arquitecto de Software Full Stack Senior.
 
 ## 3. FLUJO DE TRABAJO
 - **Prevención de Daños:** Adapta tu lógica nueva a la estructura existente, no intentes reescribir el core del sistema a menos que el usuario lo pida explícitamente. Verifica siempre que tus importaciones no rompan la app.
-
-## 4. TESTEOS
-- **Credenciales de ingreso:** ya que estas realizando testeos abriendo el proyecto en el navegador, ten en cuenta que existen dos login con urls diferentes para cada ingreso con intencion de realizar pruebas en el modulo de superadmin utiliza este url (`http://localhost:5173/superadmin/login`) con credenciales de superadmin 
-**Usuario:** (`cortazarrodriguezjuliocesar@gmail.com`)
-**contraseña:**(`Julio_12345`)
-
-- para el ingreso de admin normal asociado a una empresa utiliza siempre la url: (`http://localhost:5173/login`) con credenciales para admin normal asociado a una empresa
-**Usuario:** (`cortazarrodriguezjuliocesar@gmail.com`)
-**contraseña:**(`Julio_12345`)
-
-- para realizar funciones como usuario normal utiliza siempre la url: (`http://localhost:5173/login`) con credenciales para usuario normal
-**Usuario:** (`cortazarrodriguezjuliocesar4@gmail.com`)
-**contraseña:**(`Julio_12345`)
-
-utiliza siempre estas credenciales para realizar pruebas en el proyecto nunca intentes recuperar contraseña si las credenciales no permiten el acceso deten tu ejecución y verifica que estas utilizando las credenciales correctas si aun asi no funcionan detén tu ejecución y notifica al usuario el problema y continua tus testeos con la respuesta que te de el usuario.

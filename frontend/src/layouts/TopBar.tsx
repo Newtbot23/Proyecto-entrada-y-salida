@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface TopBarProps {
     showLoginButton?: boolean;
@@ -28,8 +28,6 @@ export const TopBar: React.FC<TopBarProps> = ({
     showBranding = false,
     subtitle = 'Inicio',
 }) => {
-    const navigate = useNavigate();
-
     const topBarStyle: React.CSSProperties = {
         position: 'fixed',
         top: 0,
@@ -50,6 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         alignItems: 'center',
         gap: '0.75rem',
         cursor: 'pointer',
+        textDecoration: 'none',
     };
 
     const brandTextStyle: React.CSSProperties = {
@@ -75,6 +74,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         fontWeight: 700,
         cursor: 'pointer',
         color: 'var(--color-text-main)',
+        textDecoration: 'none',
     };
 
     const rightContainerStyle: React.CSSProperties = {
@@ -89,6 +89,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     };
 
     const loginButtonStyle: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '0.5rem 1.4rem',
         fontSize: '1.025rem',
         fontWeight: 600,
@@ -97,9 +100,13 @@ export const TopBar: React.FC<TopBarProps> = ({
         cursor: 'pointer',
         backgroundColor: 'var(--color-primary)',
         color: '#fff',
+        textDecoration: 'none',
     };
 
     const plansButtonStyle: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '0.5rem 1.4rem',
         fontSize: '1.025rem',
         fontWeight: 600,
@@ -109,37 +116,38 @@ export const TopBar: React.FC<TopBarProps> = ({
         backgroundColor: 'transparent',
         color: 'var(--color-text-main)',
         transition: 'all 0.2s',
+        textDecoration: 'none',
     };
 
     return (
         <div style={topBarStyle}>
             {showBranding ? (
-                <div style={logoContainerStyle} onClick={() => navigate('/')}>
+                <Link to="/" style={logoContainerStyle}>
                     <AccessLogo />
                     <div style={brandTextStyle}>
                         <span style={brandTitleStyle}>Control Inteligente: Acceso a tus instalaciones</span>
                         <span style={brandSubtitleStyle}>{subtitle}</span>
                     </div>
-                </div>
+                </Link>
             ) : (
-                <div style={logoStyle} onClick={() => navigate('/')}>
+                <Link to="/" style={logoStyle}>
                     Sistema de control de entrada y salida
-                </div>
+                </Link>
             )}
 
             <div style={rightContainerStyle}>
                 {showPlansButton && (
-                    <button style={plansButtonStyle} onClick={() => navigate('/plans')}>
+                    <Link to="/plans" style={plansButtonStyle}>
                         Ver planes
-                    </button>
+                    </Link>
                 )}
 
                 {showLoginButton && (
                     <>
                         {!showPlansButton && <span style={textStyle}>¿Ya tiene un plan?</span>}
-                        <button style={loginButtonStyle} onClick={() => navigate('/login')}>
+                        <Link to="/login" style={loginButtonStyle}>
                             Iniciar Sesión
-                        </button>
+                        </Link>
                     </>
                 )}
             </div>

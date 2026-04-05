@@ -26,8 +26,10 @@ class FinishRegistrationRequest extends FormRequest
             // Admin User Data
             'doc' => ['required', 'string', 'regex:/^[0-9]{7,10}$/', 'unique:usuarios,doc'],
             'id_tip_doc' => 'required|exists:tipo_doc,id_tip_doc',
-            'primer_nombre' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
-            'primer_apellido' => 'required|string|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'primer_nombre' => 'required|string|min:2|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'segundo_nombre' => 'nullable|string|min:2|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'primer_apellido' => 'required|string|min:2|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'segundo_apellido' => 'nullable|string|min:2|max:50|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
             'user_telefono' => ['required', 'string', 'regex:/^(3[0-9]{9}|60[0-9]{8})$/'],
             'user_correo' => 'required|email|max:100|unique:usuarios,correo',
             'contrasena' => ['required', 'string', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/'],
@@ -56,7 +58,9 @@ class FinishRegistrationRequest extends FormRequest
             'user_correo' => 'correo electrónico',
             'contrasena' => 'contraseña',
             'primer_nombre' => 'primer nombre',
+            'segundo_nombre' => 'segundo nombre',
             'primer_apellido' => 'primer apellido',
+            'segundo_apellido' => 'segundo apellido',
         ];
     }
 

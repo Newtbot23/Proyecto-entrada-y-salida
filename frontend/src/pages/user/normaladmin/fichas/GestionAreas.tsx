@@ -33,7 +33,7 @@ const GestionAreas: React.FC = () => {
         queryFn:  AreasService.getAreas,
     });
 
-    const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
+    const { data: allUsers = [] } = useQuery({
         queryKey: ['usuariosAsignables'],
         queryFn:  FichasService.getUsuariosAsignables,
     });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { registrationService } from '../../../services/registrationService';
 import { ConfirmationModal } from '../../../components/modals/ConfirmationModal';
 import styles from '../Registration.module.css';
@@ -313,9 +313,9 @@ const RegisterUser: React.FC = () => {
 
                     <div className={styles.loginSection}>
                         <span className={styles.loginText}>¿Ya tienes una cuenta? </span>
-                        <a href="/login" className={styles.loginLink}>
+                        <Link to="/login" className={styles.loginLink}>
                             Iniciar Sesión
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>
