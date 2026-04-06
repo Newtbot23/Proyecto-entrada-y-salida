@@ -7,7 +7,6 @@ interface VehiculoContainerProps {
     vehiculos: Vehiculo[];
     loading: boolean;
     catalogos: UserDashboardCatalog | null;
-    isSubmitting: boolean;
     isOcrLoading: boolean;
     onToggleStatus: (id: string, currentStatus: string, tipo: 'vehiculo') => void;
     onSetDefault: (id: string, tipo: 'vehiculo') => void;
@@ -18,10 +17,11 @@ interface VehiculoContainerProps {
 const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
 export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
-    vehiculos, loading, catalogos, isSubmitting, isOcrLoading,
+    vehiculos, loading, catalogos, isOcrLoading,
     onToggleStatus, onSetDefault, onCreate, onPerformOCR
 }) => {
     const [showModal, setShowModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [placaError, setPlacaError] = useState<string | null>(null);
     const [marcaError, setMarcaError] = useState<string | null>(null);
     const [form, setForm] = useState({
@@ -71,6 +71,9 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isProcessing) return; // Guardia de envío
+        
+        setIsProcessing(true);
         setPlacaError(null);
         setMarcaError(null);
 
@@ -87,12 +90,15 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
         if (res.success) {
             setShowModal(false);
             setForm({ placa: '', tipo_vehiculo_id: '', marca_vehiculo_id: '', modelo: '', color: '', foto: null, foto_placa: null });
-        } else if (res.error) {
-            // Si el error menciona "marca", lo asignamos a su estado correspondiente
-            if (res.error.toLowerCase().includes('marca')) {
-                setMarcaError(res.error);
-            } else {
-                setPlacaError(res.error);
+        } else {
+            setIsProcessing(false); // Reactivar solo si falla para permitir reintento
+            if (res.error) {
+                // Si el error menciona "marca", lo asignamos a su estado correspondiente
+                if (res.error.toLowerCase().includes('marca')) {
+                    setMarcaError(res.error);
+                } else {
+                    setPlacaError(res.error);
+                }
             }
         }
     };
@@ -288,9 +294,9 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
 
                             {/* FOOTER ACTIONS - Span full width */}
                             <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
-                                <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isSubmitting}>Cancelar</button>
-                                <button type="submit" className={styles.btnSubmit} disabled={isSubmitting || !!placaError}>
-                                    {isSubmitting ? 'Registrando...' : 'Registrar Vehículo'}
+                                <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isProcessing}>Cancelar</button>
+                                <button type="submit" className={styles.btnSubmit} disabled={isProcessing || !!placaError}>
+                                    {isProcessing ? 'Registrando...' : 'Registrar Vehículo'}
                                 </button>
                             </div>
                         </form>

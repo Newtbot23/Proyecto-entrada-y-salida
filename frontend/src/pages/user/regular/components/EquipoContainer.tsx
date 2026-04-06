@@ -7,7 +7,6 @@ interface EquipoContainerProps {
     equipos: Equipo[];
     loading: boolean;
     catalogos: UserDashboardCatalog | null;
-    isSubmitting: boolean;
     isOcrLoading: boolean;
     onToggleStatus: (id: string, currentStatus: string, tipo: 'equipo') => void;
     onSetDefault: (id: string, tipo: 'equipo') => void;
@@ -18,10 +17,12 @@ interface EquipoContainerProps {
 const STORAGE_URL = import.meta.env.VITE_API_STORAGE || 'http://localhost:8000/storage';
 
 export const EquipoContainer: React.FC<EquipoContainerProps> = ({ 
-    equipos, loading, catalogos, isSubmitting, isOcrLoading,
+    equipos, loading, catalogos, isOcrLoading,
     onToggleStatus, onSetDefault, onCreate, onPerformOCR 
 }) => {
     const [showModal, setShowModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [form, setForm] = useState({
         serial: '',
         tipo_equipo_id: '',
@@ -66,9 +67,13 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isProcessing) return; // Guardia de envío
+        
+        setIsProcessing(true);
+        setErrors({}); // Limpiar errores previos
 
         const formData = new FormData();
-        formData.append('serial', form.serial); // Forzado a "" si no es COMPUTO por la lógica de limpieza
+        formData.append('serial', form.serial);
         formData.append('id_marca', form.marca_equipo_id);
         formData.append('id_sistema_operativo', form.so_id);
         formData.append('modelo', form.modelo);
@@ -77,7 +82,6 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
         formData.append('tipo_equipo_desc', form.tipo_equipo_desc);
         formData.append('caracteristicas', form.caracteristicas);
         
-        // Inyección directa de valores fijos por seguridad
         formData.append('tipo_equipo', 'propio');
         formData.append('estado', 'asignado');
         
@@ -87,6 +91,23 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
         if (res.success) {
             setShowModal(false);
             setForm({ serial: '', tipo_equipo_id: '', marca_equipo_id: '', modelo: '', so_id: '', ram: '', procesador: '', tipo_equipo_desc: '', caracteristicas: '', tipo_equipo: 'propio', foto: null });
+            // No reseteamos isProcessing aquí porque el componente se cerrará/desmontará
+        } else {
+            setIsProcessing(false); // Reactivar solo si falla para permitir reintento
+            if (res.error) {
+                // Mapeo básico de error del backend a campos
+                const err = res.error.toLowerCase();
+                const newErrors: Record<string, string> = {};
+                
+                if (err.includes('serial')) newErrors.serial = res.error;
+                if (err.includes('marca')) newErrors.id_marca = res.error;
+                if (err.includes('modelo')) newErrors.modelo = res.error;
+                
+                // Si no se identificó el campo, lo ponemos como error general en el serial
+                if (Object.keys(newErrors).length === 0) newErrors.general = res.error;
+                
+                setErrors(newErrors);
+            }
         }
     };
 
@@ -198,9 +219,12 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                                     <div className={styles.formGroup}>
                                         <label className={styles.label}>Marca:</label>
                                         <select 
-                                            className={styles.input}
+                                            className={`${styles.input} ${errors.id_marca ? styles.inputError : ''}`}
                                             value={form.marca_equipo_id}
-                                            onChange={e => setForm(prev => ({ ...prev, marca_equipo_id: e.target.value }))}
+                                            onChange={e => {
+                                                setForm(prev => ({ ...prev, marca_equipo_id: e.target.value }));
+                                                setErrors(prev => ({ ...prev, id_marca: '' }));
+                                            }}
                                             required
                                         >
                                             <option value="">Seleccione...</option>
@@ -208,6 +232,7 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                                                 <option key={String(m.id)} value={m.id}>{m.nombre}</option>
                                             ))}
                                         </select>
+                                        {errors.id_marca && <p className={styles.errorText}>{errors.id_marca}</p>}
                                     </div>
 
                                     {/* SISTEMA OPERATIVO */}
@@ -258,11 +283,16 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
                                         <input 
                                             type="text" 
                                             value={form.serial}
-                                            onChange={e => setForm(prev => ({ ...prev, serial: alphanumericNoSpaces(e.target.value) }))}
-                                            className={styles.input}
+                                            onChange={e => {
+                                                setForm(prev => ({ ...prev, serial: alphanumericNoSpaces(e.target.value) }));
+                                                setErrors(prev => ({ ...prev, serial: '' }));
+                                            }}
+                                            className={`${styles.input} ${errors.serial ? styles.inputError : ''}`}
                                             placeholder="Serial único"
                                             required 
                                         />
+                                        {errors.serial && <p className={styles.errorText}>{errors.serial}</p>}
+                                        {errors.general && <p className={styles.errorText}>{errors.general}</p>}
                                     </div>
                                 </React.Fragment>
                             )}
@@ -314,9 +344,9 @@ export const EquipoContainer: React.FC<EquipoContainerProps> = ({
 
                             {/* FOOTER ACTIONS */}
                             <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
-                                <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isSubmitting}>Cancelar</button>
-                                <button type="submit" className={`${styles.btnSubmit} ${styles.btnSubmitEquipo}`} disabled={isSubmitting}>
-                                    {isSubmitting ? 'Registrando...' : 'Registrar Equipo'}
+                                <button type="button" onClick={() => setShowModal(false)} className={styles.btnCancel} disabled={isProcessing}>Cancelar</button>
+                                <button type="submit" className={`${styles.btnSubmit} ${styles.btnSubmitEquipo}`} disabled={isProcessing}>
+                                    {isProcessing ? 'Registrando...' : 'Registrar Equipo'}
                                 </button>
                             </div>
                         </form>
