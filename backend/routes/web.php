@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\PlanesLicenciasController;
 use App\Http\Controllers\Api\UsuariosController;
 use App\Http\Controllers\Api\PasswordRecoveryApiController as PasswordRecoveryController;
 
-Route::get('/', function () {
+Route::get('/nom/', function () {
     return redirect()->route('superadmin.login');
 });
 /*

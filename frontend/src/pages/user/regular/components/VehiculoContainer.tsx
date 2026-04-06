@@ -23,6 +23,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
 }) => {
     const [showModal, setShowModal] = useState(false);
     const [placaError, setPlacaError] = useState<string | null>(null);
+    const [marcaError, setMarcaError] = useState<string | null>(null);
     const [form, setForm] = useState({
         placa: '',
         tipo_vehiculo_id: '',
@@ -71,11 +72,12 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setPlacaError(null);
+        setMarcaError(null);
 
         const formData = new FormData();
         formData.append('placa', form.placa);
         formData.append('id_tipo_vehiculo', form.tipo_vehiculo_id);
-        formData.append('id_marca_vehiculo', form.marca_vehiculo_id);
+        formData.append('id_marca', form.marca_vehiculo_id);
         formData.append('modelo', form.modelo);
         formData.append('color', form.color);
         if (form.foto) formData.append('foto_general', form.foto);
@@ -86,7 +88,12 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
             setShowModal(false);
             setForm({ placa: '', tipo_vehiculo_id: '', marca_vehiculo_id: '', modelo: '', color: '', foto: null, foto_placa: null });
         } else if (res.error) {
-            setPlacaError(res.error);
+            // Si el error menciona "marca", lo asignamos a su estado correspondiente
+            if (res.error.toLowerCase().includes('marca')) {
+                setMarcaError(res.error);
+            } else {
+                setPlacaError(res.error);
+            }
         }
     };
 
@@ -230,9 +237,12 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Marca:</label>
                                 <select
-                                    className={styles.input}
+                                    className={`${styles.input} ${marcaError ? styles.inputError : ''}`}
                                     value={form.marca_vehiculo_id}
-                                    onChange={e => setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }))}
+                                    onChange={e => {
+                                        setForm(prev => ({ ...prev, marca_vehiculo_id: e.target.value }));
+                                        setMarcaError(null);
+                                    }}
                                     disabled={!form.tipo_vehiculo_id}
                                     required
                                 >
@@ -249,6 +259,7 @@ export const VehiculoContainer: React.FC<VehiculoContainerProps> = ({
                                         </option>
                                     ))}
                                 </select>
+                                {marcaError && <p className={styles.errorText}>{marcaError}</p>}
                             </div>
 
                             {/* MODELO */}
