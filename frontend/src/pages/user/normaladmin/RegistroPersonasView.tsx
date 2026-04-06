@@ -5,7 +5,7 @@ const RegistroPersonasView: React.FC = () => {
     return (
         <DynamicCrud
             tableName="usuarios"
-            overrideTitle="Registro Completo de Personas"
+            overrideTitle="Usuarios Registrados"
             immutableFields={['nit_entidad', 'codigo_qr', 'imagen']}
             hiddenFormFields={['nit_entidad', 'codigo_qr']}
             hideCreateForm={true}
