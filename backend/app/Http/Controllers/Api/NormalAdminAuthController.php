@@ -10,6 +10,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Api\Auth\LoginRequest;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TwoFactorAuthMail;
+use Carbon\Carbon;
 
 class NormalAdminAuthController extends Controller
 {
@@ -73,7 +78,28 @@ class NormalAdminAuthController extends Controller
                 ], 403);
             }
 
-            // Create Sanctum token
+            // Trigger 2FA logic exclusively for 'Administrador' (id_rol = 1)
+            if ($user->id_rol === 1) {
+                // Generate 6-digit code
+                $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+                // Store code in Cache with a 10-minute expiration
+                Cache::put('2fa_normaladmin_' . $user->correo, $code, Carbon::now()->addMinutes(10));
+
+                // Send Email
+                Mail::to($user->correo)->send(new TwoFactorAuthMail($code));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Código de autenticación enviado al correo.',
+                    'data' => [
+                        'email' => $user->correo,
+                        'requires_2fa' => true
+                    ]
+                ], 200);
+            }
+
+            // Create Sanctum token for users that don't need 2FA (id_rol != 1)
             $token = $user->createToken('admin_token')->plainTextToken;
 
             return response()->json([
@@ -98,9 +124,103 @@ class NormalAdminAuthController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al iniciar sesión Normal Admin: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al iniciar sesión',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify the 6-digit 2FA code and finalize login for Normal Admin
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verify2fa(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'code' => 'required|string|size:6'
+            ]);
+
+            // Check code against Cache
+            $cacheKey = '2fa_normaladmin_' . $request->email;
+            $storedCode = Cache::get($cacheKey);
+
+            if (!$storedCode || $storedCode !== $request->code) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El código es inválido o ha expirado.',
+                    'errors' => [
+                        'code' => ['El código es inválido o ha expirado.']
+                    ]
+                ], 422);
+            }
+
+            // Find the user
+            $user = Usuarios::where('correo', $request->email)->first();
+
+            if (!$user || $user->id_rol !== 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Acceso no autorizado.'
+                ], 403);
+            }
+
+            // Load license relationship
+            $user->load('licenciaSistema');
+            $licencia = $user->licenciaSistema;
+
+            $currentDate = now();
+            $licenseExpired = false;
+
+            if ($licencia && $licencia->fecha_vencimiento < $currentDate) {
+                $licenseExpired = true;
+            }
+
+            // Delete the used code
+            Cache::forget($cacheKey);
+
+            // Generate token
+            $token = $user->createToken('admin_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Inicio de sesión exitoso',
+                'data' => [
+                    'user' => [
+                        'id' => $user->doc,
+                        'nombre' => $user->primer_nombre . ' ' . $user->primer_apellido,
+                        'correo' => $user->correo,
+                        'id_rol' => $user->id_rol,
+                        'nit_entidad' => $user->nit_entidad,
+                        'codigo_qr' => $user->codigo_qr,
+                        'license_id' => $licencia ? $licencia->id : null,
+                        'license_status' => $licencia ? $licencia->estado : null,
+                        'license_expired' => $licenseExpired,
+                        'es_instructor' => DetalleFichaUsuarios::where('doc', $user->doc)
+                            ->where('tipo_participante', 'instructor')
+                            ->exists()
+                    ],
+                    'token' => $token
+                ]
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error verifying 2FA normal admin: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al verificar el código.',
                 'error' => $e->getMessage()
             ], 500);
         }

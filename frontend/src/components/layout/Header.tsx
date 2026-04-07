@@ -29,10 +29,7 @@ const Header: React.FC = () => {
             <div className={styles.rightSection}>
                 <div className={styles.userInfo}>
                     <span className={styles.userRole}>
-                        {user?.rol ?? 'Super Administrador'}
-                    </span>
-                    <span className={styles.userName}>
-                        {user?.nombre ?? '—'}
+                        {user?.rol ?? 'Super Administrador'}{user?.nombre ? ` - ${user.nombre}` : ''}
                     </span>
                 </div>
 

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from '../Registration.module.css'; // Reusing registration styles for consistency
 import { loginNormalAdmin } from '../../../services/authService';
+import { useAuth } from '../../../context/AuthContext';
 
 const NormalAdminLogin: React.FC = () => {
     const navigate = useNavigate();
+    const { setUser } = useAuth();
     const [formData, setFormData] = useState({
         correo: '',
         contrasena: '',
@@ -34,10 +36,22 @@ const NormalAdminLogin: React.FC = () => {
         try {
             const data = await loginNormalAdmin(formData);
 
+            if (data.requires_2fa && data.email) {
+                // Halt standard flow, jump to 2FA verification passing email by state
+                navigate('/verify-2fa-admin', { state: { email: data.email } });
+                return;
+            }
+
             // Store token and user data in sessionStorage (unified keys)
             const { token, user } = data;
+            
+            // Map roles accurately for local context
+            let rolName = 'Usuario';
+            if (user.id_rol === 3) rolName = 'Puertas Personas';
+            if (user.id_rol === 4) rolName = 'Puertas Vehículos';
+            
+            setUser({ ...user, rol: rolName } as any);
             sessionStorage.setItem('authToken', token);
-            sessionStorage.setItem('authUser', JSON.stringify(user));
 
             // Phase 15 & 16: Redirect logic based on license
             if (user.license_status === 'pendiente') {

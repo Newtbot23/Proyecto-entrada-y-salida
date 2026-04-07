@@ -31,12 +31,18 @@ const SuperAdminLogin: React.FC = () => {
         try {
             const data = await loginSuperAdmin({ correo: email, contrasena: password });
 
-            // Store token and admin data in sessionStorage for tab isolation
-            sessionStorage.setItem('authToken', data.token);
-            sessionStorage.setItem('authUser', JSON.stringify(data.admin));
+            // If backend requires 2FA, redirect to verification page with email in state
+            if (data.requires_2fa && data.email) {
+                navigate('/superadmin/verify-2fa', { state: { email: data.email } });
+                return;
+            }
 
-            // Redirect to dashboard
-            navigate('/superadmin/dashboard');
+            // Normal login fallback (or if 2FA was bypassed for some reason)
+            if (data.token && data.admin) {
+                sessionStorage.setItem('authToken', data.token);
+                sessionStorage.setItem('authUser', JSON.stringify(data.admin));
+                navigate('/superadmin/dashboard');
+            }
 
         } catch (err: any) {
             console.error('Login error:', err);
