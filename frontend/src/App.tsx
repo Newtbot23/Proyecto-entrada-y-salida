@@ -1,8 +1,10 @@
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import SuperAdminLogin from './pages/superadmin/SuperAdminLogin';
+import Verify2FA from './pages/superadmin/Verify2FA';
 import { PlansPage } from './pages/Plans/PlansPage';
 import PublicDashboardPage from './pages/PublicDashboardPage';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import VerifyNormalAdmin2FA from './pages/user/normaladmin/VerifyNormalAdmin2FA';
 import LicensePlansPage from './pages/superadmin/LicensePlansPage';
 import InstitutionsPage from './pages/superadmin/InstitutionsPage';
 import AdminEntitiesPage from './pages/superadmin/AdminEntitiesPage';
@@ -68,6 +70,8 @@ function App() {
           <Route path="/register-entity" element={<RegisterEntity />} />
           <Route path="/register-admin" element={<RegisterAdmin />} />
           <Route path="/register-user" element={<RegisterUser />} />
+          <Route path="/license-payment" element={<LicensePayment />} />          
+          <Route path="/verify-2fa-admin" element={<VerifyNormalAdmin2FA />} />
 
           {/* Protected Normal Admin Area */}
 
@@ -105,6 +109,7 @@ function App() {
 
           {/* Super Admin Routes */}
           <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+          <Route path="/superadmin/verify-2fa" element={<Verify2FA />} />
 
           {/* Protected Super Admin Area */}
           <Route element={<ProtectedRoute />}>

@@ -296,6 +296,8 @@ class UserDashboardController extends Controller
                 $pathDetalle = $request->file('foto_detalle')->store('equipos', 'public');
             }
 
+            DB::beginTransaction();
+
             // Concatenar rutas con pipe |
             $rutaFinal = $pathGeneral;
             if ($pathDetalle) {
@@ -319,15 +321,35 @@ class UserDashboardController extends Controller
             Asignacion::create([
                 'doc' => $user->doc,
                 'serial_equipo' => $request->serial,
-                'numero_ambiente' => null,
-                'estado' => 1,
+                'id_ficha' => null, // Opcional según requerimiento
+                'id_lote' => null,  // Opcional según requerimiento
+                'estado' => Asignacion::ESTADO_EN_USO, // Uso de constante enum string
+                'codigo_asignacion' => null
             ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Equipo registrado exitosamente'
             ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            // Manejo de error de serial duplicado
+            if ($e->errorInfo[1] == 1062) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El serial ya se encuentra registrado.',
+                    'errors' => ['serial' => ['Este serial ya ha sido tomado.']]
+                ], 422);
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de base de datos al registrar equipo',
+                'error' => $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar equipo',

@@ -19,9 +19,12 @@ Route::get('/login', function () {
 |--------------------------------------------------------------------------
 */
 
-// Authentication
-Route::post('/admins/login', [App\Http\Controllers\Api\AdminsAuthController::class, 'login']);
-Route::post('/normaladmin/login', [App\Http\Controllers\Api\NormalAdminAuthController::class, 'login']);
+// Authentication Routes
+Route::post('/admins/login', [\App\Http\Controllers\Api\AdminsAuthController::class, 'login']);
+Route::post('/superadmin/verify-2fa', [\App\Http\Controllers\Api\AdminsAuthController::class, 'verify2fa'])->middleware('throttle:5,1');
+
+Route::post('/normaladmin/login', [\App\Http\Controllers\Api\NormalAdminAuthController::class, 'login']);
+Route::post('/normaladmin/verify-2fa', [\App\Http\Controllers\Api\NormalAdminAuthController::class, 'verify2fa'])->middleware('throttle:5,1');
 
 // Password Recovery
 Route::post('/forgot-password', [App\Http\Controllers\Api\PasswordRecoveryApiController::class, 'sendResetCode']);

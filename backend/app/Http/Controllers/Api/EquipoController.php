@@ -132,7 +132,7 @@ class EquipoController extends Controller
                     'caracteristicas' => $caract ?: 'Importado masivamente',
                     'id_sistema_operativo' => $idSo,
                     'id_lote' => $lote->id,
-                    'estado_aprobacion' => 'aprobado',
+                    'estado_aprobacion' => 'activo',
                 ]);
 
                 $importedCount++;

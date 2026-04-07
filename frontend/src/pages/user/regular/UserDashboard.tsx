@@ -177,7 +177,6 @@ const UserDashboard: React.FC = () => {
                         vehiculos={vehiculos}
                         loading={loadingVehiculos}
                         catalogos={catalogos || null}
-                        isSubmitting={mutationCreateVehiculo.isPending}
                         isOcrLoading={isOcrLoading}
                         onToggleStatus={handleToggleStatus}
                         onSetDefault={handleSetDefault}
@@ -189,7 +188,6 @@ const UserDashboard: React.FC = () => {
                         equipos={equipos}
                         loading={loadingEquipos}
                         catalogos={catalogos || null}
-                        isSubmitting={mutationCreateEquipo.isPending}
                         isOcrLoading={isOcrEquipoLoading}
                         onToggleStatus={handleToggleStatus}
                         onSetDefault={handleSetDefault}

@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const normalAdminItems = [
         { label: 'Panel', path: '/dashboard', icon: DashboardIcon },
         { label: 'Usuarios', path: '/user/normaladmin/tables/usuarios', icon: InstitutionIcon },
-        { label: 'Registro Completo', path: '/user/normaladmin/registro-personas', icon: ReportIcon },
+        { label: 'Usuarios Registrados', path: '/user/normaladmin/registro-personas', icon: ReportIcon },
     ];
 
     const menuItems = isSuperAdmin ? superAdminItems : normalAdminItems;

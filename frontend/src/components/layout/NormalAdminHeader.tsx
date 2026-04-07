@@ -9,7 +9,7 @@ const routeTitles: Record<string, string> = {
     'license-plans': 'Planes de Licencia',
     institutions: 'Instituciones',
     reports: 'Reportes',
-    'registro-personas': 'Registro Completo',
+    'registro-personas': 'Usuarios Registrados',
     tables: 'Tablas de Usuarios',
     personas: 'Control de Personas',
     vehiculos: 'Control de Vehículos',
@@ -43,10 +43,7 @@ const NormalAdminHeader: React.FC = () => {
             <div className={styles.rightSection}>
                 <div className={styles.userInfo}>
                     <span className={styles.userRole}>
-                        {getRoleName()}
-                    </span>
-                    <span className={styles.userName}>
-                        {user?.nombre ?? '—'}
+                        {getRoleName()}{user?.nombre ? ` - ${user.nombre}` : ''}
                     </span>
                 </div>
 
